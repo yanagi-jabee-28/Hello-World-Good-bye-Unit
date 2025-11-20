@@ -58,6 +58,18 @@ export interface Item {
   effectDescription: string;
 }
 
+export interface StatsSnapshot {
+  hp: number;
+  sanity: number;
+  caffeine: number;
+  turn: number;
+}
+
+export interface EventStats {
+  count: number;
+  lastTurn: number;
+}
+
 export interface GameState {
   day: number;
   timeSlot: TimeSlot;
@@ -72,7 +84,9 @@ export interface GameState {
   logs: LogEntry[];
   status: GameStatus;
   turnCount: number;
-  eventHistory: string[]; // 直近のイベントIDを保持して重複を防ぐ
+  eventHistory: string[]; // 直近のイベントID（UI表示用など）
+  eventStats: Record<string, EventStats>; // イベントごとの発生統計（ロジック制御用）
+  statsHistory: StatsSnapshot[]; // 履歴データ
 }
 
 export enum ActionType {
@@ -99,7 +113,7 @@ export type GameAction =
   | { type: ActionType.USE_ITEM; payload: ItemId }
   | { type: ActionType.RESTART };
 
-export interface RandomEventEffect {
+export interface GameEventEffect {
   hp?: number;
   sanity?: number;
   knowledge?: Partial<Record<SubjectId, number>>;
@@ -108,22 +122,36 @@ export interface RandomEventEffect {
   inventory?: Partial<Record<ItemId, number>>;
 }
 
-export type EventCategory = 
-  | 'health_recovery' // 体力・SAN回復（ピンチ時に出やすい）
-  | 'study_boost'     // 学力アップ（赤点時に出やすい）
-  | 'drowsiness'      // 睡魔・集中力低下（カフェインで防げる）
-  | 'tech_trouble'    // 技術的トラブル（不運）
-  | 'social'          // 人間関係
-  | 'flavor'          // その他・雰囲気
-  | 'item_get';       // アイテム入手
+export type EventTriggerType = 
+  | 'turn_end'        // ターン終了時（ランダムイベント）
+  | 'action_professor' // 教授コマンド実行時
+  | 'action_senior'    // 先輩コマンド実行時
+  | 'action_friend';   // 友人コマンド実行時
 
-export interface RandomEvent {
+export interface GameEventCondition {
+  minHp?: number;
+  maxHp?: number;
+  minSanity?: number;
+  maxSanity?: number;
+  minAvgScore?: number;
+  maxAvgScore?: number;
+  minRelationship?: number; // アクション対象の友好度（turn_endの場合は無視）
+  maxRelationship?: number;
+  caffeineMin?: number;
+  caffeineMax?: number;
+  timeSlots?: TimeSlot[];
+}
+
+export interface GameEvent {
   id: string;
+  trigger: EventTriggerType;
   text: string;
   type: 'good' | 'bad' | 'flavor';
-  category: EventCategory; // ロジック制御用カテゴリ
-  effect?: RandomEventEffect;
-  allowedTimeSlots?: TimeSlot[];
-  minAvgScore?: number; // イベント発生に必要な最低平均点
-  maxAvgScore?: number; // イベント発生に必要な最高平均点
+  category?: string; // グルーピング用（flavor, tech_troubleなど）
+  conditions?: GameEventCondition;
+  effect?: GameEventEffect;
+  weight: number; // 基本発生確率の重み (1-100程度)
+  coolDownTurns?: number; // 再発生までの最低ターン数
+  maxOccurrences?: number; // ゲーム中最大発生回数 (undefinedなら無限)
+  decay?: number; // 発生するたびに重みを減らす割合 (0.5なら次回確率半減)
 }

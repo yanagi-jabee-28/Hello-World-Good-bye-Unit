@@ -1,9 +1,11 @@
-import { GameState, ActionType, GameAction, TimeSlot, GameStatus, SubjectId, LogEntry, ItemId, RelationshipId } from '../types';
+
+import { GameState, ActionType, GameAction, TimeSlot, GameStatus, SubjectId, LogEntry, ItemId, RelationshipId, EventTriggerType } from '../types';
 import { SUBJECTS, PASSING_SCORE } from '../data/subjects';
-import { LOG_MESSAGES, RANDOM_EVENTS } from '../data/events';
+import { LOG_MESSAGES, ALL_EVENTS } from '../data/events';
 import { ITEMS } from '../data/items';
 import { clamp, chance, formatDelta, joinMessages } from '../utils/common';
 import { getNextTimeSlot } from './time';
+import { selectEvent, applyEventEffect, recordEventOccurrence } from './eventManager';
 
 const INIT_RELATIONSHIPS = {
   [RelationshipId.PROFESSOR]: 20,
@@ -18,8 +20,7 @@ const INIT_KNOWLEDGE = {
   [SubjectId.HUMANITIES]: 0,
 };
 
-const EVENT_HISTORY_LIMIT = 4; // 直近4つのイベントを記憶して重複を防ぐ
-const EVENT_PROBABILITY = 30; // イベント発生確率(%) - カオス度アップ
+const RANDOM_EVENT_PROBABILITY = 35; // 毎ターン発生確率
 
 export const INITIAL_STATE: GameState = {
   day: 1,
@@ -43,6 +44,8 @@ export const INITIAL_STATE: GameState = {
   status: GameStatus.PLAYING,
   turnCount: 0,
   eventHistory: [],
+  eventStats: {},
+  statsHistory: [],
 };
 
 export const gameReducer = (state: GameState, action: GameAction): GameState => {
@@ -51,7 +54,6 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     const inheritedKnowledge = { ...INIT_KNOWLEDGE };
     let inherited = false;
     
-    // 前回の学力がある場合、半分を引き継ぐ
     (Object.keys(state.knowledge) as SubjectId[]).forEach((id) => {
       if (state.knowledge[id] > 0) {
         inheritedKnowledge[id] = Math.floor(state.knowledge[id] / 2);
@@ -68,7 +70,6 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       knowledge: inheritedKnowledge,
       relationships: { ...INIT_RELATIONSHIPS },
       inventory: { ...INITIAL_STATE.inventory },
-      eventHistory: [],
       logs: [{
         id: Math.random().toString(36).substr(2, 9),
         text: restartLogText,
@@ -86,6 +87,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
   newState.knowledge = { ...state.knowledge };
   newState.relationships = { ...state.relationships };
   newState.inventory = { ...state.inventory };
+  newState.eventStats = { ...state.eventStats };
   
   let logs = [...state.logs];
   
@@ -99,6 +101,23 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
   };
 
   let timeAdvanced = true;
+
+  // ヘルパー：イベント処理
+  const executeEvent = (currentState: GameState, trigger: EventTriggerType, fallbackText?: string): GameState => {
+     const event = selectEvent(currentState, ALL_EVENTS, trigger);
+     
+     if (event) {
+        const { newState: appliedState, messages } = applyEventEffect(currentState, event);
+        const details = joinMessages(messages, ', ');
+        const logType = event.type === 'good' ? 'success' : event.type === 'bad' ? 'danger' : 'info';
+        addLog(details ? `${event.text}\n(${details})` : event.text, logType);
+        return appliedState;
+     } else if (fallbackText) {
+        addLog(fallbackText, 'info');
+        return currentState;
+     }
+     return currentState;
+  };
 
   const calculateStudyEffect = (subjectId: SubjectId) => {
     const subject = SUBJECTS[subjectId];
@@ -204,7 +223,6 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       let hpRecov = 20;
       let sanityRecov = 10;
       let caffeineDrop = -20;
-      let friendRelDelta = 0;
       let baseLog = "";
       let logType: LogEntry['type'] = 'info';
 
@@ -219,10 +237,8 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
         baseLog = LOG_MESSAGES.rest_success;
         logType = 'success';
       } else if (state.timeSlot === TimeSlot.NOON) {
-        friendRelDelta = 2;
         sanityRecov += 5;
-        baseLog = "【ランチ】友人と学食で無駄話をしてリフレッシュした。";
-        logType = 'success';
+        baseLog = "【ランチ】学食で少しリラックスした。";
       } else {
         baseLog = LOG_MESSAGES.rest_short;
       }
@@ -230,13 +246,11 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       newState.hp = clamp(newState.hp + hpRecov, 0, newState.maxHp);
       newState.sanity = clamp(newState.sanity + sanityRecov, 0, newState.maxSanity);
       newState.caffeine = clamp(newState.caffeine + caffeineDrop, 0, 200);
-      if (friendRelDelta) newState.relationships[RelationshipId.FRIEND] = clamp(newState.relationships[RelationshipId.FRIEND] + friendRelDelta, 0, 100);
 
       const details = joinMessages([
         formatDelta('HP', hpRecov),
         formatDelta('SAN', sanityRecov),
-        formatDelta('カフェイン', caffeineDrop),
-        formatDelta('友人友好度', friendRelDelta)
+        formatDelta('カフェイン', caffeineDrop)
       ], ', ');
 
       addLog(`${baseLog}\n(${details})`, logType);
@@ -246,7 +260,6 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case ActionType.ESCAPISM: {
       const sanDelta = 25;
       const hpDelta = -5;
-      const friendRelDelta = 5;
       let profRelDelta = 0;
       let baseLog = "";
       let logType: LogEntry['type'] = 'info';
@@ -261,13 +274,11 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
 
       newState.sanity = clamp(newState.sanity + sanDelta, 0, newState.maxSanity);
       newState.hp = clamp(newState.hp + hpDelta, 0, newState.maxHp);
-      newState.relationships[RelationshipId.FRIEND] = clamp(newState.relationships[RelationshipId.FRIEND] + friendRelDelta, 0, 100);
       if (profRelDelta) newState.relationships[RelationshipId.PROFESSOR] = clamp(newState.relationships[RelationshipId.PROFESSOR] + profRelDelta, 0, 100);
 
       const details = joinMessages([
         formatDelta('SAN', sanDelta),
         formatDelta('HP', hpDelta),
-        formatDelta('友人友好度', friendRelDelta),
         formatDelta('教授友好度', profRelDelta)
       ], ', ');
 
@@ -277,8 +288,8 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
 
     case ActionType.CONSUME_CAFFEINE: {
       const cafDelta = 50;
-      const sanDelta = -10; // SANは減る
-      const hpDelta = 10;   // HPは増える(元気の前借り)
+      const sanDelta = -10; 
+      const hpDelta = 10; 
       
       newState.caffeine = clamp(newState.caffeine + cafDelta, 0, 200);
       newState.sanity = clamp(newState.sanity + sanDelta, 0, newState.maxSanity);
@@ -296,133 +307,27 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     }
 
     case ActionType.ASK_PROFESSOR: {
-      const hpDelta = -5;
-      let profRelDelta = 0;
-      let knowledgeDelta = 0;
-      let subjectName = "";
-      let baseLog = "";
-      let logType: LogEntry['type'] = 'info';
-
-      const successChance = 40 + (newState.relationships[RelationshipId.PROFESSOR] / 2);
-      
-      if (chance(successChance)) {
-         const subIds = Object.values(SubjectId);
-         const target = subIds[Math.floor(Math.random() * subIds.length)];
-         subjectName = SUBJECTS[target].name;
-         
-         knowledgeDelta = 10;
-         profRelDelta = 10;
-         
-         newState.knowledge[target] = clamp(newState.knowledge[target] + knowledgeDelta, 0, 100);
-         baseLog = LOG_MESSAGES.prof_success;
-         logType = 'success';
-      } else {
-         profRelDelta = 2;
-         baseLog = LOG_MESSAGES.prof_fail;
-         logType = 'warning';
+      // イベントシステムへ委譲。失敗時のデフォルト処理はイベント定義内にBadイベントとして含める
+      newState = executeEvent(newState, 'action_professor', "教授室は留守のようだ。");
+      // ランダム科目の学習効果補正（イベントEffectsで特定科目が指定されていない場合用）
+      if (newState.relationships[RelationshipId.PROFESSOR] > state.relationships[RelationshipId.PROFESSOR]) {
+          // 友好度が上がっていれば、ランダムに学習効果を付与（簡易的な実装）
+          // 本来はGameEventのEffectで完結させるのが望ましいが、科目ランダム性を維持するためここに残す
+          const subIds = Object.values(SubjectId);
+          const target = subIds[Math.floor(Math.random() * subIds.length)];
+          newState.knowledge[target] = clamp(newState.knowledge[target] + 5, 0, 100);
+          // ログは別途出す必要はないが、わかりやすくするためにはイベントテキストを工夫する
       }
-      
-      newState.relationships[RelationshipId.PROFESSOR] = clamp(newState.relationships[RelationshipId.PROFESSOR] + profRelDelta, 0, 100);
-      newState.hp = clamp(newState.hp + hpDelta, 0, newState.maxHp);
-
-      const details = joinMessages([
-        formatDelta('HP', hpDelta),
-        formatDelta('教授友好度', profRelDelta),
-        knowledgeDelta > 0 ? `${subjectName}+${knowledgeDelta}` : null
-      ], ', ');
-
-      addLog(`${baseLog}\n(${details})`, logType);
       break;
     }
 
     case ActionType.ASK_SENIOR: {
-      const hpDelta = -5;
-      let seniorRelDelta = 0;
-      let knowledgeDelta = 0;
-      let subjectName = "";
-      let itemGained = null;
-      let baseLog = "";
-      let logType: LogEntry['type'] = 'info';
-
-      const successChance = 50 + (newState.relationships[RelationshipId.SENIOR] / 2);
-      
-      if (chance(successChance)) {
-        const subIds = Object.values(SubjectId);
-        const target = subIds[Math.floor(Math.random() * subIds.length)];
-        subjectName = SUBJECTS[target].name;
-        
-        knowledgeDelta = 5;
-        seniorRelDelta = 10;
-        newState.knowledge[target] = clamp(newState.knowledge[target] + knowledgeDelta, 0, 100);
-        baseLog = LOG_MESSAGES.senior_success;
-        logType = 'success';
-        
-        if (chance(30)) {
-           const items = [ItemId.HIGH_CACAO_CHOCO, ItemId.REFERENCE_BOOK, ItemId.USB_MEMORY];
-           const item = items[Math.floor(Math.random() * items.length)];
-           newState.inventory = {
-             ...newState.inventory,
-             [item]: (newState.inventory[item] || 0) + 1
-           };
-           itemGained = ITEMS[item].name;
-        }
-      } else {
-        baseLog = LOG_MESSAGES.senior_busy;
-      }
-      
-      newState.relationships[RelationshipId.SENIOR] = clamp(newState.relationships[RelationshipId.SENIOR] + seniorRelDelta, 0, 100);
-      newState.hp = clamp(newState.hp + hpDelta, 0, newState.maxHp);
-
-      const details = joinMessages([
-        formatDelta('HP', hpDelta),
-        formatDelta('先輩友好度', seniorRelDelta),
-        knowledgeDelta > 0 ? `${subjectName}+${knowledgeDelta}` : null,
-        itemGained ? `アイテム入手: ${itemGained}` : null
-      ], ', ');
-
-      addLog(details ? `${baseLog}\n(${details})` : baseLog, logType);
+      newState = executeEvent(newState, 'action_senior', "先輩は見当たらなかった。");
       break;
     }
 
     case ActionType.RELY_FRIEND: {
-      let sanDelta = 0;
-      let friendRelDelta = 10;
-      let hpDelta = 0;
-      let knowledgeDelta = 0;
-      let subjectName = "";
-      let baseLog = "";
-      let logType: LogEntry['type'] = 'info';
-
-      newState.relationships[RelationshipId.FRIEND] = clamp(newState.relationships[RelationshipId.FRIEND] + friendRelDelta, 0, 100);
-
-      if (chance(50)) {
-        sanDelta = 15;
-        const subIds = Object.values(SubjectId);
-        const target = subIds[Math.floor(Math.random() * subIds.length)];
-        subjectName = SUBJECTS[target].name;
-        knowledgeDelta = 5;
-        
-        newState.knowledge[target] = clamp(newState.knowledge[target] + knowledgeDelta, 0, 100);
-        baseLog = LOG_MESSAGES.friend_share;
-        logType = 'success';
-      } else {
-        sanDelta = 15;
-        hpDelta = -5;
-        baseLog = LOG_MESSAGES.friend_play;
-        logType = 'warning';
-      }
-      
-      newState.sanity = clamp(newState.sanity + sanDelta, 0, newState.maxSanity);
-      newState.hp = clamp(newState.hp + hpDelta, 0, newState.maxHp);
-
-      const details = joinMessages([
-        formatDelta('SAN', sanDelta),
-        formatDelta('HP', hpDelta),
-        formatDelta('友人友好度', friendRelDelta),
-        knowledgeDelta > 0 ? `${subjectName}+${knowledgeDelta}` : null
-      ], ', ');
-
-      addLog(`${baseLog}\n(${details})`, logType);
+      newState = executeEvent(newState, 'action_friend', "友人は忙しいようだ。");
       break;
     }
 
@@ -505,118 +410,20 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     }
     newState.turnCount += 1;
 
-    // --- Logic for Random Events with Weighted Probability ---
-    if (chance(EVENT_PROBABILITY)) {
-      const currentAvgKnowledge = Object.values(newState.knowledge).reduce((a, b) => a + b, 0) / 4;
-      const history = newState.eventHistory || [];
-      
-      // Status flags for crisis detection
-      const isLowHp = newState.hp < 40;
-      const isLowSanity = newState.sanity < 40;
-      const isCrisis = isLowHp || isLowSanity;
-      const isLowScore = currentAvgKnowledge < 60; // 赤点危機
-      const isCaffeinated = newState.caffeine > 50;
-
-      // 1. Filter possible events by TimeSlot, Score, History
-      const validEvents = RANDOM_EVENTS.filter(e => {
-        const isTimeValid = !e.allowedTimeSlots || e.allowedTimeSlots.includes(newState.timeSlot);
-        const isMinScoreValid = e.minAvgScore === undefined || currentAvgKnowledge >= e.minAvgScore;
-        const isMaxScoreValid = e.maxAvgScore === undefined || currentAvgKnowledge <= e.maxAvgScore;
-        const isNotDuplicate = !history.includes(e.id);
-        return isTimeValid && isMinScoreValid && isMaxScoreValid && isNotDuplicate;
-      });
-
-      // 2. Calculate Weight for each event
-      const weightedPool = validEvents.map(evt => {
-        let weight = 10; // Base weight
-
-        // Crisis Recovery Boost
-        if (isCrisis && evt.category === 'health_recovery') {
-          weight += 40; // Greatly increase chance of recovery items/events
-        }
-
-        // Study Catch-up Boost
-        if (isLowScore && evt.category === 'study_boost') {
-          weight += 50; // Greatly increase chance of study helpers
-        }
-        
-        // Caffeine Blocks Drowsiness
-        if (isCaffeinated && evt.category === 'drowsiness') {
-          weight = 0; // Completely block drowsiness events
-        } else if (evt.category === 'drowsiness') {
-           // Increase drowsiness chance if NOT caffeinated at night/afternoon
-           if (newState.timeSlot === TimeSlot.NIGHT || newState.timeSlot === TimeSlot.AFTERNOON) {
-              weight += 20;
-           }
-        }
-
-        return { evt, weight };
-      }).filter(item => item.weight > 0);
-
-      // 3. Weighted Selection
-      const totalWeight = weightedPool.reduce((sum, item) => sum + item.weight, 0);
-      
-      if (totalWeight > 0) {
-        let randomVal = Math.random() * totalWeight;
-        let selectedEvent = null;
-        
-        for (const item of weightedPool) {
-          randomVal -= item.weight;
-          if (randomVal <= 0) {
-            selectedEvent = item.evt;
-            break;
-          }
-        }
-        
-        // Fallback just in case
-        if (!selectedEvent && weightedPool.length > 0) selectedEvent = weightedPool[0].evt;
-
-        if (selectedEvent) {
-          const evt = selectedEvent;
-          // Update history
-          newState.eventHistory = [evt.id, ...history].slice(0, EVENT_HISTORY_LIMIT);
-
-          const messages = [];
-          if (evt.effect) {
-            if (evt.effect.hp) {
-               newState.hp = clamp(newState.hp + evt.effect.hp, 0, newState.maxHp);
-               messages.push(formatDelta('HP', evt.effect.hp));
-            }
-            if (evt.effect.sanity) {
-               newState.sanity = clamp(newState.sanity + evt.effect.sanity, 0, newState.maxSanity);
-               messages.push(formatDelta('SAN', evt.effect.sanity));
-            }
-            if (evt.effect.caffeine) {
-               newState.caffeine = clamp(newState.caffeine + evt.effect.caffeine, 0, 200);
-               messages.push(formatDelta('カフェイン', evt.effect.caffeine));
-            }
-            if (evt.effect.knowledge) {
-               Object.entries(evt.effect.knowledge).forEach(([subjId, delta]) => {
-                  const sId = subjId as SubjectId;
-                  const val = delta as number;
-                  newState.knowledge[sId] = clamp(newState.knowledge[sId] + (val || 0), 0, 100);
-                  messages.push(formatDelta(SUBJECTS[sId].name, val || 0));
-               });
-            }
-            if (evt.effect.relationships) {
-               Object.entries(evt.effect.relationships).forEach(([relId, delta]) => {
-                  const rId = relId as RelationshipId;
-                  const val = delta as number;
-                  newState.relationships[rId] = clamp(newState.relationships[rId] + (val || 0), 0, 100);
-                  const label = rId === RelationshipId.PROFESSOR ? '教授' : rId === RelationshipId.SENIOR ? '先輩' : '友人';
-                  messages.push(formatDelta(`${label}友好度`, val || 0));
-               });
-            }
-            if (evt.effect.inventory) {
-               // Implement inventory changes if any event uses it
-            }
-          }
-          
-          const logType = evt.type === 'good' ? 'success' : evt.type === 'bad' ? 'danger' : 'info';
-          const details = joinMessages(messages, ', ');
-          addLog(details ? `${evt.text}\n(${details})` : evt.text, logType);
-        }
+    // Record Stats History for Analytics
+    newState.statsHistory = [
+      ...newState.statsHistory,
+      {
+        hp: newState.hp,
+        sanity: newState.sanity,
+        caffeine: newState.caffeine,
+        turn: newState.turnCount
       }
+    ];
+
+    // --- Random Event Trigger ---
+    if (chance(RANDOM_EVENT_PROBABILITY)) {
+       newState = executeEvent(newState, 'turn_end');
     }
   }
 
