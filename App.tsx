@@ -1,15 +1,17 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Layout } from './components/Layout';
 import { StatusDisplay } from './components/StatusDisplay';
 import { LogWindow } from './components/LogWindow';
 import { ActionPanel } from './components/ActionPanel';
 import { EndingScreen } from './components/EndingScreen';
+import { ShopModal } from './components/ShopModal';
 import { useGameEngine } from './hooks/useGameEngine';
-import { ActionType, GameAction } from './types';
+import { ActionType, GameAction, ItemId } from './types';
 
 const App: React.FC = () => {
   const { state, dispatch } = useGameEngine();
+  const [isShopOpen, setIsShopOpen] = useState(false);
 
   // Overload implementation to match ActionPanel expectations
   const handleAction = (type: ActionType, payload?: any) => {
@@ -18,8 +20,25 @@ const App: React.FC = () => {
     dispatch({ type, payload } as GameAction);
   };
 
+  const handleBuyItem = (itemId: ItemId) => {
+    dispatch({ type: ActionType.BUY_ITEM, payload: itemId });
+  };
+
+  const overlays = (
+    <>
+      {isShopOpen && (
+        <ShopModal 
+          money={state.money} 
+          onClose={() => setIsShopOpen(false)} 
+          onBuy={handleBuyItem} 
+        />
+      )}
+      <EndingScreen state={state} onRestart={() => handleAction(ActionType.RESTART)} />
+    </>
+  );
+
   return (
-    <Layout state={state}>
+    <Layout state={state} overlays={overlays}>
       {/* Main Grid Layout */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 h-full min-h-0">
         
@@ -40,14 +59,15 @@ const App: React.FC = () => {
 
           {/* Action Panel (Fixed height at bottom) */}
           <div className="shrink-0">
-            <ActionPanel state={state} onAction={handleAction} />
+            <ActionPanel 
+              state={state} 
+              onAction={handleAction} 
+              onShopOpen={() => setIsShopOpen(true)}
+            />
           </div>
         
         </div>
       </div>
-
-      {/* Overlays */}
-      <EndingScreen state={state} onRestart={() => handleAction(ActionType.RESTART)} />
     </Layout>
   );
 };

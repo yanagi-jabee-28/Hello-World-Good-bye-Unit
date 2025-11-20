@@ -3,20 +3,21 @@ import React from 'react';
 import { ActionType, SubjectId, GameStatus, GameState, ItemId } from '../types';
 import { SUBJECTS } from '../data/subjects';
 import { ITEMS } from '../data/items';
-import { getAvailability, getStudyHint, getRestHint } from '../logic/advisor';
-import { BookOpen, Coffee, Moon, Users, Gamepad2, Package, School, GraduationCap, UserPlus, AlertTriangle } from 'lucide-react';
+import { getAvailability, getStudyHint } from '../logic/advisor';
+import { BookOpen, Moon, Users, Gamepad2, Package, School, GraduationCap, UserPlus, AlertTriangle, ShoppingCart, Briefcase } from 'lucide-react';
 
 interface Props {
   state: GameState;
-  // Overloaded definitions for stricter type checking in component
   onAction: {
     (type: ActionType.STUDY, payload: SubjectId): void;
     (type: ActionType.USE_ITEM, payload: ItemId): void;
-    (type: Exclude<ActionType, ActionType.STUDY | ActionType.USE_ITEM>): void;
+    (type: ActionType.WORK): void;
+    (type: Exclude<ActionType, ActionType.STUDY | ActionType.USE_ITEM | ActionType.WORK>): void;
   };
+  onShopOpen: () => void;
 }
 
-export const ActionPanel: React.FC<Props> = ({ state, onAction }) => {
+export const ActionPanel: React.FC<Props> = ({ state, onAction, onShopOpen }) => {
   const isGameOver = state.status !== GameStatus.PLAYING;
   const { timeSlot, caffeine } = state;
   
@@ -26,10 +27,8 @@ export const ActionPanel: React.FC<Props> = ({ state, onAction }) => {
     .filter(([_, count]) => (count || 0) > 0)
     .map(([id]) => id as ItemId);
 
-  // Logic delegated to Advisor
   const { professor: isProfAvailable, senior: isSeniorAvailable, friend: isFriendAvailable } = getAvailability(timeSlot);
   const studyHint = getStudyHint(timeSlot, caffeine);
-  const restHint = getRestHint(timeSlot, caffeine);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border-t-2 border-green-900 bg-gray-950">
@@ -57,45 +56,43 @@ export const ActionPanel: React.FC<Props> = ({ state, onAction }) => {
         ))}
       </div>
 
-      {/* Survival Actions */}
+      {/* Life & Economy Actions */}
       <div className="space-y-2">
         <h3 className="text-xs text-gray-500 font-bold mb-2 flex items-center gap-2">
-           <Moon size={12} />
-           SURVIVAL (生存行動)
+           <Briefcase size={12} />
+           LIFE & ECONOMY (生活)
         </h3>
         
-        <div className="grid grid-cols-2 gap-2">
-            <button
-            onClick={() => onAction(ActionType.REST)}
-            className="w-full flex flex-col items-center gap-1 p-2 border border-blue-900 hover:bg-blue-900/20 text-center group"
-            >
-              <div className="relative">
-                 <Moon size={16} className="text-blue-500" />
-                 {caffeine > 80 && <AlertTriangle size={10} className="absolute -top-1 -right-1 text-yellow-500" />}
-              </div>
-              <div className="text-[10px] font-bold text-blue-400">休息/睡眠</div>
-            </button>
-
-            <button
-            onClick={() => onAction(ActionType.CONSUME_CAFFEINE)}
-            className="w-full flex flex-col items-center gap-1 p-2 border border-yellow-900 hover:bg-yellow-900/20 text-center"
-            >
-              <Coffee size={16} className="text-yellow-500" />
-              <div className="text-[10px] font-bold text-yellow-400">カフェイン</div>
-            </button>
-        </div>
-        <div className="text-[10px] text-gray-500 text-center">
-           {restHint}
-        </div>
+        <button
+        onClick={() => onAction(ActionType.REST)}
+        className="w-full flex flex-col items-center gap-1 p-2 border border-blue-900 hover:bg-blue-900/20 text-center group"
+        >
+          <div className="relative">
+              <Moon size={16} className="text-blue-500" />
+              {caffeine > 80 && <AlertTriangle size={10} className="absolute -top-1 -right-1 text-yellow-500" />}
+          </div>
+          <div className="text-[10px] font-bold text-blue-400">休息/睡眠</div>
+        </button>
 
         <button
-          onClick={() => onAction(ActionType.ESCAPISM)}
-          className="w-full flex items-center gap-3 p-2 border border-pink-900 hover:bg-pink-900/20 text-left mt-2"
+          onClick={() => onAction(ActionType.WORK)}
+          className="w-full flex items-center gap-3 p-2 border border-orange-900 hover:bg-orange-900/20 text-left"
         >
-          <Gamepad2 size={16} className="text-pink-500" />
+          <Briefcase size={16} className="text-orange-500" />
           <div>
-            <div className="text-xs font-bold text-pink-400">現実逃避</div>
-            <div className="text-[10px] text-gray-500">SAN回復 / 時間経過</div>
+            <div className="text-xs font-bold text-orange-400">アルバイト</div>
+            <div className="text-[10px] text-gray-500">資金獲得 (+¥5000)</div>
+          </div>
+        </button>
+
+        <button
+          onClick={onShopOpen}
+          className="w-full flex items-center gap-3 p-2 border border-cyan-900 hover:bg-cyan-900/20 text-left"
+        >
+          <ShoppingCart size={16} className="text-cyan-500" />
+          <div>
+            <div className="text-xs font-bold text-cyan-400">生協オンライン</div>
+            <div className="text-[10px] text-gray-500">アイテム購入</div>
           </div>
         </button>
       </div>
@@ -146,6 +143,17 @@ export const ActionPanel: React.FC<Props> = ({ state, onAction }) => {
             <div className="text-[10px] text-gray-500">
               {isFriendAvailable ? "SAN回復 (深夜以外)" : "睡眠中"}
             </div>
+          </div>
+        </button>
+
+        <button
+          onClick={() => onAction(ActionType.ESCAPISM)}
+          className="w-full flex items-center gap-3 p-2 border border-pink-900 hover:bg-pink-900/20 text-left mt-2"
+        >
+          <Gamepad2 size={16} className="text-pink-500" />
+          <div>
+            <div className="text-xs font-bold text-pink-400">現実逃避</div>
+            <div className="text-[10px] text-gray-500">SAN回復 / 時間経過</div>
           </div>
         </button>
       </div>

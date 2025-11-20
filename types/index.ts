@@ -49,6 +49,13 @@ export enum ItemId {
   HIGH_CACAO_CHOCO = 'HIGH_CACAO_CHOCO',
   REFERENCE_BOOK = 'REFERENCE_BOOK',
   SMART_DRUG = 'SMART_DRUG',
+  ENERGY_DRINK = 'ENERGY_DRINK',
+  CUP_RAMEN = 'CUP_RAMEN',
+  EARPLUGS = 'EARPLUGS',
+  BLACK_COFFEE = 'BLACK_COFFEE',
+  CAFE_LATTE = 'CAFE_LATTE',
+  GAMING_SUPPLEMENT = 'GAMING_SUPPLEMENT', // New
+  HOT_EYE_MASK = 'HOT_EYE_MASK', // New
 }
 
 export interface Item {
@@ -56,6 +63,7 @@ export interface Item {
   name: string;
   description: string;
   effectDescription: string;
+  price: number;
 }
 
 export interface StatsSnapshot {
@@ -63,6 +71,7 @@ export interface StatsSnapshot {
   sanity: number;
   caffeine: number;
   turn: number;
+  money: number;
 }
 
 export interface EventStats {
@@ -70,9 +79,22 @@ export interface EventStats {
   lastTurn: number;
 }
 
+// New Buff System
+export type BuffType = 'STUDY_EFFICIENCY' | 'REST_EFFICIENCY' | 'SANITY_DRAIN';
+
+export interface Buff {
+  id: string;
+  name: string;
+  type: BuffType;
+  duration: number; // 残りターン数
+  value: number; // 倍率や固定値
+  description: string;
+}
+
 export interface GameState {
   day: number;
   timeSlot: TimeSlot;
+  money: number; // JPY
   hp: number; // Max 100
   maxHp: number;
   sanity: number; // Max 100
@@ -81,6 +103,7 @@ export interface GameState {
   knowledge: Record<SubjectId, number>; // 0 - 100
   relationships: Record<RelationshipId, number>; // 0 - 100
   inventory: Partial<Record<ItemId, number>>;
+  activeBuffs: Buff[]; // New
   logs: LogEntry[];
   status: GameStatus;
   turnCount: number;
@@ -93,12 +116,13 @@ export enum ActionType {
   STUDY = 'STUDY',
   REST = 'REST',
   ESCAPISM = 'ESCAPISM',
-  CONSUME_CAFFEINE = 'CONSUME_CAFFEINE',
   ASK_SENIOR = 'ASK_SENIOR',
   ASK_PROFESSOR = 'ASK_PROFESSOR',
   RELY_FRIEND = 'RELY_FRIEND',
   USE_ITEM = 'USE_ITEM',
   RESTART = 'RESTART',
+  WORK = 'WORK',
+  BUY_ITEM = 'BUY_ITEM',
 }
 
 // Discriminated Union for strict typing
@@ -106,12 +130,13 @@ export type GameAction =
   | { type: ActionType.STUDY; payload: SubjectId }
   | { type: ActionType.REST }
   | { type: ActionType.ESCAPISM }
-  | { type: ActionType.CONSUME_CAFFEINE }
   | { type: ActionType.ASK_PROFESSOR }
   | { type: ActionType.ASK_SENIOR }
   | { type: ActionType.RELY_FRIEND }
   | { type: ActionType.USE_ITEM; payload: ItemId }
-  | { type: ActionType.RESTART };
+  | { type: ActionType.RESTART }
+  | { type: ActionType.WORK }
+  | { type: ActionType.BUY_ITEM; payload: ItemId };
 
 export interface GameEventEffect {
   hp?: number;
@@ -120,6 +145,7 @@ export interface GameEventEffect {
   relationships?: Partial<Record<RelationshipId, number>>;
   caffeine?: number;
   inventory?: Partial<Record<ItemId, number>>;
+  money?: number;
 }
 
 export type EventTriggerType = 

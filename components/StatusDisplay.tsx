@@ -3,7 +3,7 @@ import React from 'react';
 import { GameState, SubjectId, ItemId, RelationshipId } from '../types';
 import { SUBJECTS, PASSING_SCORE } from '../data/subjects';
 import { ITEMS } from '../data/items';
-import { Heart, Brain, Coffee, Package, Users } from 'lucide-react';
+import { Heart, Brain, Coffee, Package, Users, Wallet, Zap, Bed, AlertOctagon } from 'lucide-react';
 
 interface Props {
   state: GameState;
@@ -51,6 +51,12 @@ export const StatusDisplay: React.FC<Props> = ({ state }) => {
     .filter(([_, count]) => (count || 0) > 0)
     .map(([id, count]) => ({ id: id as ItemId, count }));
 
+  let caffeineStatus = "NORMAL";
+  let caffeineColor = "bg-yellow-700";
+  if (state.caffeine >= 50) { caffeineStatus = "AWAKE"; caffeineColor = "bg-yellow-500"; }
+  if (state.caffeine >= 100) { caffeineStatus = "ZONE"; caffeineColor = "bg-orange-500"; }
+  if (state.caffeine >= 150) { caffeineStatus = "OVERDOSE"; caffeineColor = "bg-red-600 animate-pulse"; }
+
   return (
     <div className="border-2 border-green-800 bg-black p-4 shadow-[0_0_15px_rgba(34,197,94,0.2)] h-full overflow-y-auto">
       <h2 className="text-lg font-bold mb-4 border-b border-green-900 pb-2 flex items-center gap-2">
@@ -59,6 +65,15 @@ export const StatusDisplay: React.FC<Props> = ({ state }) => {
       </h2>
       
       <div className="space-y-4">
+        <div className="flex justify-between items-center border-b border-green-900/50 pb-2 mb-2">
+           <div className="flex items-center gap-2 text-sm text-green-400">
+             <Wallet size={16} /> FUNDS (所持金)
+           </div>
+           <div className="text-lg font-bold text-yellow-400 font-mono">
+             ¥{state.money.toLocaleString()}
+           </div>
+        </div>
+
         <ProgressBar 
           label="HP (体力)" 
           value={state.hp} 
@@ -75,10 +90,42 @@ export const StatusDisplay: React.FC<Props> = ({ state }) => {
           label="CFN (カフェイン)" 
           value={state.caffeine} 
           max={200} 
-          subLabel={state.caffeine > 100 ? "中毒 (OVERDOSE)" : `${state.caffeine} mg/dL`}
-          colorClass={state.caffeine > 100 ? 'bg-yellow-500 animate-pulse' : 'bg-yellow-700'} 
+          subLabel={`${caffeineStatus} (${state.caffeine}mg)`}
+          colorClass={caffeineColor} 
         />
       </div>
+
+      {/* Active Buffs Display */}
+      {state.activeBuffs.length > 0 && (
+        <div className="mt-6">
+          <h3 className="text-sm font-bold text-yellow-500 mb-2 border-b border-yellow-900 pb-1 flex items-center gap-2">
+            <Zap size={14} /> ACTIVE EFFECTS (状態異常)
+          </h3>
+          <div className="space-y-2">
+            {state.activeBuffs.map((buff) => {
+              let icon = <Zap size={12} />;
+              let color = 'text-yellow-400';
+              if (buff.type === 'REST_EFFICIENCY') { icon = <Bed size={12} />; color = 'text-blue-400'; }
+              if (buff.type === 'SANITY_DRAIN') { icon = <AlertOctagon size={12} />; color = 'text-red-400'; }
+              
+              return (
+                <div key={buff.id} className="flex justify-between items-center text-xs border border-gray-800 p-1.5 bg-gray-900/30">
+                  <div className={`flex items-center gap-2 ${color}`}>
+                    {icon}
+                    <span>{buff.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500">{buff.description}</span>
+                    <span className="font-mono font-bold text-white bg-gray-800 px-1 rounded">
+                      {buff.duration}T
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="mt-6">
         <h3 className="text-sm font-bold text-green-700 mb-2 border-b border-green-900 pb-1 flex items-center gap-2">

@@ -5,10 +5,11 @@ import { Clock, Calendar } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
+  overlays?: ReactNode;
   state: GameState;
 }
 
-export const Layout: React.FC<Props> = ({ children, state }) => {
+export const Layout: React.FC<Props> = ({ children, overlays, state }) => {
   const isLateNight = state.timeSlot === TimeSlot.LATE_NIGHT;
 
   return (
@@ -41,6 +42,9 @@ export const Layout: React.FC<Props> = ({ children, state }) => {
       <footer className="mt-4 text-[10px] text-center text-gray-600 border-t border-gray-900 pt-2">
         MEMORY_USAGE: 256MB | THREADS: 4 | NO_SLEEP_DETECTED
       </footer>
+
+      {/* Overlays (Modals) - Rendered outside main to avoid z-index trapping */}
+      {overlays}
     </div>
   );
 };

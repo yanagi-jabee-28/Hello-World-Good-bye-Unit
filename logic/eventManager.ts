@@ -1,9 +1,11 @@
 
-import { GameState, GameEvent, EventTriggerType, SubjectId, RelationshipId, TimeSlot } from '../types';
-import { clamp } from '../utils/common';
+import { GameState, GameEvent, EventTriggerType, SubjectId, RelationshipId } from '../types';
+import { clamp, joinMessages } from '../utils/common';
+import { pushLog } from './stateHelpers';
+import { ALL_EVENTS } from '../data/events';
 
 /**
- * イベント発生条件を満たしているかチェック
+ * Checks if event conditions are met.
  */
 const checkConditions = (state: GameState, event: GameEvent, trigger: EventTriggerType): boolean => {
   if (event.trigger !== trigger) return false;
@@ -32,7 +34,6 @@ const checkConditions = (state: GameState, event: GameEvent, trigger: EventTrigg
   if (conditions.maxAvgScore !== undefined && avgScore > conditions.maxAvgScore) return false;
 
   // Relationship Check
-  // トリガーに応じた対象の友好度をチェック
   let targetRelValue = 0;
   if (trigger === 'action_professor') targetRelValue = state.relationships[RelationshipId.PROFESSOR];
   if (trigger === 'action_senior') targetRelValue = state.relationships[RelationshipId.SENIOR];
@@ -47,19 +48,17 @@ const checkConditions = (state: GameState, event: GameEvent, trigger: EventTrigg
 };
 
 /**
- * クールダウンや回数制限をチェックし、動的な重みを計算する
+ * Calculates dynamic weight based on cooldowns and history.
  */
 const calculateDynamicWeight = (state: GameState, event: GameEvent): number => {
   const stats = state.eventStats[event.id];
   
   if (!stats) return event.weight;
 
-  // Max Occurrences Check
   if (event.maxOccurrences !== undefined && stats.count >= event.maxOccurrences) {
     return 0;
   }
 
-  // Cool Down Check
   if (event.coolDownTurns !== undefined) {
     const turnsSinceLast = state.turnCount - stats.lastTurn;
     if (turnsSinceLast < event.coolDownTurns) {
@@ -67,13 +66,11 @@ const calculateDynamicWeight = (state: GameState, event: GameEvent): number => {
     }
   }
 
-  // Decay (繰り返しによる確率低下)
   let weight = event.weight;
   if (event.decay && stats.count > 0) {
     weight = weight * Math.pow(event.decay, stats.count);
   }
 
-  // 直近の履歴に含まれている場合、さらに確率を下げる（短期間の連続発生抑制）
   if (state.eventHistory.includes(event.id)) {
     weight *= 0.1;
   }
@@ -82,15 +79,13 @@ const calculateDynamicWeight = (state: GameState, event: GameEvent): number => {
 };
 
 /**
- * イベントプールからイベントを抽選する
+ * Selects an event from the pool.
  */
 export const selectEvent = (
   state: GameState, 
   events: GameEvent[], 
   trigger: EventTriggerType
 ): GameEvent | null => {
-  
-  // 1. 条件に合致するイベントをフィルタリングし、重みを計算
   const candidates = events
     .filter(evt => checkConditions(state, evt, trigger))
     .map(evt => ({
@@ -101,7 +96,6 @@ export const selectEvent = (
 
   if (candidates.length === 0) return null;
 
-  // 2. 重み付き抽選
   const totalWeight = candidates.reduce((sum, item) => sum + item.weight, 0);
   let randomVal = Math.random() * totalWeight;
   
@@ -116,14 +110,14 @@ export const selectEvent = (
 };
 
 /**
- * イベント発生後のState更新（統計情報の更新など）
+ * Records stats for analytics.
  */
 export const recordEventOccurrence = (state: GameState, eventId: string): GameState => {
   const currentStats = state.eventStats[eventId] || { count: 0, lastTurn: -1 };
   
   return {
     ...state,
-    eventHistory: [eventId, ...state.eventHistory].slice(0, 5), // 履歴は最新5件
+    eventHistory: [eventId, ...state.eventHistory].slice(0, 5),
     eventStats: {
       ...state.eventStats,
       [eventId]: {
@@ -135,18 +129,16 @@ export const recordEventOccurrence = (state: GameState, eventId: string): GameSt
 };
 
 /**
- * イベント効果をStateに適用する
+ * Applies event effects to the state.
  */
 export const applyEventEffect = (state: GameState, event: GameEvent): { newState: GameState; messages: string[] } => {
   let newState = { ...state };
-  // deep copy complex objects
   newState.knowledge = { ...state.knowledge };
   newState.relationships = { ...state.relationships };
   newState.inventory = { ...state.inventory };
 
   const messages: string[] = [];
   
-  // 統計情報の更新
   newState = recordEventOccurrence(newState, event.id);
 
   if (!event.effect) return { newState, messages };
@@ -170,7 +162,7 @@ export const applyEventEffect = (state: GameState, event: GameEvent): { newState
       if (val) {
         const sId = key as SubjectId;
         newState.knowledge[sId] = clamp(newState.knowledge[sId] + val, 0, 100);
-        messages.push(`学力${val > 0 ? '+' : ''}${val}`); // 科目名まで入れると長くなるので簡略化、もしくはUI側で処理
+        messages.push(`学力${val > 0 ? '+' : ''}${val}`);
       }
     });
   }
@@ -186,7 +178,7 @@ export const applyEventEffect = (state: GameState, event: GameEvent): { newState
   if (effect.inventory) {
     Object.entries(effect.inventory).forEach(([key, val]) => {
       if (val) {
-        const iId = key as any; // ItemId
+        const iId = key as any;
         const current = newState.inventory[iId] || 0;
         newState.inventory[iId] = current + val;
         messages.push(`アイテム${val > 0 ? '入手' : '消費'}`);
@@ -195,4 +187,23 @@ export const applyEventEffect = (state: GameState, event: GameEvent): { newState
   }
 
   return { newState, messages };
+};
+
+/**
+ * Orchestrates the selection and application of an event.
+ */
+export const executeEvent = (state: GameState, trigger: EventTriggerType, fallbackText?: string): GameState => {
+  const event = selectEvent(state, ALL_EVENTS, trigger);
+  
+  if (event) {
+     const { newState: appliedState, messages } = applyEventEffect(state, event);
+     const details = joinMessages(messages, ', ');
+     const logType = event.type === 'good' ? 'success' : event.type === 'bad' ? 'danger' : 'info';
+     pushLog(appliedState, details ? `${event.text}\n(${details})` : event.text, logType);
+     return appliedState;
+  } else if (fallbackText) {
+     pushLog(state, fallbackText, 'info');
+     return state;
+  }
+  return state;
 };
