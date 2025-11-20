@@ -6,13 +6,13 @@ export const SUBJECTS: Record<SubjectId, Subject> = {
     id: SubjectId.MATH,
     name: '線形代数',
     description: '行列の固有値が、あなたのSAN値を削り取る。',
-    difficulty: 0.8, // 難化した
+    difficulty: 0.9, // やや難
   },
   [SubjectId.ALGO]: {
     id: SubjectId.ALGO,
     name: 'アルゴリズム',
     description: '再帰呼び出しの深淵を覗く時、深淵もまた...Stack Overflow.',
-    difficulty: 0.6, // 超難関
+    difficulty: 0.7, // 最難関
   },
   [SubjectId.CIRCUIT]: {
     id: SubjectId.CIRCUIT,
@@ -24,7 +24,7 @@ export const SUBJECTS: Record<SubjectId, Subject> = {
     id: SubjectId.HUMANITIES,
     name: '人間科学(教養)',
     description: '「人間とは何か」を問う前に、出席日数が足りない。',
-    difficulty: 1.5, // 単位を取りやすい（救済科目）
+    difficulty: 1.4, // 単位を取りやすい
   },
 };
 

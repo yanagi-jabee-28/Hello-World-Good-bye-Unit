@@ -26,13 +26,12 @@ const INIT_KNOWLEDGE = {
   [SubjectId.HUMANITIES]: 0,
 };
 
-// イベント発生率を上昇 (30 -> 45) してカオス度を上げる
-const RANDOM_EVENT_PROBABILITY = 45;
+const RANDOM_EVENT_PROBABILITY = 30; // 少し下げる
 
 export const INITIAL_STATE: GameState = {
   day: 1,
   timeSlot: TimeSlot.MORNING,
-  money: 1500, // 初期資金を減らし、バイトの必要性を高める
+  money: 3000, // 初期所持金微増
   hp: 100,
   maxHp: 100,
   sanity: 100,
@@ -41,8 +40,10 @@ export const INITIAL_STATE: GameState = {
   knowledge: { ...INIT_KNOWLEDGE },
   relationships: { ...INIT_RELATIONSHIPS },
   inventory: {
-    [ItemId.BLACK_COFFEE]: 1,    // 初期アイテムも削減
-    [ItemId.HIGH_CACAO_CHOCO]: 1, 
+    [ItemId.BLACK_COFFEE]: 2,    // 1本でAWAKE到達可能に
+    [ItemId.CAFE_LATTE]: 1,      // 追加: 安定回復手段
+    [ItemId.HIGH_CACAO_CHOCO]: 1, // 小回復用
+    [ItemId.HOT_EYE_MASK]: 1,     // 休息効率アップ体験用
   },
   activeBuffs: [],
   logs: [{
