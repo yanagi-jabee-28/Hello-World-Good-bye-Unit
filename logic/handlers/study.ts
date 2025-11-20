@@ -1,3 +1,4 @@
+
 import { GameState, SubjectId, TimeSlot, LogEntry, RelationshipId } from '../../types';
 import { SUBJECTS } from '../../data/subjects';
 import { LOG_MESSAGES } from '../../data/events';
@@ -9,7 +10,7 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
   const currentScore = state.knowledge[subjectId];
   
   let efficiency = 1.0;
-  let hpCost = 15; // Base cost increased
+  let hpCost = 15; // Base cost
   let sanityCost = 5;
   let baseLog = "";
   let logType: LogEntry['type'] = 'info';
@@ -57,25 +58,40 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
     }
   }
 
-  // Caffeine Multipliers & Penalties
+  // HP Penalty (New Mechanic: Exhaustion)
+  // HPが低いと学習効率が激減する。これにより「HP回復」が攻略に必須となる。
+  if (state.hp < 30) {
+    efficiency *= 0.5;
+    baseLog += "\n【疲労困憊】身体が鉛のように重い。内容が全く頭に入ってこない...";
+    logType = 'danger';
+  } else if (state.hp < 50) {
+    efficiency *= 0.8;
+    baseLog += "\n【体調不良】疲労で集中力が続かない。";
+  }
+
+  // Caffeine Multipliers & Penalties (Extreme Risk/Reward)
   if (state.caffeine >= 50 && state.caffeine < 100) {
-    efficiency += 0.1; // Awake (x1.1)
+    efficiency += 0.2; // Awake (x1.2)
   } else if (state.caffeine >= 100 && state.caffeine < 150) {
-    efficiency += 0.3; // Zone (x1.3)
-    hpCost += 5; // Metabolic stress
-    sanityCost += 3;
-    baseLog += " (カフェイン覚醒)";
+    efficiency += 0.6; // Zone (x1.6) Stronger buff
+    hpCost += 8; 
+    sanityCost += 5;
+    baseLog += " (カフェイン覚醒ZONE)";
   } else if (state.caffeine >= 150) {
-    efficiency += 0.5; // Overdose (x1.5)
-    hpCost += 15; // Severe stress
-    sanityCost += 15;
+    // Overdose: Insane speed but high risk of crash
+    efficiency += 1.5; // Overdose (x2.5) !!
+    hpCost += 20; 
+    sanityCost += 20;
     baseLog += `\n${LOG_MESSAGES.study_jitter}`;
     logType = 'danger';
     
-    // Crash Risk
-    if (chance(20)) {
+    // Crash Risk increased to 40%
+    if (chance(40)) {
       efficiency = 0;
-      baseLog = "【カフェインクラッシュ】手が震えてペンが持てない。動悸が激しく、何も頭に入ってこない。";
+      hpCost += 10; // Extra damage
+      baseLog = "【心肺異常】心臓が早鐘を打ち、激しい動悸とめまいで倒れ込んだ。何も勉強できない。\n(OD反動: 学力上昇0, HP大幅減)";
+    } else {
+       baseLog += "\n【限界突破】寿命を燃やして脳をオーバークロックしている。理解速度が異常だ。";
     }
   }
 
