@@ -5,9 +5,10 @@ import { clamp, formatDelta, joinMessages } from '../../utils/common';
 import { pushLog } from '../stateHelpers';
 
 export const handleRest = (state: GameState): GameState => {
-  let hpRecov = 35;
-  let sanityRecov = 20;
-  let caffeineDrop = -25;
+  // 時間帯別の基礎回復量設定
+  let hpRecov = 0;
+  let sanityRecov = 0;
+  let caffeineDrop = -25; // カフェイン除去量は一律
   let baseLog = "";
   let logType: LogEntry['type'] = 'info';
 
@@ -17,17 +18,36 @@ export const handleRest = (state: GameState): GameState => {
   // Day 7: 0.4 (Panic mode, almost no rest)
   const anxietyFactor = Math.max(0.4, 1.0 - ((state.day - 1) * 0.1));
 
-  if (state.timeSlot === TimeSlot.LATE_NIGHT) {
-    hpRecov = 60;
-    sanityRecov = 30;
-    baseLog = LOG_MESSAGES.rest_success;
-    logType = 'success';
-  } else if (state.timeSlot === TimeSlot.NOON) {
-    sanityRecov += 5;
-    hpRecov = 20;
-    baseLog = "【ランチ】学食で定食を食べた。少しリラックス。";
-  } else {
-    baseLog = LOG_MESSAGES.rest_short;
+  switch (state.timeSlot) {
+    case TimeSlot.LATE_NIGHT:
+      // 就寝: 大回復
+      hpRecov = 70;
+      sanityRecov = 40;
+      baseLog = LOG_MESSAGES.rest_success; // "死んだように眠った..."
+      logType = 'success';
+      break;
+
+    case TimeSlot.MORNING:
+      // 二度寝: 中回復（HP寄り）
+      hpRecov = 25;
+      sanityRecov = 10;
+      baseLog = "【二度寝】誘惑に負けて布団に戻った。罪悪感と幸福感が混ざり合う。";
+      break;
+
+    case TimeSlot.NOON:
+      // 昼寝: 中回復（SAN寄り）
+      hpRecov = 15;
+      sanityRecov = 20;
+      baseLog = "【昼寝】午後の講義に備えて机で仮眠。脳のオーバーヒートが少し収まった。";
+      break;
+
+    default:
+      // 仮眠(机): 小回復
+      // 従来(35/20)よりも下げて、ちゃんと夜寝ることの重要性を上げる
+      hpRecov = 15;
+      sanityRecov = 5;
+      baseLog = LOG_MESSAGES.rest_short; // "机に突っ伏して仮眠をとった..."
+      break;
   }
 
   // Caffeine Interference

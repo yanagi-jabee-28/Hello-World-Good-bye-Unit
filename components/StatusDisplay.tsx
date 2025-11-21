@@ -54,16 +54,17 @@ export const StatusDisplay: React.FC<Props> = ({ state }) => {
   let caffeineColor = "bg-yellow-700";
   let caffeineEffect = "";
   
-  if (state.caffeine >= 50) { 
+  // Thresholds: 40 (Awake) / 100 (Zone) / 150 (Toxicity)
+  if (state.caffeine >= 40) { 
       caffeineStatus = "AWAKE"; 
       caffeineColor = "bg-yellow-500"; 
   }
-  if (state.caffeine >= 120) { 
+  if (state.caffeine >= 100) { 
       caffeineStatus = "ZONE"; 
       caffeineColor = "bg-orange-500";
       caffeineEffect = "animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.5)]"; 
   }
-  if (state.caffeine >= 180) { 
+  if (state.caffeine >= 150) { 
       caffeineStatus = "TOXICITY"; 
       caffeineColor = "bg-red-600"; 
       caffeineEffect = "animate-[pulse_0.2s_infinite] shadow-[0_0_15px_rgba(220,38,38,0.8)]";

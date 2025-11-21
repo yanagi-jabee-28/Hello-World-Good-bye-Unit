@@ -46,25 +46,52 @@ export interface LogEntry {
 
 export enum ItemId {
   USB_MEMORY = 'USB_MEMORY',
-  HIGH_CACAO_CHOCO = 'HIGH_CACAO_CHOCO',
-  REFERENCE_BOOK = 'REFERENCE_BOOK',
-  SMART_DRUG = 'SMART_DRUG',
-  ENERGY_DRINK = 'ENERGY_DRINK',
-  CUP_RAMEN = 'CUP_RAMEN',
-  EARPLUGS = 'EARPLUGS',
+  MINERAL_WATER = 'MINERAL_WATER', // New: Decaf / HP small
   BLACK_COFFEE = 'BLACK_COFFEE',
+  GUMMY_CANDY = 'GUMMY_CANDY', // New: Sanity small
+  PROTEIN_BAR = 'PROTEIN_BAR', // New: HP medium
+  HIGH_CACAO_CHOCO = 'HIGH_CACAO_CHOCO',
   CAFE_LATTE = 'CAFE_LATTE',
-  GAMING_SUPPLEMENT = 'GAMING_SUPPLEMENT',
+  ENERGY_DRINK = 'ENERGY_DRINK',
+  HERBAL_TEA = 'HERBAL_TEA', // New: Decaf large / Sanity medium
+  CUP_RAMEN = 'CUP_RAMEN',
   HOT_EYE_MASK = 'HOT_EYE_MASK',
-  GIFT_SWEETS = 'GIFT_SWEETS', // New: Gift for Senior
+  EARPLUGS = 'EARPLUGS',
+  REFERENCE_BOOK = 'REFERENCE_BOOK',
+  GAMING_SUPPLEMENT = 'GAMING_SUPPLEMENT',
+  SMART_DRUG = 'SMART_DRUG',
+  GIFT_SWEETS = 'GIFT_SWEETS',
+}
+
+// New Buff System
+export type BuffType = 'STUDY_EFFICIENCY' | 'REST_EFFICIENCY' | 'SANITY_DRAIN';
+
+export interface Buff {
+  id: string;
+  name: string;
+  type: BuffType;
+  duration: number; // 残りターン数
+  value: number; // 倍率や固定値
+  description: string;
+}
+
+export interface ItemEffects {
+  hp?: number;
+  sanity?: number;
+  caffeine?: number;
+  knowledge?: number; // 汎用的な学力アップの場合
+  buffs?: Omit<Buff, 'id'>[]; // IDは使用時に生成
 }
 
 export interface Item {
   id: ItemId;
   name: string;
   description: string;
-  effectDescription: string;
   price: number;
+  // データ駆動用パラメータ
+  effects?: ItemEffects;
+  // ロジック側で特殊処理が必要な場合の補助テキスト（自動生成できない部分用）
+  specialEffectDescription?: string;
 }
 
 export interface StatsSnapshot {
@@ -78,18 +105,6 @@ export interface StatsSnapshot {
 export interface EventStats {
   count: number;
   lastTurn: number;
-}
-
-// New Buff System
-export type BuffType = 'STUDY_EFFICIENCY' | 'REST_EFFICIENCY' | 'SANITY_DRAIN';
-
-export interface Buff {
-  id: string;
-  name: string;
-  type: BuffType;
-  duration: number; // 残りターン数
-  value: number; // 倍率や固定値
-  description: string;
 }
 
 export interface GameState {

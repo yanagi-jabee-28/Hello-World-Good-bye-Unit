@@ -1,4 +1,3 @@
-
 import { GameState, ActionType, GameAction, TimeSlot, GameStatus, SubjectId, RelationshipId, ItemId } from '../types';
 import { LOG_MESSAGES } from '../data/events';
 import { clamp, chance } from '../utils/common';
@@ -150,20 +149,19 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       .filter(b => b.duration > 0);
 
     // Caffeine Decay logic
-    const cafDecay = -8; 
+    // 毎ターン確実に10mg減る。計算しやすくする。
+    const cafDecay = -10; 
     newState.caffeine = clamp(newState.caffeine + cafDecay, 0, 200);
     
-    // Project Melting Brain: Toxic Slip Damage from High Caffeine
-    // The "Zone" comes with a price.
-    if (newState.caffeine >= 120) {
-       const isOverdose = newState.caffeine >= 180;
-       const toxicHp = isOverdose ? 15 : 5;
-       const toxicSan = isOverdose ? 15 : 5;
+    // Slip Damage from High Caffeine
+    // Zone(100+) starts minor damage, Toxicity(150+) is severe
+    if (newState.caffeine >= 100) {
+       const isOverdose = newState.caffeine >= 150;
+       const toxicHp = isOverdose ? 15 : 2; // Zoneの時はダメージ小
+       const toxicSan = isOverdose ? 15 : 2;
        
        newState.hp = clamp(newState.hp - toxicHp, 0, newState.maxHp);
        newState.sanity = clamp(newState.sanity - toxicSan, 0, newState.maxSanity);
-       
-       // ログには出さないが、プレイヤーはHP/SANの減少で気づく設計
     }
 
     const { slot, isNextDay } = getNextTimeSlot(state.timeSlot);

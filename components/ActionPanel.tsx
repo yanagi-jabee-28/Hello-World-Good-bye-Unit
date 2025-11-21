@@ -1,10 +1,12 @@
+
 import React from 'react';
-import { ActionType, SubjectId, GameStatus, GameState, ItemId } from '../types';
+import { ActionType, SubjectId, GameStatus, GameState, ItemId, TimeSlot } from '../types';
 import { SUBJECTS } from '../data/subjects';
 import { ITEMS } from '../data/items';
 import { getAvailability, getStudyHint } from '../logic/advisor';
 import { getWorkConfig } from '../data/work';
-import { BookOpen, Moon, Users, Gamepad2, Package, School, GraduationCap, UserPlus, AlertTriangle, ShoppingCart, Briefcase } from 'lucide-react';
+import { getItemEffectDescription } from '../utils/common';
+import { BookOpen, Moon, Users, Gamepad2, Package, School, GraduationCap, UserPlus, AlertTriangle, ShoppingCart, Briefcase, Bed, Sun, BatteryCharging } from 'lucide-react';
 
 interface Props {
   state: GameState;
@@ -36,6 +38,47 @@ export const ActionPanel: React.FC<Props> = ({ state, onAction, onShopOpen }) =>
     text: workConfig.label,
     sub: `¥${workConfig.salary.toLocaleString()} / ${workConfig.description}`
   };
+
+  // 休息コマンドの設定を時間帯によって切り替える
+  const getRestConfig = (slot: TimeSlot) => {
+    switch (slot) {
+      case TimeSlot.LATE_NIGHT:
+        return {
+          label: "就寝 (布団)",
+          desc: "1日を終了し深く眠る",
+          effect: "HP大回復 / SAN大回復",
+          icon: Bed,
+          style: "border-blue-800 hover:bg-blue-900/30"
+        };
+      case TimeSlot.MORNING:
+        return {
+          label: "二度寝",
+          desc: "登校時間まで粘る",
+          effect: "HP中回復 / SAN小回復",
+          icon: Sun,
+          style: "border-blue-900 hover:bg-blue-900/20"
+        };
+      case TimeSlot.NOON:
+        return {
+          label: "昼寝",
+          desc: "午後の講義に備える",
+          effect: "HP小回復 / SAN中回復",
+          icon: Moon,
+          style: "border-blue-900 hover:bg-blue-900/20"
+        };
+      default:
+        return {
+          label: "仮眠 (机)",
+          desc: "隙間時間で回復",
+          effect: "HP小回復 / SAN微回復",
+          icon: BatteryCharging,
+          style: "border-blue-900 hover:bg-blue-900/20"
+        };
+    }
+  };
+
+  const restConfig = getRestConfig(timeSlot);
+  const RestIcon = restConfig.icon;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border-t-2 border-green-900 bg-gray-950">
@@ -71,14 +114,18 @@ export const ActionPanel: React.FC<Props> = ({ state, onAction, onShopOpen }) =>
         </h3>
         
         <button
-        onClick={() => onAction(ActionType.REST)}
-        className="w-full flex flex-col items-center gap-1 p-2 border border-blue-900 hover:bg-blue-900/20 text-center group"
+          onClick={() => onAction(ActionType.REST)}
+          className={`w-full flex items-center gap-3 p-2 border text-left group transition-colors ${restConfig.style}`}
         >
           <div className="relative">
-              <Moon size={16} className="text-blue-500" />
+              <RestIcon size={16} className="text-blue-500" />
               {caffeine > 80 && <AlertTriangle size={10} className="absolute -top-1 -right-1 text-yellow-500" />}
           </div>
-          <div className="text-[10px] font-bold text-blue-400">休息/睡眠</div>
+          <div>
+            <div className="text-xs font-bold text-blue-400">{restConfig.label}</div>
+            <div className="text-[9px] text-gray-400">{restConfig.desc}</div>
+            <div className="text-[9px] text-blue-300 font-bold mt-0.5">{restConfig.effect}</div>
+          </div>
         </button>
 
         <button
@@ -177,21 +224,26 @@ export const ActionPanel: React.FC<Props> = ({ state, onAction, onShopOpen }) =>
            </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {ownedItems.map((itemId) => (
-              <button
-                key={itemId}
-                onClick={() => onAction(ActionType.USE_ITEM, itemId)}
-                className="flex items-start gap-2 p-2 border border-gray-700 hover:bg-gray-900 text-left transition-colors"
-              >
-                <Package size={14} className="text-orange-400 mt-1 shrink-0" />
-                <div>
-                  <div className="text-xs font-bold text-orange-300">
-                    {ITEMS[itemId].name} x{state.inventory[itemId]}
+            {ownedItems.map((itemId) => {
+              const item = ITEMS[itemId];
+              return (
+                <button
+                  key={itemId}
+                  onClick={() => onAction(ActionType.USE_ITEM, itemId)}
+                  className="flex items-start gap-2 p-2 border border-gray-700 hover:bg-gray-900 text-left transition-colors"
+                >
+                  <Package size={14} className="text-orange-400 mt-1 shrink-0" />
+                  <div>
+                    <div className="text-xs font-bold text-orange-300">
+                      {item.name} x{state.inventory[itemId]}
+                    </div>
+                    <div className="text-[9px] text-gray-400 leading-tight">
+                      {getItemEffectDescription(item)}
+                    </div>
                   </div>
-                  <div className="text-[9px] text-gray-400 leading-tight">{ITEMS[itemId].effectDescription}</div>
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>

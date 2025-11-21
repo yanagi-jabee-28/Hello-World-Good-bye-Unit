@@ -1,4 +1,6 @@
 
+import { Item } from '../types';
+
 /**
  * Clamps a number between a minimum and maximum value.
  */
@@ -26,4 +28,32 @@ export const formatDelta = (label: string, delta: number): string | null => {
  */
 export const joinMessages = (messages: (string | null)[], delimiter: string = ' '): string => {
   return messages.filter(msg => msg !== null).join(delimiter);
+};
+
+/**
+ * Generates a description string from an item's effect data.
+ */
+export const getItemEffectDescription = (item: Item): string => {
+  const parts: string[] = [];
+  
+  if (item.specialEffectDescription) {
+    parts.push(item.specialEffectDescription);
+  }
+
+  if (item.effects) {
+    const { effects } = item;
+    if (effects.hp) parts.push(formatDelta('HP', effects.hp) || '');
+    if (effects.sanity) parts.push(formatDelta('SAN', effects.sanity) || '');
+    if (effects.caffeine) parts.push(formatDelta('カフェイン', effects.caffeine) || '');
+    // Item effects usually boost ALL subjects, so clarify that.
+    if (effects.knowledge) parts.push(formatDelta('全学力', effects.knowledge) || '');
+    
+    if (effects.buffs && effects.buffs.length > 0) {
+      effects.buffs.forEach(buff => {
+        parts.push(`${buff.description}(${buff.duration}T)`);
+      });
+    }
+  }
+
+  return parts.filter(s => s !== '').join(', ');
 };

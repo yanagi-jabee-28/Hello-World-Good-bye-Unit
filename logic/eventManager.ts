@@ -1,8 +1,10 @@
 
-import { GameState, GameEvent, EventTriggerType, SubjectId, RelationshipId } from '../types';
+import { GameState, GameEvent, EventTriggerType, SubjectId, RelationshipId, ItemId } from '../types';
 import { clamp, joinMessages } from '../utils/common';
 import { pushLog } from './stateHelpers';
 import { ALL_EVENTS } from '../data/events';
+import { SUBJECTS } from '../data/subjects';
+import { ITEMS } from '../data/items';
 
 /**
  * Checks if event conditions are met.
@@ -128,6 +130,12 @@ export const recordEventOccurrence = (state: GameState, eventId: string): GameSt
   };
 };
 
+const RELATIONSHIP_NAMES: Record<RelationshipId, string> = {
+  [RelationshipId.PROFESSOR]: '教授友好度',
+  [RelationshipId.SENIOR]: '先輩友好度',
+  [RelationshipId.FRIEND]: '友人友好度',
+};
+
 /**
  * Applies event effects to the state.
  */
@@ -162,7 +170,8 @@ export const applyEventEffect = (state: GameState, event: GameEvent): { newState
       if (val) {
         const sId = key as SubjectId;
         newState.knowledge[sId] = clamp(newState.knowledge[sId] + val, 0, 100);
-        messages.push(`学力${val > 0 ? '+' : ''}${val}`);
+        const subjectName = SUBJECTS[sId].name;
+        messages.push(`${subjectName}${val > 0 ? '+' : ''}${val}`);
       }
     });
   }
@@ -171,19 +180,26 @@ export const applyEventEffect = (state: GameState, event: GameEvent): { newState
       if (val) {
         const rId = key as RelationshipId;
         newState.relationships[rId] = clamp(newState.relationships[rId] + val, 0, 100);
-        messages.push(`友好${val > 0 ? '+' : ''}${val}`);
+        const relName = RELATIONSHIP_NAMES[rId];
+        messages.push(`${relName}${val > 0 ? '+' : ''}${val}`);
       }
     });
   }
   if (effect.inventory) {
     Object.entries(effect.inventory).forEach(([key, val]) => {
       if (val) {
-        const iId = key as any;
+        const iId = key as ItemId;
         const current = newState.inventory[iId] || 0;
         newState.inventory[iId] = current + val;
-        messages.push(`アイテム${val > 0 ? '入手' : '消費'}`);
+        const item = ITEMS[iId];
+        messages.push(`${item.name}${val > 0 ? '入手' : '消費'}`);
       }
     });
+  }
+
+  if (effect.money) {
+    newState.money += effect.money;
+    messages.push(`資金${effect.money > 0 ? '+' : ''}¥${effect.money.toLocaleString()}`);
   }
 
   return { newState, messages };

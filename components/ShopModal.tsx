@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { ItemId } from '../types';
 import { ITEMS } from '../data/items';
+import { getItemEffectDescription } from '../utils/common';
 import { ShoppingCart, X, DollarSign } from 'lucide-react';
 
 interface Props {
@@ -45,7 +47,7 @@ export const ShopModal: React.FC<Props> = ({ money, onClose, onBuy }) => {
                   </div>
                   <p className="text-[10px] text-gray-400 mb-2 min-h-[2.5em]">{item.description}</p>
                   <div className="text-[10px] text-cyan-700 border-l-2 border-cyan-800 pl-2 mb-3">
-                    {item.effectDescription}
+                    {getItemEffectDescription(item)}
                   </div>
                 </div>
                 <button
