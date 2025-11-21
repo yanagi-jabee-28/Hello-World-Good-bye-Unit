@@ -44,8 +44,16 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
     case TimeSlot.AM:
       // 午前: 講義 (安定 + 教授評価)
       efficiency = 1.0;
-      profRelDelta = 2;
-      baseLog = LOG_MESSAGES.study_am_normal(subject.name);
+      // 授業に真面目に出席すると好感度が上がりやすく(基本+6)
+      profRelDelta = 6; 
+      
+      if (state.caffeine >= 40 && state.caffeine < 150) {
+          // 覚醒時はさらにボーナス(+4 -> 合計+10)
+          profRelDelta += 4;
+          baseLog = `【真面目な受講】カフェインのおかげで意識は明瞭。${subject.name}の最前列で猛烈にノートを取った。教授が満足げに頷いている。`;
+      } else {
+          baseLog = LOG_MESSAGES.study_am_normal(subject.name);
+      }
       break;
 
     case TimeSlot.NOON:
@@ -151,6 +159,7 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
     formatDelta(SUBJECTS[subjectId].name, knowledgeGain),
     formatDelta('HP', -hpCost),
     formatDelta('SAN', -sanityCost),
+    formatDelta('教授友好度', profRelDelta),
   ], ', ');
 
   pushLog(state, `${baseLog}\n(${details})`, logType);

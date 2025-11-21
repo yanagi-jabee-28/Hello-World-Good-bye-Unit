@@ -4,8 +4,44 @@ import { clamp, formatDelta, joinMessages } from '../../utils/common';
 import { executeEvent } from '../eventManager';
 import { pushLog } from '../stateHelpers';
 import { ITEMS } from '../../data/items';
+import { SUBJECTS } from '../../data/subjects';
 
 export const handleAskProfessor = (state: GameState): GameState => {
+  // 手土産スイーツ処理
+  if ((state.inventory[ItemId.GIFT_SWEETS] || 0) > 0) {
+    state.inventory[ItemId.GIFT_SWEETS] = (state.inventory[ItemId.GIFT_SWEETS] || 0) - 1;
+    
+    const relBonus = 25;
+    const sanityBonus = 15;
+    
+    state.relationships[RelationshipId.PROFESSOR] = clamp(state.relationships[RelationshipId.PROFESSOR] + relBonus, 0, 100);
+    state.sanity = clamp(state.sanity + sanityBonus, 0, state.maxSanity);
+
+    // 報酬決定
+    // 40%確率で参考書(9800円相当)、60%で直接指導(知識+15)
+    let rewardLog = "";
+    const messages = [
+        formatDelta('教授友好度', relBonus),
+        formatDelta('SAN', sanityBonus)
+    ];
+
+    if (Math.random() < 0.4) {
+        state.inventory[ItemId.REFERENCE_BOOK] = (state.inventory[ItemId.REFERENCE_BOOK] || 0) + 1;
+        rewardLog = "「ほう、気が利くね。これ、昔書いた本だが役に立つはずだ」";
+        messages.push(`アイテム入手: ${ITEMS[ItemId.REFERENCE_BOOK].name}`);
+    } else {
+        const subIds = Object.values(SubjectId);
+        const target = subIds[Math.floor(Math.random() * subIds.length)];
+        const kDelta = 15;
+        state.knowledge[target] = clamp(state.knowledge[target] + kDelta, 0, 100);
+        rewardLog = "「いい茶菓子だ。特別に試験のヒントを教えよう」";
+        messages.push(`${SUBJECTS[target].name}+${kDelta}`);
+    }
+
+    pushLog(state, `【贈答】${ITEMS[ItemId.GIFT_SWEETS].name}を教授室に持参した。\n${rewardLog}\n(${joinMessages(messages, ', ')})`, 'success');
+    return state;
+  }
+
   let newState = executeEvent(state, 'action_professor', "教授室は留守のようだ。");
   
   // Bonus if relationship improved

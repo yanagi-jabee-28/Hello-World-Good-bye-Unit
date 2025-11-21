@@ -137,8 +137,8 @@ export const ITEMS: Record<ItemId, Item> = {
   [ItemId.GIFT_SWEETS]: {
     id: ItemId.GIFT_SWEETS,
     name: '手土産スイーツ',
-    description: 'デパ地下で買った高級菓子。先輩への貢ぎ物として最強。',
-    specialEffectDescription: '「先輩」コマンドで使用。友好度大幅UP&成功確定',
+    description: 'デパ地下で買った高級菓子。目上の人への貢ぎ物として最強。',
+    specialEffectDescription: '「先輩」または「教授」コマンドで使用。友好度大幅UP&成功確定',
     price: 3500,
   },
   [ItemId.GAMING_SUPPLEMENT]: {
