@@ -31,6 +31,17 @@ export const joinMessages = (messages: (string | null)[], delimiter: string = ' 
 };
 
 /**
+ * Applies a soft cap function to a multiplier.
+ * As x increases, the result asymptotically approaches (1 + asymptote).
+ * Formula: f(x) = 1 + (x-1) / (1 + (x-1)/k) where k is asymptote.
+ */
+export const applySoftCap = (currentMult: number, asymptote: number): number => {
+  if (currentMult <= 1.0) return currentMult;
+  const excess = currentMult - 1;
+  return 1 + (excess / (1 + (excess / asymptote)));
+};
+
+/**
  * Generates a description string from an item's effect data.
  */
 export const getItemEffectDescription = (item: Item): string => {

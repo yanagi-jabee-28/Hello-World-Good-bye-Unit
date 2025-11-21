@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { GameState, GameStatus, SubjectId } from '../types';
 import { generateGameEvaluation } from '../utils/ai';
-import { Terminal, FileText, Eye, EyeOff } from 'lucide-react';
+import { Terminal, FileText, Eye, EyeOff, CheckCircle, AlertTriangle, AlertOctagon } from 'lucide-react';
 import { SUBJECTS } from '../data/subjects';
 
 interface Props {
@@ -58,11 +58,42 @@ export const EndingScreen: React.FC<Props> = ({ state, onRestart }) => {
     }
   };
 
+  // Determine log section style based on status
+  const getLogSectionConfig = () => {
+    switch (state.status) {
+      case GameStatus.VICTORY:
+        return {
+          title: "FINAL_EXECUTION_LOG (最終実行ログ)",
+          icon: CheckCircle,
+          bgClass: "bg-green-950/20",
+          borderClass: "border-green-900/50",
+          textClass: "text-green-500"
+        };
+      case GameStatus.FAILURE:
+        return {
+          title: "COMPILATION_ERROR_LOG (エラーログ)",
+          icon: AlertTriangle,
+          bgClass: "bg-orange-950/20",
+          borderClass: "border-orange-900/50",
+          textClass: "text-orange-500"
+        };
+      default: // HP/SAN GameOver
+        return {
+          title: "FATAL_EXCEPTION (直近のイベント)",
+          icon: AlertOctagon,
+          bgClass: "bg-red-950/20",
+          borderClass: "border-red-900/50",
+          textClass: "text-red-500"
+        };
+    }
+  };
+
   const msg = getMessage();
+  const logConfig = getLogSectionConfig();
+  const LogIcon = logConfig.icon;
   const lastLogs = state.logs.slice(-4).reverse(); // 直近のログを取得
 
   // ログ確認モード時は、背景の入力を許可しつつ、操作ボタンだけを表示する
-  // ボタン位置を上部に移動し、下部のログやSYSTEM HALTED表示と重ならないようにする
   if (isLogMode) {
     return (
       <div className="fixed inset-0 z-50 pointer-events-none flex flex-col justify-start items-center pt-20 md:pt-24">
@@ -84,7 +115,7 @@ export const EndingScreen: React.FC<Props> = ({ state, onRestart }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm animate-[fadeIn_0.5s_ease-out] overflow-y-auto py-10">
       <div className="max-w-3xl w-full border-4 border-green-800 bg-black p-6 md:p-8 text-center shadow-[0_0_50px_rgba(34,197,94,0.2)] m-4 relative">
         
-        {/* ログ確認ボタン (タイトルと重ならないよう配置変更) */}
+        {/* ログ確認ボタン */}
         <div className="flex justify-end mb-4">
           <button 
             onClick={() => setIsLogMode(true)}
@@ -101,16 +132,16 @@ export const EndingScreen: React.FC<Props> = ({ state, onRestart }) => {
         </div>
         <p className="text-sm md:text-xl text-gray-300 mb-6 font-mono">{msg.sub}</p>
         
-        {/* CAUSE OF ERROR Section - Added */}
-        <div className="text-left mb-6 bg-red-950/20 border border-red-900/50 p-3">
-           <h4 className="text-red-500 text-xs font-bold mb-2 flex items-center gap-2">
-             <Terminal size={12} /> FATAL_EXCEPTION (直近のイベント)
+        {/* RECENT EVENTS Section - Dynamic Style */}
+        <div className={`text-left mb-6 border p-3 ${logConfig.bgClass} ${logConfig.borderClass}`}>
+           <h4 className={`${logConfig.textClass} text-xs font-bold mb-2 flex items-center gap-2`}>
+             <LogIcon size={12} /> {logConfig.title}
            </h4>
            <div className="space-y-1 font-mono text-xs md:text-sm text-gray-400">
              {lastLogs.map((log, i) => (
                <div key={log.id} className={`${i === 0 ? 'text-white font-bold' : 'opacity-70'}`}>
                  <span className="mr-2 opacity-50">{log.timestamp}</span>
-                 {i === 0 && <span className="text-red-500 mr-1">&gt;&gt;</span>}
+                 {i === 0 && <span className={`${logConfig.textClass} mr-1`}>&gt;&gt;</span>}
                  {log.text}
                </div>
              ))}

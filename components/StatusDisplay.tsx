@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { GameState, SubjectId, ItemId, RelationshipId } from '../types';
 import { SUBJECTS, PASSING_SCORE } from '../data/subjects';
 import { ITEMS } from '../data/items';
-import { CAFFEINE_THRESHOLDS, BUFF_MULTIPLIER_CAP } from '../config/gameConstants';
+import { CAFFEINE_THRESHOLDS, BUFF_SOFT_CAP_ASYMPTOTE } from '../config/gameConstants';
 import { Heart, Brain, Coffee, Package, Users, Wallet, Zap, Bed, AlertOctagon, BarChart2 } from 'lucide-react';
 
 interface Props {
@@ -216,7 +215,7 @@ export const StatusDisplay: React.FC<Props> = ({ state }) => {
       {showDevMetrics && (
         <div className="mt-4 p-2 bg-gray-900 border border-gray-700 text-[10px] font-mono text-gray-300">
            <div className="font-bold border-b border-gray-700 mb-1 text-yellow-500">DEV METRICS</div>
-           <div>Buff Cap: {BUFF_MULTIPLIER_CAP}x</div>
+           <div>Soft Cap Asymp: +{BUFF_SOFT_CAP_ASYMPTOTE}</div>
            <div>Awake/Zone/Toxic: {Object.values(CAFFEINE_THRESHOLDS).join('/')}</div>
            <div>Buff Count: {state.activeBuffs.length}</div>
            <div>Event Hist: {state.eventHistory.length}</div>

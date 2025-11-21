@@ -158,8 +158,10 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     // Slip Damage from High Caffeine
     if (newState.caffeine >= CAFFEINE_THRESHOLDS.ZONE) {
        const isOverdose = newState.caffeine >= CAFFEINE_THRESHOLDS.TOXICITY;
-       const toxicHp = isOverdose ? 15 : 2; 
-       const toxicSan = isOverdose ? 15 : 2;
+       
+       // Rebalanced: Lowered slip damage to reduce "sudden death" feeling
+       const toxicHp = isOverdose ? 12 : 3; // 15 -> 12, 2 -> 3
+       const toxicSan = isOverdose ? 6 : 1; // 15 -> 6, 2 -> 1 (Less sanity dmg)
        
        newState.hp = clamp(newState.hp - toxicHp, 0, newState.maxHp);
        newState.sanity = clamp(newState.sanity - toxicSan, 0, newState.maxSanity);

@@ -2,21 +2,21 @@
 import { GameState, SubjectId, TimeSlot, LogEntry, RelationshipId } from '../../types';
 import { SUBJECTS } from '../../data/subjects';
 import { LOG_MESSAGES } from '../../data/events';
-import { clamp, chance, formatDelta, joinMessages } from '../../utils/common';
+import { clamp, chance, formatDelta, joinMessages, applySoftCap } from '../../utils/common';
 import { pushLog } from '../stateHelpers';
-import { CAFFEINE_THRESHOLDS, BUFF_MULTIPLIER_CAP } from '../../config/gameConstants';
+import { CAFFEINE_THRESHOLDS, BUFF_SOFT_CAP_ASYMPTOTE } from '../../config/gameConstants';
 
 /**
  * 日数進行による難易度係数を計算
- * 以前よりも上昇カーブを緩やかにし、理不尽さを軽減
+ * 上昇カーブを緩和し、終盤の事故率を低減
  */
 const getPressureMultiplier = (day: number): number => {
   // Day 1-3: 1.0x (Standard)
   // Day 4-5: 1.1x (Slightly Hard)
-  // Day 6-7: 1.25x (Hard)
+  // Day 6-7: 1.15x (Hard but survivable) - was 1.25
   if (day <= 3) return 1.0;
   if (day <= 5) return 1.1;
-  return 1.25; 
+  return 1.15; 
 };
 
 export const handleStudy = (state: GameState, subjectId: SubjectId): GameState => {
@@ -25,10 +25,10 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
   const pressure = getPressureMultiplier(state.day);
   
   // Base Stats
-  let efficiency = 1.0;
-  // バランス調整: 学習コストのSAN消費を倍増。睡眠だけでは回復しきれないようにする。
+  let rawEfficiency = 1.0;
+  // バランス調整: 学習コストのSAN消費を微調整
   let hpCost = Math.floor(10 * pressure); 
-  let sanityCost = Math.floor(12 * pressure); // was 5
+  let sanityCost = Math.floor(10 * pressure); // was 12 * pressure. Slightly reduced base cost.
   
   let baseLog = "";
   let logType: LogEntry['type'] = 'info';
@@ -38,13 +38,13 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
   switch (state.timeSlot) {
     case TimeSlot.MORNING:
       // 朝: 冴えている (ボーナス)
-      efficiency = 1.2;
+      rawEfficiency *= 1.2;
       baseLog = LOG_MESSAGES.study_morning_bonus(subject.name);
       break;
 
     case TimeSlot.AM:
       // 午前: 講義 (安定 + 教授評価)
-      efficiency = 1.0;
+      rawEfficiency *= 1.0;
       // 授業に真面目に出席すると好感度が上がりやすく(基本+6)
       profRelDelta = 6; 
       
@@ -60,30 +60,30 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
     case TimeSlot.NOON:
       // 昼: 騒がしい (微デバフだが、カフェインで相殺可能)
       if (state.caffeine >= CAFFEINE_THRESHOLDS.AWAKE) {
-        efficiency = 1.1; // 覚醒していれば逆に集中できる
+        rawEfficiency *= 1.1; // 覚醒していれば逆に集中できる
         baseLog = LOG_MESSAGES.study_caffeine_awake(subject.name);
       } else {
-        efficiency = 0.8; // 少し効率落ちる程度に留める
+        rawEfficiency *= 0.85; // 効率低下を緩和 (0.8 -> 0.85)
         baseLog = LOG_MESSAGES.study_noon_drowsy(subject.name);
       }
       break;
 
     case TimeSlot.AFTERNOON:
-      // 午後: 眠気 (デバフ削除 -> 標準化)
-      efficiency = 1.0; 
+      // 午後: 眠気
+      rawEfficiency *= 1.0; 
       hpCost += 2; // 少し体力を使いやすい
       baseLog = `【午後の演習】${subject.name}の課題に取り組む。眠気はあるが、手は動いている。`;
       break;
 
     case TimeSlot.AFTER_SCHOOL:
       // 放課後: 集中 (ボーナス)
-      efficiency = 1.2;
+      rawEfficiency *= 1.2;
       baseLog = LOG_MESSAGES.study_after_school_focus(subject.name);
       break;
 
     case TimeSlot.NIGHT:
       // 夜: 疲労 (微デバフ)
-      efficiency = 0.9;
+      rawEfficiency *= 0.9;
       hpCost += 5; // 疲労が溜まる
       baseLog = LOG_MESSAGES.study_night_tired(subject.name);
       break;
@@ -91,8 +91,8 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
     case TimeSlot.LATE_NIGHT:
       // 深夜: ハイリスク・ハイリターン
       // 確実に高効率だが、SAN値コストが極めて高い
-      efficiency = 1.4; 
-      sanityCost += 15; // Base 12 + 15 = 27 damage
+      rawEfficiency *= 1.4; 
+      sanityCost += 12; // Added cost reduced (15 -> 12)
       baseLog = `【深夜の集中】静寂が思考を加速させる。SAN値を削って${subject.name}を脳に刻み込む。`;
       logType = 'warning'; // コストが高いことを警告
       break;
@@ -100,42 +100,44 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
 
   // --- Caffeine Effects ---
   if (state.caffeine >= CAFFEINE_THRESHOLDS.TOXICITY) {
-    efficiency *= 2.0;
-    hpCost += 20;
-    sanityCost += 15;
+    rawEfficiency *= 2.0;
+    hpCost += 15; // 20 -> 15
+    sanityCost += 10; // 15 -> 10
     baseLog += " (中毒状態: 限界突破)";
     logType = 'danger';
   } else if (state.caffeine >= CAFFEINE_THRESHOLDS.ZONE) {
-    efficiency *= 1.5;
-    hpCost += 5;
-    sanityCost += 5;
+    rawEfficiency *= 1.5;
+    hpCost += 4; // 5 -> 4
+    sanityCost += 4; // 5 -> 4
     baseLog += " (ZONE状態: 高負荷・高効率)";
     logType = 'success'; // ポジティブな強化
   } else if (state.caffeine >= CAFFEINE_THRESHOLDS.AWAKE) {
-    efficiency *= 1.2;
+    rawEfficiency *= 1.2;
     baseLog += " (覚醒状態)";
   }
 
-  // --- Madness Bonus (Constant, not random) ---
+  // --- Madness Bonus ---
   // SAN値が低いと、効率は上がるがHPが減る (火事場の馬鹿力)
   if (state.sanity < 30) {
-    efficiency *= 1.3;
-    hpCost += 10;
+    rawEfficiency *= 1.3;
+    hpCost += 8; // 10 -> 8
     baseLog += "\n【狂気】精神の摩耗と引き換えに、異常な集中力を発揮している。";
   }
 
-  // Apply Buffs with Cap
+  // Apply Buffs (Multiplicative)
   const studyBuffs = state.activeBuffs.filter(b => b.type === 'STUDY_EFFICIENCY');
   if (studyBuffs.length > 0) {
-    let buffMultiplier = studyBuffs.reduce((acc, b) => acc * b.value, 1.0);
-    // Cap multiplier to prevent breaking the game
-    if (buffMultiplier > BUFF_MULTIPLIER_CAP) {
-        buffMultiplier = BUFF_MULTIPLIER_CAP;
-        baseLog += ` [ブースト上限到達]`;
-    } else {
-        baseLog += ` [ブースト x${buffMultiplier.toFixed(1)}]`;
-    }
-    efficiency *= buffMultiplier;
+    const buffMultiplier = studyBuffs.reduce((acc, b) => acc * b.value, 1.0);
+    rawEfficiency *= buffMultiplier;
+    baseLog += ` [アイテム効果 x${buffMultiplier.toFixed(1)}]`;
+  }
+
+  // --- Apply Soft Cap ---
+  // ここで最終的な倍率にソフトキャップを適用する
+  const finalEfficiency = applySoftCap(rawEfficiency, BUFF_SOFT_CAP_ASYMPTOTE);
+  
+  if (finalEfficiency < rawEfficiency) {
+     baseLog += ` (効率上限補正)`;
   }
 
   // Diminishing Returns (Score Saturation)
@@ -146,7 +148,7 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
   else progressionMultiplier = 0.5; // 90点以上は難しい
 
   // Final Calculation
-  let knowledgeGain = Math.floor(10 * efficiency * subject.difficulty * progressionMultiplier);
+  let knowledgeGain = Math.floor(10 * finalEfficiency * subject.difficulty * progressionMultiplier);
   if (knowledgeGain < 1) knowledgeGain = 1;
 
   // Update State

@@ -25,7 +25,7 @@ export const ITEMS: Record<ItemId, Item> = {
     id: ItemId.BLACK_COFFEE,
     name: '缶コーヒー(微糖)',
     description: '覚醒剤代わり。1本で覚醒状態(40mg~)へ。2ターン効果が続く。',
-    price: 140,
+    price: 150, // 微増 140 -> 150
     effects: {
       caffeine: 50, // 0 -> 50(Awake) -> 40(Awake) -> 30(Normal)
       hp: 5,
@@ -78,10 +78,10 @@ export const ITEMS: Record<ItemId, Item> = {
   [ItemId.ENERGY_DRINK]: {
     id: ItemId.ENERGY_DRINK,
     name: 'ZONe (Ver.Infinity)',
-    description: 'デジタル没入エナジー。一撃でZONE(100mg~)へ突入する。',
+    description: 'デジタル没入エナジー。カフェインを大量摂取し、一気に集中モードへ。',
     price: 400,
     effects: {
-      caffeine: 100, // Balance Adjustment: 120 -> 100. Just enough to hit ZONE.
+      caffeine: 85, // Nerfed: 100 -> 85. 0からだと15足りない(Normal) -> 微調整アイテムとの併用を促す
       hp: 10,
       sanity: -5 
     }
@@ -112,14 +112,14 @@ export const ITEMS: Record<ItemId, Item> = {
     id: ItemId.HOT_EYE_MASK,
     name: 'ホットアイマスク',
     description: '目の疲れを癒やし、休息の質を高める。',
-    price: 1500,
+    price: 1200, // Rebalanced: 1500 -> 1200 (More accessible)
     effects: {
       buffs: [
         {
           name: '温熱効果',
           type: 'REST_EFFICIENCY',
           value: 1.5,
-          duration: 3,
+          duration: 4, // Extended: 3 -> 4
           description: '休息効果1.5倍'
         }
       ]
@@ -139,27 +139,27 @@ export const ITEMS: Record<ItemId, Item> = {
     name: '手土産スイーツ',
     description: 'デパ地下で買った高級菓子。目上の人への貢ぎ物として最強。',
     specialEffectDescription: '「先輩」または「教授」コマンドで使用。友好度大幅UP&成功確定',
-    price: 3500,
+    price: 3000, // Rebalanced: 3500 -> 3000
   },
   [ItemId.GAMING_SUPPLEMENT]: {
     id: ItemId.GAMING_SUPPLEMENT,
     name: 'ゲーミングサプリ',
     description: '集中力ブースト。副作用で精神が少しずつ削れる。',
-    price: 5800,
+    price: 3800, // Rebalanced: 5800 -> 3800 (Make it mid-game viable)
     effects: {
       buffs: [
         {
           name: '集中モード',
           type: 'STUDY_EFFICIENCY',
-          value: 1.3, // マイルドに調整
-          duration: 5,
+          value: 1.3, 
+          duration: 4, // Reduced duration for balance: 5 -> 4
           description: '学習効率1.3倍'
         },
         {
           name: '反動',
           type: 'SANITY_DRAIN',
           value: 2,
-          duration: 5,
+          duration: 4,
           description: '毎ターンSAN-2'
         }
       ]
@@ -171,7 +171,7 @@ export const ITEMS: Record<ItemId, Item> = {
     name: '「わかる」本',
     description: '試験直前の駆け込み寺。専門書は高いが背に腹は代えられない。',
     specialEffectDescription: '最低点数の科目+15 (使い切り)',
-    price: 9800,
+    price: 8800, // Rebalanced: 9800 -> 8800
   },
   [ItemId.SMART_DRUG]: {
     id: ItemId.SMART_DRUG,
@@ -179,7 +179,7 @@ export const ITEMS: Record<ItemId, Item> = {
     description: '脳内物質を強制分泌させる未承認薬。学習効率が劇的に向上するが、反動も大きい。',
     price: 12800,
     effects: {
-      hp: -30, // Risk increased: -20 -> -30
+      hp: -30, 
       buffs: [
         {
           name: '限界突破',
