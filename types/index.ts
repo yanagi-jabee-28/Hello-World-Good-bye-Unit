@@ -107,6 +107,15 @@ export interface EventStats {
   lastTurn: number;
 }
 
+export interface GameFlags {
+  sleepDebt: number;       // 睡眠負債 (0-5+)
+  lastSleepQuality: number;// 前回の睡眠の質 (0.5-1.0)
+  caffeineDependent: boolean; // カフェイン依存症フラグ
+  hasPastPapers: boolean;  // 過去問入手フラグ
+  madnessStack: number;    // 狂気スタック (0-4)
+  examRisk: boolean;       // 最終日無理をしたか
+}
+
 export interface GameState {
   day: number;
   timeSlot: TimeSlot;
@@ -127,6 +136,7 @@ export interface GameState {
   eventHistory: string[]; // 直近のイベントID（UI表示用など）
   eventStats: Record<string, EventStats>; // イベントごとの発生統計（ロジック制御用）
   statsHistory: StatsSnapshot[]; // 履歴データ
+  flags: GameFlags; // Hidden mechanics flags
 }
 
 export enum ActionType {

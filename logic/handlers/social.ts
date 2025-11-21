@@ -42,13 +42,18 @@ export const handleAskProfessor = (state: GameState): GameState => {
     return state;
   }
 
-  let newState = executeEvent(state, 'action_professor', "教授室は留守のようだ。");
+  // 通常処理
+  const newState = executeEvent(state, 'action_professor', "教授室は留守のようだ。");
   
-  // Bonus if relationship improved
+  // Bonus if relationship improved (教授の機嫌が良い時)
+  // イベントが成功し、かつ友好度が上がった場合、追加で少しヒントをもらえることがある
   if (newState.relationships[RelationshipId.PROFESSOR] > state.relationships[RelationshipId.PROFESSOR]) {
-      const subIds = Object.values(SubjectId);
-      const target = subIds[Math.floor(Math.random() * subIds.length)];
-      newState.knowledge[target] = clamp(newState.knowledge[target] + 5, 0, 100);
+      // ランダムで「ここ大事だぞ」と言われる
+      if (Math.random() < 0.3) {
+          const subIds = Object.values(SubjectId);
+          const target = subIds[Math.floor(Math.random() * subIds.length)];
+          newState.knowledge[target] = clamp(newState.knowledge[target] + 3, 0, 100);
+      }
   }
   return newState;
 };
@@ -71,6 +76,9 @@ export const handleAskSenior = (state: GameState): GameState => {
     state.sanity = clamp(state.sanity + sanityBonus, 0, state.maxSanity);
     state.inventory[receivedItem] = (state.inventory[receivedItem] || 0) + 1;
 
+    // USBメモリを入手した場合、フラグも立てる可能性があるが、USB使用時に判定する設計
+    // ここではアイテム入手のみ
+
     const details = joinMessages([
         formatDelta('先輩友好度', relBonus),
         formatDelta('SAN', sanityBonus),
@@ -82,9 +90,24 @@ export const handleAskSenior = (state: GameState): GameState => {
   }
 
   // 通常処理
-  return executeEvent(state, 'action_senior', "先輩は見当たらなかった。");
+  const newState = executeEvent(state, 'action_senior', "先輩は見当たらなかった。");
+
+  // 過去問イベントが発生したかチェック (ID: senior_past_exam)
+  // eventHistory の最新を確認
+  if (newState.eventHistory[0] === 'senior_past_exam') {
+    newState.flags.hasPastPapers = true;
+  }
+
+  return newState;
 };
 
 export const handleRelyFriend = (state: GameState): GameState => {
-  return executeEvent(state, 'action_friend', "友人は忙しいようだ。");
+  const newState = executeEvent(state, 'action_friend', "友人は忙しいようだ。");
+
+  // 友人経由で過去問を入手した場合のフラグ処理 (ID: friend_cloud_leak)
+  if (newState.eventHistory[0] === 'friend_cloud_leak') {
+    newState.flags.hasPastPapers = true;
+  }
+
+  return newState;
 };

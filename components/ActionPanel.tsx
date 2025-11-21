@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ActionType, SubjectId, GameStatus, GameState, ItemId, TimeSlot } from '../types';
 import { SUBJECTS } from '../data/subjects';
@@ -5,6 +6,7 @@ import { ITEMS } from '../data/items';
 import { getAvailability, getStudyHint } from '../logic/advisor';
 import { getWorkConfig } from '../data/work';
 import { getItemEffectDescription } from '../utils/common';
+import { getExamWarnings } from '../logic/warningSystem';
 import { BookOpen, Moon, Users, Gamepad2, Package, School, GraduationCap, UserPlus, AlertTriangle, ShoppingCart, Briefcase, Bed, Sun, BatteryCharging, Ban } from 'lucide-react';
 
 interface Props {
@@ -20,6 +22,8 @@ interface Props {
 
 export const ActionPanel: React.FC<Props> = ({ state, onAction, onShopOpen }) => {
   const isGameOver = state.status !== GameStatus.PLAYING;
+  const warnings = getExamWarnings(state);
+  const hasCriticalWarning = warnings.some(w => w.severity === 'critical' || w.severity === 'danger');
   
   if (isGameOver) {
     return (
@@ -89,6 +93,36 @@ export const ActionPanel: React.FC<Props> = ({ state, onAction, onShopOpen }) =>
 
   return (
     <div className="grid grid-cols-2 gap-2 p-2 md:grid-cols-2 lg:grid-cols-4 lg:gap-4 lg:p-4 border-t-2 border-green-900 bg-gray-950">
+      
+      {/* 警告バナー（DAY 5以降） */}
+      {warnings.length > 0 && (
+        <div className="col-span-2 lg:col-span-4 mb-2">
+          <div className={`p-3 border-2 rounded ${
+            hasCriticalWarning ? 'border-red-700 bg-red-900/20 animate-pulse' : 'border-yellow-700 bg-yellow-900/20'
+          }`}>
+            <div className="flex items-center gap-2 mb-2">
+              <AlertTriangle size={16} className={hasCriticalWarning ? 'text-red-500' : 'text-yellow-500'} />
+              <span className="text-xs font-bold text-white">
+                試験準備警告 ({warnings.length})
+              </span>
+            </div>
+            <div className="text-[10px] space-y-1">
+              {warnings.slice(0, 3).map((w, i) => (
+                <div key={i} className="text-gray-300 flex items-center gap-2">
+                  <span>{w.icon}</span>
+                  <span>{w.message}</span>
+                </div>
+              ))}
+              {warnings.length > 3 && (
+                <div className="text-gray-500 italic">
+                  ...他 {warnings.length - 3} 件（デバッグパネルで確認）
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Study Actions */}
       <div className="col-span-2 lg:col-span-1 space-y-2">
         <h3 className="text-xs text-gray-500 font-bold mb-1 flex items-center gap-2">

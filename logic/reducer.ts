@@ -6,6 +6,7 @@ import { getNextTimeSlot } from './time';
 import { executeEvent } from './eventManager';
 import { pushLog } from './stateHelpers';
 import { CAFFEINE_DECAY, CAFFEINE_THRESHOLDS, EVENT_CONSTANTS } from '../config/gameConstants';
+import { evaluateExam } from './examEvaluation';
 
 // Handlers
 import { handleStudy } from './handlers/study';
@@ -57,6 +58,14 @@ export const INITIAL_STATE: GameState = {
   eventHistory: [],
   eventStats: {},
   statsHistory: [],
+  flags: {
+    sleepDebt: 0,
+    lastSleepQuality: 1.0,
+    caffeineDependent: false,
+    hasPastPapers: false,
+    madnessStack: 0,
+    examRisk: false,
+  }
 };
 
 export const gameReducer = (state: GameState, action: GameAction): GameState => {
@@ -101,12 +110,17 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
   newState.eventStats = { ...state.eventStats };
   newState.activeBuffs = [...state.activeBuffs];
   newState.logs = [...state.logs];
+  newState.flags = { ...state.flags };
   
   let timeAdvanced = true;
 
   switch (action.type) {
     case ActionType.STUDY:
       newState = handleStudy(newState, action.payload);
+      // 勉強すると狂気スタックがたまりやすい(SAN値が低い場合)
+      if (newState.sanity < 30) {
+        newState.flags.madnessStack = Math.min(4, newState.flags.madnessStack + 1);
+      }
       break;
     case ActionType.REST:
       newState = handleRest(newState);
@@ -140,6 +154,34 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
   }
 
   if (timeAdvanced) {
+    // --- Hidden Mechanics Update ---
+    
+    // 1. Sleep Debt Accumulation
+    // REST以外のアクションで時間が進むと、わずかに負債がたまる
+    // 特に深夜に行動すると負債が増えやすい
+    if (action.type !== ActionType.REST) {
+      let debtIncrease = 0.2; // Base
+      if (newState.timeSlot === TimeSlot.LATE_NIGHT) {
+        debtIncrease = 1.0; // 深夜活動は負債大
+      }
+      newState.flags.sleepDebt += debtIncrease;
+    }
+
+    // 2. Madness Reduction (REST or ESCAPISM heals madness)
+    if (action.type === ActionType.REST || action.type === ActionType.ESCAPISM) {
+        if (newState.flags.madnessStack > 0) {
+             newState.flags.madnessStack = Math.max(0, newState.flags.madnessStack - 1);
+        }
+    }
+
+    // 3. Caffeine Dependence
+    // カフェイン中毒状態で一定期間過ごすと依存症フラグ
+    if (newState.caffeine >= CAFFEINE_THRESHOLDS.TOXICITY) {
+       if (chance(10)) newState.flags.caffeineDependent = true;
+    }
+
+    // --- End Hidden Mechanics ---
+
     // Buff Effects
     newState.activeBuffs.forEach(buff => {
       if (buff.type === 'SANITY_DRAIN') {
@@ -158,20 +200,16 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     // Slip Damage from High Caffeine
     if (newState.caffeine >= CAFFEINE_THRESHOLDS.ZONE) {
        const isOverdose = newState.caffeine >= CAFFEINE_THRESHOLDS.TOXICITY;
-       
-       // Rebalanced: Lowered slip damage to reduce "sudden death" feeling
-       const toxicHp = isOverdose ? 12 : 3; // 15 -> 12, 2 -> 3
-       const toxicSan = isOverdose ? 6 : 1; // 15 -> 6, 2 -> 1 (Less sanity dmg)
+       const toxicHp = isOverdose ? 12 : 3; 
+       const toxicSan = isOverdose ? 6 : 1; 
        
        newState.hp = clamp(newState.hp - toxicHp, 0, newState.maxHp);
        newState.sanity = clamp(newState.sanity - toxicSan, 0, newState.maxSanity);
     }
 
     // --- 孤独システム (Isolation Logic) ---
-    // 社会的行動を取らないとSAN値が減る
     const turnsSinceSocial = newState.turnCount - newState.lastSocialTurn;
     if (turnsSinceSocial > EVENT_CONSTANTS.ISOLATION_THRESHOLD) {
-      // 閾値を超えたら毎ターンSAN減少
       const lonelinessDmg = EVENT_CONSTANTS.ISOLATION_DAMAGE;
       newState.sanity = clamp(newState.sanity - lonelinessDmg, 0, newState.maxSanity);
       pushLog(newState, `【孤独】誰とも話さず${turnsSinceSocial}ターン経過。社会からの隔絶が精神を蝕む。(SAN-${lonelinessDmg})`, 'warning');
@@ -203,8 +241,8 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
 
   // Check Game Over Conditions
   if (newState.day > 7) {
-    const allPassed = Object.values(newState.knowledge).every(score => score >= 60);
-    newState.status = allPassed ? GameStatus.VICTORY : GameStatus.FAILURE;
+    const metrics = evaluateExam(newState);
+    newState.status = metrics.passed ? GameStatus.VICTORY : GameStatus.FAILURE;
     if (newState.status === GameStatus.VICTORY) pushLog(newState, LOG_MESSAGES.victory, 'success');
     else pushLog(newState, LOG_MESSAGES.failure, 'danger');
   } else if (newState.hp <= 0) {

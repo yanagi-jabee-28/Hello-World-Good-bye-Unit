@@ -6,6 +6,7 @@ import { LogWindow } from './components/LogWindow';
 import { ActionPanel } from './components/ActionPanel';
 import { EndingScreen } from './components/EndingScreen';
 import { ShopModal } from './components/ShopModal';
+import { DebugPanel } from './components/DebugPanel';
 import { useGameEngine } from './hooks/useGameEngine';
 import { ActionType, GameAction, ItemId } from './types';
 import { Terminal, Activity } from 'lucide-react';
@@ -46,6 +47,7 @@ const App: React.FC = () => {
         />
       )}
       <EndingScreen state={state} onRestart={() => handleAction(ActionType.RESTART)} />
+      <DebugPanel state={state} />
     </>
   );
 

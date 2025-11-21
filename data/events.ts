@@ -41,15 +41,25 @@ export const ALL_EVENTS: GameEvent[] = [
     trigger: 'action_professor',
     text: "【質問】研究室を訪ねた。「ここは試験に出すぞ」というリーク情報を入手！",
     type: 'good',
-    weight: 50,
+    weight: 40,
     effect: { relationships: { [RelationshipId.PROFESSOR]: 5 }, knowledge: { [SubjectId.MATH]: 5 } }
+  },
+  {
+    id: 'prof_exam_hint_leak',
+    trigger: 'action_professor',
+    text: "【核心】「ここだけの話だが...」教授が試験の最重要ポイントをポロリと漏らした。勝利を確信した。",
+    type: 'good',
+    weight: 25,
+    conditions: { minRelationship: 30 },
+    effect: { relationships: { [RelationshipId.PROFESSOR]: 10 }, knowledge: { [SubjectId.ALGO]: 15, [SubjectId.CIRCUIT]: 15 } },
+    maxOccurrences: 2
   },
   {
     id: 'prof_small_talk',
     trigger: 'action_professor',
     text: "【雑談】廊下でバッタリ会った。「最近顔色が悪いぞ」と缶コーヒーを奢ってくれた。",
     type: 'good',
-    weight: 60, // 発生しやすい
+    weight: 50,
     effect: { relationships: { [RelationshipId.PROFESSOR]: 8 }, caffeine: 10, hp: 5 }
   },
   {
@@ -66,7 +76,7 @@ export const ALL_EVENTS: GameEvent[] = [
     trigger: 'action_professor',
     text: "【門前払い】「その質問は講義中に説明したはずだ」と一蹴された。冷たい。",
     type: 'bad',
-    weight: 20, // 重みを低下
+    weight: 15,
     conditions: { maxRelationship: 40 },
     effect: { relationships: { [RelationshipId.PROFESSOR]: 2 }, hp: -5 }
   },
@@ -95,7 +105,7 @@ export const ALL_EVENTS: GameEvent[] = [
     trigger: 'action_professor',
     text: "【説教】「君、このままだと留年だよ？」...1時間説教された。",
     type: 'bad',
-    weight: 30, // 重みを低下
+    weight: 20,
     conditions: { maxAvgScore: 40 },
     effect: { sanity: -15, knowledge: { [SubjectId.HUMANITIES]: 5 } },
     coolDownTurns: 3
@@ -107,19 +117,29 @@ export const ALL_EVENTS: GameEvent[] = [
   {
     id: 'senior_past_exam',
     trigger: 'action_senior',
-    text: "【継承】研究室の先輩が、代々伝わる「秘伝の過去問」をUSBで渡してくれた！",
+    text: "【継承】研究室の先輩が、代々伝わる「秘伝の過去問」をUSBで渡してくれた！これで勝てる！",
     type: 'good',
-    weight: 30,
-    conditions: { minRelationship: 40 },
+    weight: 50, // Increased chance (30 -> 50)
+    conditions: { minRelationship: 30 }, // Relaxed condition (40 -> 30)
     effect: { knowledge: { [SubjectId.CIRCUIT]: 20 }, relationships: { [RelationshipId.SENIOR]: 5 } },
     maxOccurrences: 2
+  },
+  {
+    id: 'senior_lab_cleanup',
+    trigger: 'action_senior',
+    text: "【掃除】「これもう要らねぇからやるわ」研究室の片付けを手伝ったら、古いUSBメモリを譲り受けた。",
+    type: 'good',
+    weight: 30,
+    conditions: { minRelationship: 20 },
+    effect: { inventory: { [ItemId.USB_MEMORY]: 1 }, relationships: { [RelationshipId.SENIOR]: 5 } },
+    maxOccurrences: 1
   },
   {
     id: 'senior_lab_gossip',
     trigger: 'action_senior',
     text: "【裏情報】「あの教授、実は猫好きらしいぜ」攻略に役立つ無駄知識を得た。",
     type: 'flavor',
-    weight: 60, // 発生しやすい
+    weight: 50,
     effect: { relationships: { [RelationshipId.SENIOR]: 8, [RelationshipId.PROFESSOR]: 2 }, sanity: 5 }
   },
   {
@@ -142,20 +162,12 @@ export const ALL_EVENTS: GameEvent[] = [
     coolDownTurns: 2
   },
   {
-    id: 'senior_busy',
-    trigger: 'action_senior',
-    text: "【修羅場】先輩は卒論の締め切り前で死にかけている...が、机にあったチョコを「これ食って生きろ...」と分けてくれた。",
-    type: 'flavor',
-    weight: 20,
-    effect: { inventory: { [ItemId.HIGH_CACAO_CHOCO]: 1 }, relationships: { [RelationshipId.SENIOR]: 2 } }
-  },
-  {
     id: 'senior_usb_gift',
     trigger: 'action_senior',
     text: "【遺産】「これやるよ、俺はもう卒業だから」謎のUSBメモリを託された。",
     type: 'good',
-    weight: 10,
-    conditions: { minRelationship: 70 },
+    weight: 15,
+    conditions: { minRelationship: 60 },
     effect: { inventory: { [ItemId.USB_MEMORY]: 1 }, relationships: { [RelationshipId.SENIOR]: 10 } },
     maxOccurrences: 1
   },
@@ -164,11 +176,30 @@ export const ALL_EVENTS: GameEvent[] = [
   // FRIEND ACTIONS
   // ==========================================
   {
+    id: 'friend_cloud_leak',
+    trigger: 'action_friend',
+    text: "【共有】「例のドライブ、見れる？」友人から過去問データが入ったクラウドストレージのURLが送られてきた！",
+    type: 'good',
+    weight: 25, // New Route for Past Papers
+    conditions: { minRelationship: 50 },
+    effect: { relationships: { [RelationshipId.FRIEND]: 10 }, sanity: 10, knowledge: { [SubjectId.ALGO]: 10 } },
+    maxOccurrences: 1
+  },
+  {
+    id: 'friend_info_share',
+    trigger: 'action_friend',
+    text: "【噂話】「先輩が言うには、今年は線形代数が鬼門らしい」有益な情報を入手した。",
+    type: 'good',
+    weight: 40,
+    conditions: { minRelationship: 20 },
+    effect: { knowledge: { [SubjectId.MATH]: 15 }, relationships: { [RelationshipId.FRIEND]: 5 } }
+  },
+  {
     id: 'friend_sns_share',
     trigger: 'action_friend',
     text: "【共有】講義のノート画像をAirDropで送り合った。「助かるわ～」という返信。",
     type: 'good',
-    weight: 60, // 発生しやすい
+    weight: 50,
     effect: { relationships: { [RelationshipId.FRIEND]: 8 }, knowledge: { [SubjectId.HUMANITIES]: 5 } }
   },
   {
@@ -258,7 +289,7 @@ export const ALL_EVENTS: GameEvent[] = [
     text: "【救済】YouTubeで「インド人の神解説動画」を発見。一瞬で理解度が跳ね上がった。",
     type: 'good',
     category: 'study_boost',
-    weight: 5, // Probability reduced (8 -> 5)
+    weight: 8,
     conditions: { maxAvgScore: 60 },
     effect: { knowledge: { [SubjectId.ALGO]: 15, [SubjectId.MATH]: 15 } },
     maxOccurrences: 1
@@ -343,7 +374,7 @@ export const ALL_EVENTS: GameEvent[] = [
     trigger: 'turn_end',
     text: "【絶望】レポート保存直前にブルースクリーン。バックアップ？ とってないよ。",
     type: 'bad',
-    weight: 1, // Rare but fatal (3 -> 1)
+    weight: 1, // Rare but fatal
     effect: { sanity: -40 },
     maxOccurrences: 1
   }

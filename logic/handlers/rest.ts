@@ -13,20 +13,23 @@ export const handleRest = (state: GameState): GameState => {
   let baseLog = "";
   let logType: LogEntry['type'] = 'info';
 
+  // Sleep Flag Updates
+  let debtReduction = 0;
+  let quality = 0.8;
+
   // Project Melting Brain: Anxiety Factor
   // 日数経過による回復量減衰係数
-  // Day 1: 1.0
-  // Day 7: 1.0 - 6*0.06 = 0.64 (Previously 0.4)
-  // 終盤でも最低限の回復(6割強)は保証する
   const anxietyFactor = Math.max(0.6, 1.0 - ((state.day - 1) * 0.06));
 
   switch (state.timeSlot) {
     case TimeSlot.LATE_NIGHT:
       // 就寝: HP大回復 / SAN中回復
       hpRecov = 80;
-      sanityRecov = 30; // Rebalanced: 25 -> 30
+      sanityRecov = 30; 
       baseLog = LOG_MESSAGES.rest_success; 
       logType = 'success';
+      debtReduction = 5; // Fully recover sleep debt
+      quality = 1.0;
       break;
 
     case TimeSlot.MORNING:
@@ -34,6 +37,8 @@ export const handleRest = (state: GameState): GameState => {
       hpRecov = 30;
       sanityRecov = 10;
       baseLog = "【二度寝】誘惑に負けて布団に戻った。罪悪感で精神は休まらない。";
+      debtReduction = 2;
+      quality = 0.9;
       break;
 
     case TimeSlot.NOON:
@@ -41,6 +46,8 @@ export const handleRest = (state: GameState): GameState => {
       hpRecov = 15;
       sanityRecov = 15;
       baseLog = "【昼寝】午後の講義に備えて机で仮眠。脳のオーバーヒートが少し収まった。";
+      debtReduction = 1;
+      quality = 0.85;
       break;
 
     default:
@@ -48,6 +55,8 @@ export const handleRest = (state: GameState): GameState => {
       hpRecov = 15;
       sanityRecov = 5;
       baseLog = LOG_MESSAGES.rest_short; 
+      debtReduction = 0.5;
+      quality = 0.8;
       break;
   }
 
@@ -57,11 +66,13 @@ export const handleRest = (state: GameState): GameState => {
     sanityRecov = -10; // Nightmare -15 -> -10
     baseLog = LOG_MESSAGES.rest_caffeine_fail;
     logType = 'danger';
+    quality = 0.5; // Poor quality
   } else if (state.caffeine >= CAFFEINE_THRESHOLDS.ZONE) {
     hpRecov = Math.floor(hpRecov * 0.6); // 0.5 -> 0.6
     sanityRecov = Math.floor(sanityRecov * 0.5); // 0.4 -> 0.5
     baseLog = "【浅い眠り】カフェインが脳を締め付け、深く眠れなかった。";
     logType = 'warning';
+    quality = 0.7;
   }
 
   // Apply Buffs with Soft Cap
@@ -72,7 +83,6 @@ export const handleRest = (state: GameState): GameState => {
     baseLog += ` [安眠効果 x${rawMultiplier.toFixed(1)}]`;
   }
 
-  // Use the same soft cap constant for consistency, though unlikely to reach it for rest
   const finalMultiplier = applySoftCap(rawMultiplier, BUFF_SOFT_CAP_ASYMPTOTE);
 
   hpRecov = Math.floor(hpRecov * finalMultiplier);
@@ -89,6 +99,10 @@ export const handleRest = (state: GameState): GameState => {
   state.hp = clamp(state.hp + hpRecov, 0, state.maxHp);
   state.sanity = clamp(state.sanity + sanityRecov, 0, state.maxSanity);
   state.caffeine = clamp(state.caffeine + caffeineDrop, 0, 200);
+
+  // Update flags
+  state.flags.sleepDebt = Math.max(0, state.flags.sleepDebt - debtReduction);
+  state.flags.lastSleepQuality = quality;
 
   const details = joinMessages([
     formatDelta('HP', hpRecov),

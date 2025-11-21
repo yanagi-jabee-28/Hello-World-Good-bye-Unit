@@ -120,6 +120,8 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
           const target = Object.values(SubjectId)[Math.floor(Math.random() * 4)];
           const kDelta = 20;
           state.knowledge[target] = clamp(state.knowledge[target] + kDelta, 0, 100);
+          // USB解析成功で過去問入手
+          state.flags.hasPastPapers = true;
           baseLog = `【解析成功】${item.name}から${SUBJECTS[target].name}の「神過去問」を発掘！これが先輩たちの遺産か...！`;
           logType = 'success';
           pushLog(state, `${baseLog}\n(${SUBJECTS[target].name}+${kDelta})`, logType);
