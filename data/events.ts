@@ -258,7 +258,7 @@ export const ALL_EVENTS: GameEvent[] = [
     text: "【救済】YouTubeで「インド人の神解説動画」を発見。一瞬で理解度が跳ね上がった。",
     type: 'good',
     category: 'study_boost',
-    weight: 8, // Probability reduced
+    weight: 5, // Probability reduced (8 -> 5)
     conditions: { maxAvgScore: 60 },
     effect: { knowledge: { [SubjectId.ALGO]: 15, [SubjectId.MATH]: 15 } },
     maxOccurrences: 1
@@ -343,7 +343,7 @@ export const ALL_EVENTS: GameEvent[] = [
     trigger: 'turn_end',
     text: "【絶望】レポート保存直前にブルースクリーン。バックアップ？ とってないよ。",
     type: 'bad',
-    weight: 3, // Rare but fatal
+    weight: 1, // Rare but fatal (3 -> 1)
     effect: { sanity: -40 },
     maxOccurrences: 1
   }

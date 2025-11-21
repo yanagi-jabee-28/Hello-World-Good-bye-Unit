@@ -5,6 +5,7 @@ import { clamp, chance } from '../utils/common';
 import { getNextTimeSlot } from './time';
 import { executeEvent } from './eventManager';
 import { pushLog } from './stateHelpers';
+import { CAFFEINE_DECAY, CAFFEINE_THRESHOLDS, EVENT_CONSTANTS } from '../config/gameConstants';
 
 // Handlers
 import { handleStudy } from './handlers/study';
@@ -25,10 +26,6 @@ const INIT_KNOWLEDGE = {
   [SubjectId.CIRCUIT]: 0,
   [SubjectId.HUMANITIES]: 0,
 };
-
-const RANDOM_EVENT_PROBABILITY = 30;
-// 孤独判定が発生するまでのターン数 (約1日強)
-const ISOLATION_THRESHOLD = 9; 
 
 export const INITIAL_STATE: GameState = {
   day: 1,
@@ -156,12 +153,11 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       .filter(b => b.duration > 0);
 
     // Caffeine Decay logic
-    const cafDecay = -10; 
-    newState.caffeine = clamp(newState.caffeine + cafDecay, 0, 200);
+    newState.caffeine = clamp(newState.caffeine - CAFFEINE_DECAY, 0, 200);
     
     // Slip Damage from High Caffeine
-    if (newState.caffeine >= 100) {
-       const isOverdose = newState.caffeine >= 150;
+    if (newState.caffeine >= CAFFEINE_THRESHOLDS.ZONE) {
+       const isOverdose = newState.caffeine >= CAFFEINE_THRESHOLDS.TOXICITY;
        const toxicHp = isOverdose ? 15 : 2; 
        const toxicSan = isOverdose ? 15 : 2;
        
@@ -170,11 +166,11 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     }
 
     // --- 孤独システム (Isolation Logic) ---
-    // 社会的行動を取らないとSAN値がゴリゴリ減る
+    // 社会的行動を取らないとSAN値が減る
     const turnsSinceSocial = newState.turnCount - newState.lastSocialTurn;
-    if (turnsSinceSocial > ISOLATION_THRESHOLD) {
+    if (turnsSinceSocial > EVENT_CONSTANTS.ISOLATION_THRESHOLD) {
       // 閾値を超えたら毎ターンSAN減少
-      const lonelinessDmg = 8;
+      const lonelinessDmg = EVENT_CONSTANTS.ISOLATION_DAMAGE;
       newState.sanity = clamp(newState.sanity - lonelinessDmg, 0, newState.maxSanity);
       pushLog(newState, `【孤独】誰とも話さず${turnsSinceSocial}ターン経過。社会からの隔絶が精神を蝕む。(SAN-${lonelinessDmg})`, 'warning');
     }
@@ -198,7 +194,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       }
     ];
 
-    if (chance(RANDOM_EVENT_PROBABILITY)) {
+    if (chance(EVENT_CONSTANTS.RANDOM_PROBABILITY)) {
        newState = executeEvent(newState, 'turn_end');
     }
   }

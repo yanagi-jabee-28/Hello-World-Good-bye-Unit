@@ -1,4 +1,6 @@
+
 import { TimeSlot } from '../types';
+import { CAFFEINE_THRESHOLDS } from '../config/gameConstants';
 
 /**
  * Returns availability status for NPCs based on current time slot.
@@ -32,9 +34,9 @@ export const getStudyHint = (timeSlot: TimeSlot, caffeine: number): string => {
     default: hint = "効率: 普通";
   }
 
-  if (caffeine >= 150) return "警告: 中毒 (限界突破 / HP・SAN激減)";
-  if (caffeine >= 100) return "効率: ZONE (集中モード / 微ダメージ)";
-  if (caffeine >= 40) return "効率: 覚醒 (ブースト)";
+  if (caffeine >= CAFFEINE_THRESHOLDS.TOXICITY) return "警告: 中毒 (限界突破 / HP・SAN激減)";
+  if (caffeine >= CAFFEINE_THRESHOLDS.ZONE) return "効率: ZONE (集中モード / 微ダメージ)";
+  if (caffeine >= CAFFEINE_THRESHOLDS.AWAKE) return "効率: 覚醒 (ブースト)";
   
   return hint;
 };
@@ -43,7 +45,7 @@ export const getStudyHint = (timeSlot: TimeSlot, caffeine: number): string => {
  * Returns a localized hint string for resting.
  */
 export const getRestHint = (timeSlot: TimeSlot, caffeine: number): string => {
-  if (caffeine >= 150) return "警告: 精神汚染 (睡眠障害)";
+  if (caffeine >= CAFFEINE_THRESHOLDS.TOXICITY) return "警告: 精神汚染 (睡眠障害)";
   if (timeSlot === TimeSlot.LATE_NIGHT) return "熟睡 (大回復)";
   if (timeSlot === TimeSlot.MORNING) return "二度寝 (中回復)";
   return "仮眠/休憩 (小回復)";

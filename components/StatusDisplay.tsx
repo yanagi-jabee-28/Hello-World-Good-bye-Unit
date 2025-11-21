@@ -1,8 +1,10 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { GameState, SubjectId, ItemId, RelationshipId } from '../types';
 import { SUBJECTS, PASSING_SCORE } from '../data/subjects';
 import { ITEMS } from '../data/items';
-import { Heart, Brain, Coffee, Package, Users, Wallet, Zap, Bed, AlertOctagon } from 'lucide-react';
+import { CAFFEINE_THRESHOLDS, BUFF_MULTIPLIER_CAP } from '../config/gameConstants';
+import { Heart, Brain, Coffee, Package, Users, Wallet, Zap, Bed, AlertOctagon, BarChart2 } from 'lucide-react';
 
 interface Props {
   state: GameState;
@@ -46,6 +48,8 @@ const SubjectBar: React.FC<{ subjectId: SubjectId; score: number }> = ({ subject
 };
 
 export const StatusDisplay: React.FC<Props> = ({ state }) => {
+  const [showDevMetrics, setShowDevMetrics] = useState(false);
+  
   const ownedItems = Object.entries(state.inventory)
     .filter(([_, count]) => ((count as number) || 0) > 0)
     .map(([id, count]) => ({ id: id as ItemId, count: count as number }));
@@ -54,24 +58,32 @@ export const StatusDisplay: React.FC<Props> = ({ state }) => {
   let caffeineColor = "bg-yellow-700";
   let caffeineEffect = "";
   
-  // Thresholds: 40 (Awake) / 100 (Zone) / 150 (Toxicity)
-  if (state.caffeine >= 40) { 
+  // Thresholds from constants
+  if (state.caffeine >= CAFFEINE_THRESHOLDS.AWAKE) { 
       caffeineStatus = "AWAKE"; 
       caffeineColor = "bg-yellow-500"; 
   }
-  if (state.caffeine >= 100) { 
+  if (state.caffeine >= CAFFEINE_THRESHOLDS.ZONE) { 
       caffeineStatus = "ZONE"; 
       caffeineColor = "bg-orange-500";
       caffeineEffect = "animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.5)]"; 
   }
-  if (state.caffeine >= 150) { 
+  if (state.caffeine >= CAFFEINE_THRESHOLDS.TOXICITY) { 
       caffeineStatus = "TOXICITY"; 
       caffeineColor = "bg-red-600"; 
       caffeineEffect = "animate-[pulse_0.2s_infinite] shadow-[0_0_15px_rgba(220,38,38,0.8)]";
   }
 
   return (
-    <div className="border-2 border-green-800 bg-black p-4 shadow-[0_0_15px_rgba(34,197,94,0.2)] h-full overflow-y-auto">
+    <div className="border-2 border-green-800 bg-black p-4 shadow-[0_0_15px_rgba(34,197,94,0.2)] h-full overflow-y-auto relative">
+      <button 
+        onClick={() => setShowDevMetrics(!showDevMetrics)}
+        className="absolute top-2 right-2 p-1 opacity-20 hover:opacity-100 transition-opacity"
+        title="Toggle Dev Metrics"
+      >
+         <BarChart2 size={12} />
+      </button>
+
       <h2 className="text-lg font-bold mb-4 border-b border-green-900 pb-2 flex items-center gap-2">
         <div className="w-3 h-3 bg-green-500 animate-pulse" /> 
         BIO_MONITOR (生体情報)
@@ -200,6 +212,16 @@ export const StatusDisplay: React.FC<Props> = ({ state }) => {
         <p>STATUS: {state.hp < 30 || state.sanity < 30 ? "CRITICAL" : "STABLE"}</p>
         <p>UPTIME: {state.turnCount} TICKS</p>
       </div>
+
+      {showDevMetrics && (
+        <div className="mt-4 p-2 bg-gray-900 border border-gray-700 text-[10px] font-mono text-gray-300">
+           <div className="font-bold border-b border-gray-700 mb-1 text-yellow-500">DEV METRICS</div>
+           <div>Buff Cap: {BUFF_MULTIPLIER_CAP}x</div>
+           <div>Awake/Zone/Toxic: {Object.values(CAFFEINE_THRESHOLDS).join('/')}</div>
+           <div>Buff Count: {state.activeBuffs.length}</div>
+           <div>Event Hist: {state.eventHistory.length}</div>
+        </div>
+      )}
     </div>
   );
 };

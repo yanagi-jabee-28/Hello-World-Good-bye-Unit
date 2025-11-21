@@ -6,7 +6,7 @@ export const ITEMS: Record<ItemId, Item> = {
     id: ItemId.USB_MEMORY,
     name: '先輩のUSB',
     description: '過去問データが入っている...かもしれない。',
-    specialEffectDescription: '成功でランダム科目+20 / 失敗でSAN大幅減 (使い切り)',
+    specialEffectDescription: '確率(60%)で科目+20 / 失敗でSAN-20 (使い切り)',
     price: 99999, // 非売品
   },
   // --- Level 1: Cheap & Light Effect ---
@@ -81,7 +81,7 @@ export const ITEMS: Record<ItemId, Item> = {
     description: 'デジタル没入エナジー。一撃でZONE(100mg~)へ突入する。',
     price: 400,
     effects: {
-      caffeine: 120, // 0 -> 120(ZONE)
+      caffeine: 100, // Balance Adjustment: 120 -> 100. Just enough to hit ZONE.
       hp: 10,
       sanity: -5 
     }
@@ -179,7 +179,7 @@ export const ITEMS: Record<ItemId, Item> = {
     description: '脳内物質を強制分泌させる未承認薬。学習効率が劇的に向上するが、反動も大きい。',
     price: 12800,
     effects: {
-      hp: -20, 
+      hp: -30, // Risk increased: -20 -> -30
       buffs: [
         {
           name: '限界突破',

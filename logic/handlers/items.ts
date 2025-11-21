@@ -115,7 +115,8 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
       return state; 
     }
     case ItemId.USB_MEMORY: {
-       if (chance(70)) {
+       // Balance Adjust: 70% -> 60% success, -30 SAN -> -20 SAN
+       if (chance(60)) {
           const target = Object.values(SubjectId)[Math.floor(Math.random() * 4)];
           const kDelta = 20;
           state.knowledge[target] = clamp(state.knowledge[target] + kDelta, 0, 100);
@@ -123,7 +124,7 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
           logType = 'success';
           pushLog(state, `${baseLog}\n(${SUBJECTS[target].name}+${kDelta})`, logType);
        } else {
-          const sanDelta = -30;
+          const sanDelta = -20; // Mitigated penalty
           state.sanity = clamp(state.sanity + sanDelta, 0, state.maxSanity);
           baseLog = `【解析失敗】${item.name}の中身は...大量のウィルス入りファイルだった。PCがフリーズし、精神的ダメージを受けた。`;
           logType = 'danger';

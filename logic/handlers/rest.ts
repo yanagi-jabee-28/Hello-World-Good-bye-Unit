@@ -3,6 +3,7 @@ import { GameState, TimeSlot, LogEntry, RelationshipId } from '../../types';
 import { LOG_MESSAGES } from '../../data/events';
 import { clamp, formatDelta, joinMessages } from '../../utils/common';
 import { pushLog } from '../stateHelpers';
+import { CAFFEINE_THRESHOLDS, BUFF_MULTIPLIER_CAP } from '../../config/gameConstants';
 
 export const handleRest = (state: GameState): GameState => {
   // 時間帯別の基礎回復量設定
@@ -51,25 +52,31 @@ export const handleRest = (state: GameState): GameState => {
   }
 
   // Caffeine Interference
-  if (state.caffeine >= 150) {
+  if (state.caffeine >= CAFFEINE_THRESHOLDS.TOXICITY) {
     hpRecov = Math.floor(hpRecov * 0.2);
     sanityRecov = -15; // Nightmare worsens with high caffeine
     baseLog = LOG_MESSAGES.rest_caffeine_fail;
     logType = 'danger';
-  } else if (state.caffeine >= 100) {
+  } else if (state.caffeine >= CAFFEINE_THRESHOLDS.ZONE) {
     hpRecov = Math.floor(hpRecov * 0.5);
     sanityRecov = Math.floor(sanityRecov * 0.4);
     baseLog = "【浅い眠り】カフェインが脳を締め付け、深く眠れなかった。";
     logType = 'warning';
   }
 
-  // Apply Buffs
+  // Apply Buffs with Cap
   const restBuffs = state.activeBuffs.filter(b => b.type === 'REST_EFFICIENCY');
   if (restBuffs.length > 0) {
-    const buffMultiplier = restBuffs.reduce((acc, b) => acc * b.value, 1.0);
+    let buffMultiplier = restBuffs.reduce((acc, b) => acc * b.value, 1.0);
+    // Cap multiplier
+    if (buffMultiplier > BUFF_MULTIPLIER_CAP) {
+      buffMultiplier = BUFF_MULTIPLIER_CAP;
+      baseLog += ` [安眠効果上限]`;
+    } else {
+      baseLog += ` [安眠効果 x${buffMultiplier.toFixed(1)}]`;
+    }
     hpRecov = Math.floor(hpRecov * buffMultiplier);
     sanityRecov = Math.floor(sanityRecov * buffMultiplier);
-    baseLog += ` [安眠効果 x${buffMultiplier.toFixed(1)}]`;
   }
 
   // Apply Anxiety (Scale down final recovery)

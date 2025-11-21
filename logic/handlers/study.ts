@@ -4,6 +4,7 @@ import { SUBJECTS } from '../../data/subjects';
 import { LOG_MESSAGES } from '../../data/events';
 import { clamp, chance, formatDelta, joinMessages } from '../../utils/common';
 import { pushLog } from '../stateHelpers';
+import { CAFFEINE_THRESHOLDS, BUFF_MULTIPLIER_CAP } from '../../config/gameConstants';
 
 /**
  * 日数進行による難易度係数を計算
@@ -47,7 +48,7 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
       // 授業に真面目に出席すると好感度が上がりやすく(基本+6)
       profRelDelta = 6; 
       
-      if (state.caffeine >= 40 && state.caffeine < 150) {
+      if (state.caffeine >= CAFFEINE_THRESHOLDS.AWAKE && state.caffeine < CAFFEINE_THRESHOLDS.TOXICITY) {
           // 覚醒時はさらにボーナス(+4 -> 合計+10)
           profRelDelta += 4;
           baseLog = `【真面目な受講】カフェインのおかげで意識は明瞭。${subject.name}の最前列で猛烈にノートを取った。教授が満足げに頷いている。`;
@@ -58,7 +59,7 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
 
     case TimeSlot.NOON:
       // 昼: 騒がしい (微デバフだが、カフェインで相殺可能)
-      if (state.caffeine >= 40) {
+      if (state.caffeine >= CAFFEINE_THRESHOLDS.AWAKE) {
         efficiency = 1.1; // 覚醒していれば逆に集中できる
         baseLog = LOG_MESSAGES.study_caffeine_awake(subject.name);
       } else {
@@ -97,24 +98,20 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
       break;
   }
 
-  // --- Caffeine Effects (New Thresholds) ---
-  // 40-99: AWAKE (1.2x)
-  // 100-149: ZONE (1.5x)
-  // 150+: TOXICITY (2.0x + Massive Damage)
-  
-  if (state.caffeine >= 150) {
+  // --- Caffeine Effects ---
+  if (state.caffeine >= CAFFEINE_THRESHOLDS.TOXICITY) {
     efficiency *= 2.0;
     hpCost += 20;
     sanityCost += 15;
     baseLog += " (中毒状態: 限界突破)";
     logType = 'danger';
-  } else if (state.caffeine >= 100) {
+  } else if (state.caffeine >= CAFFEINE_THRESHOLDS.ZONE) {
     efficiency *= 1.5;
     hpCost += 5;
     sanityCost += 5;
     baseLog += " (ZONE状態: 高負荷・高効率)";
     logType = 'success'; // ポジティブな強化
-  } else if (state.caffeine >= 40) {
+  } else if (state.caffeine >= CAFFEINE_THRESHOLDS.AWAKE) {
     efficiency *= 1.2;
     baseLog += " (覚醒状態)";
   }
@@ -127,12 +124,18 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
     baseLog += "\n【狂気】精神の摩耗と引き換えに、異常な集中力を発揮している。";
   }
 
-  // Apply Buffs
+  // Apply Buffs with Cap
   const studyBuffs = state.activeBuffs.filter(b => b.type === 'STUDY_EFFICIENCY');
   if (studyBuffs.length > 0) {
-    const buffMultiplier = studyBuffs.reduce((acc, b) => acc * b.value, 1.0);
+    let buffMultiplier = studyBuffs.reduce((acc, b) => acc * b.value, 1.0);
+    // Cap multiplier to prevent breaking the game
+    if (buffMultiplier > BUFF_MULTIPLIER_CAP) {
+        buffMultiplier = BUFF_MULTIPLIER_CAP;
+        baseLog += ` [ブースト上限到達]`;
+    } else {
+        baseLog += ` [ブースト x${buffMultiplier.toFixed(1)}]`;
+    }
     efficiency *= buffMultiplier;
-    baseLog += ` [ブースト x${buffMultiplier.toFixed(1)}]`;
   }
 
   // Diminishing Returns (Score Saturation)
