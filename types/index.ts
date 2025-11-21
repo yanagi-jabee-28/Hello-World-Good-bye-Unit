@@ -123,6 +123,7 @@ export interface GameState {
   logs: LogEntry[];
   status: GameStatus;
   turnCount: number;
+  lastSocialTurn: number; // 最後に社会的行動をとったターン
   eventHistory: string[]; // 直近のイベントID（UI表示用など）
   eventStats: Record<string, EventStats>; // イベントごとの発生統計（ロジック制御用）
   statsHistory: StatsSnapshot[]; // 履歴データ

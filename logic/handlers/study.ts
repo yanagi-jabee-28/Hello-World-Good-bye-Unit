@@ -1,3 +1,4 @@
+
 import { GameState, SubjectId, TimeSlot, LogEntry, RelationshipId } from '../../types';
 import { SUBJECTS } from '../../data/subjects';
 import { LOG_MESSAGES } from '../../data/events';
@@ -24,9 +25,9 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
   
   // Base Stats
   let efficiency = 1.0;
-  // 基本コストを少し下げて、回数をこなせるように調整
+  // バランス調整: 学習コストのSAN消費を倍増。睡眠だけでは回復しきれないようにする。
   let hpCost = Math.floor(10 * pressure); 
-  let sanityCost = Math.floor(5 * pressure);
+  let sanityCost = Math.floor(12 * pressure); // was 5
   
   let baseLog = "";
   let logType: LogEntry['type'] = 'info';
@@ -60,7 +61,6 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
 
     case TimeSlot.AFTERNOON:
       // 午後: 眠気 (デバフ削除 -> 標準化)
-      // 理不尽なペナルティを撤廃し、標準的な学習時間とする
       efficiency = 1.0; 
       hpCost += 2; // 少し体力を使いやすい
       baseLog = `【午後の演習】${subject.name}の課題に取り組む。眠気はあるが、手は動いている。`;
@@ -80,10 +80,10 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
       break;
 
     case TimeSlot.LATE_NIGHT:
-      // 深夜: ハイリスク・ハイリターン (ギャンブル廃止)
-      // 確実に高効率だが、SAN値コストが高い
+      // 深夜: ハイリスク・ハイリターン
+      // 確実に高効率だが、SAN値コストが極めて高い
       efficiency = 1.4; 
-      sanityCost += 10; 
+      sanityCost += 15; // Base 12 + 15 = 27 damage
       baseLog = `【深夜の集中】静寂が思考を加速させる。SAN値を削って${subject.name}を脳に刻み込む。`;
       logType = 'warning'; // コストが高いことを警告
       break;
@@ -128,7 +128,6 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
   }
 
   // Diminishing Returns (Score Saturation)
-  // 点数が高いほど伸びにくくなるのは維持するが、係数を緩める
   let progressionMultiplier = 1.0;
   if (currentScore < 50) progressionMultiplier = 1.2; // 序盤は伸びやすい
   else if (currentScore < 70) progressionMultiplier = 1.0;
@@ -136,7 +135,6 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
   else progressionMultiplier = 0.5; // 90点以上は難しい
 
   // Final Calculation
-  // Base Gain 10 (increased from 7) to ensure steady progress
   let knowledgeGain = Math.floor(10 * efficiency * subject.difficulty * progressionMultiplier);
   if (knowledgeGain < 1) knowledgeGain = 1;
 

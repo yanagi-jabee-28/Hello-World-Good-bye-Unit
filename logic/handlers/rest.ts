@@ -20,33 +20,33 @@ export const handleRest = (state: GameState): GameState => {
 
   switch (state.timeSlot) {
     case TimeSlot.LATE_NIGHT:
-      // 就寝: 大回復
-      hpRecov = 70;
-      sanityRecov = 40;
-      baseLog = LOG_MESSAGES.rest_success; // "死んだように眠った..."
+      // 就寝: HP大回復 / SAN中回復 (役割分担を明確化)
+      // 以前は SAN +40 だったので、勉強コスト増と合わせてジリ貧になるように調整
+      hpRecov = 80;
+      sanityRecov = 25; // was 40. 勉強2回分で赤字になる設定。
+      baseLog = LOG_MESSAGES.rest_success; 
       logType = 'success';
       break;
 
     case TimeSlot.MORNING:
       // 二度寝: 中回復（HP寄り）
       hpRecov = 25;
-      sanityRecov = 10;
-      baseLog = "【二度寝】誘惑に負けて布団に戻った。罪悪感と幸福感が混ざり合う。";
+      sanityRecov = 5;
+      baseLog = "【二度寝】誘惑に負けて布団に戻った。罪悪感で精神は休まらない。";
       break;
 
     case TimeSlot.NOON:
       // 昼寝: 中回復（SAN寄り）
       hpRecov = 15;
-      sanityRecov = 20;
+      sanityRecov = 15;
       baseLog = "【昼寝】午後の講義に備えて机で仮眠。脳のオーバーヒートが少し収まった。";
       break;
 
     default:
       // 仮眠(机): 小回復
-      // 従来(35/20)よりも下げて、ちゃんと夜寝ることの重要性を上げる
       hpRecov = 15;
       sanityRecov = 5;
-      baseLog = LOG_MESSAGES.rest_short; // "机に突っ伏して仮眠をとった..."
+      baseLog = LOG_MESSAGES.rest_short; 
       break;
   }
 

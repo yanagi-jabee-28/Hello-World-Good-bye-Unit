@@ -1,3 +1,4 @@
+
 import { GameState, ActionType, GameAction, TimeSlot, GameStatus, SubjectId, RelationshipId, ItemId } from '../types';
 import { LOG_MESSAGES } from '../data/events';
 import { clamp, chance } from '../utils/common';
@@ -26,6 +27,8 @@ const INIT_KNOWLEDGE = {
 };
 
 const RANDOM_EVENT_PROBABILITY = 30;
+// 孤独判定が発生するまでのターン数 (約1日強)
+const ISOLATION_THRESHOLD = 9; 
 
 export const INITIAL_STATE: GameState = {
   day: 1,
@@ -53,6 +56,7 @@ export const INITIAL_STATE: GameState = {
   }],
   status: GameStatus.PLAYING,
   turnCount: 0,
+  lastSocialTurn: 0,
   eventHistory: [],
   eventStats: {},
   statsHistory: [],
@@ -118,12 +122,15 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       break;
     case ActionType.ASK_PROFESSOR:
       newState = handleAskProfessor(newState);
+      newState.lastSocialTurn = newState.turnCount; // 更新
       break;
     case ActionType.ASK_SENIOR:
       newState = handleAskSenior(newState);
+      newState.lastSocialTurn = newState.turnCount; // 更新
       break;
     case ActionType.RELY_FRIEND:
       newState = handleRelyFriend(newState);
+      newState.lastSocialTurn = newState.turnCount; // 更新
       break;
     case ActionType.BUY_ITEM:
       newState = handleBuyItem(newState, action.payload);
@@ -149,19 +156,27 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       .filter(b => b.duration > 0);
 
     // Caffeine Decay logic
-    // 毎ターン確実に10mg減る。計算しやすくする。
     const cafDecay = -10; 
     newState.caffeine = clamp(newState.caffeine + cafDecay, 0, 200);
     
     // Slip Damage from High Caffeine
-    // Zone(100+) starts minor damage, Toxicity(150+) is severe
     if (newState.caffeine >= 100) {
        const isOverdose = newState.caffeine >= 150;
-       const toxicHp = isOverdose ? 15 : 2; // Zoneの時はダメージ小
+       const toxicHp = isOverdose ? 15 : 2; 
        const toxicSan = isOverdose ? 15 : 2;
        
        newState.hp = clamp(newState.hp - toxicHp, 0, newState.maxHp);
        newState.sanity = clamp(newState.sanity - toxicSan, 0, newState.maxSanity);
+    }
+
+    // --- 孤独システム (Isolation Logic) ---
+    // 社会的行動を取らないとSAN値がゴリゴリ減る
+    const turnsSinceSocial = newState.turnCount - newState.lastSocialTurn;
+    if (turnsSinceSocial > ISOLATION_THRESHOLD) {
+      // 閾値を超えたら毎ターンSAN減少
+      const lonelinessDmg = 8;
+      newState.sanity = clamp(newState.sanity - lonelinessDmg, 0, newState.maxSanity);
+      pushLog(newState, `【孤独】誰とも話さず${turnsSinceSocial}ターン経過。社会からの隔絶が精神を蝕む。(SAN-${lonelinessDmg})`, 'warning');
     }
 
     const { slot, isNextDay } = getNextTimeSlot(state.timeSlot);

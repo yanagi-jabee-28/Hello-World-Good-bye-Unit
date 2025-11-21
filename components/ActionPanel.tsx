@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ActionType, SubjectId, GameStatus, GameState, ItemId, TimeSlot } from '../types';
 import { SUBJECTS } from '../data/subjects';
@@ -6,7 +5,7 @@ import { ITEMS } from '../data/items';
 import { getAvailability, getStudyHint } from '../logic/advisor';
 import { getWorkConfig } from '../data/work';
 import { getItemEffectDescription } from '../utils/common';
-import { BookOpen, Moon, Users, Gamepad2, Package, School, GraduationCap, UserPlus, AlertTriangle, ShoppingCart, Briefcase, Bed, Sun, BatteryCharging } from 'lucide-react';
+import { BookOpen, Moon, Users, Gamepad2, Package, School, GraduationCap, UserPlus, AlertTriangle, ShoppingCart, Briefcase, Bed, Sun, BatteryCharging, Ban } from 'lucide-react';
 
 interface Props {
   state: GameState;
@@ -21,10 +20,20 @@ interface Props {
 
 export const ActionPanel: React.FC<Props> = ({ state, onAction, onShopOpen }) => {
   const isGameOver = state.status !== GameStatus.PLAYING;
-  const { timeSlot, caffeine } = state;
   
-  if (isGameOver) return null;
+  if (isGameOver) {
+    return (
+      <div className="h-full w-full p-4 border-t-2 border-red-900 bg-black flex items-center justify-center">
+        <div className="text-red-600 font-mono text-center animate-pulse space-y-2">
+          <Ban size={48} className="mx-auto mb-2" />
+          <h2 className="text-2xl font-bold tracking-widest">SYSTEM HALTED</h2>
+          <p className="text-xs text-red-800">USER INPUT DISABLED // WAITING FOR REBOOT</p>
+        </div>
+      </div>
+    );
+  }
 
+  const { timeSlot, caffeine } = state;
   const ownedItems = Object.entries(state.inventory)
     .filter(([_, count]) => ((count as number) || 0) > 0)
     .map(([id]) => id as ItemId);
@@ -78,8 +87,6 @@ export const ActionPanel: React.FC<Props> = ({ state, onAction, onShopOpen }) =>
   const restConfig = getRestConfig(timeSlot);
   const RestIcon = restConfig.icon;
 
-  // Mobile: grid-cols-2 gap-2 p-2
-  // Desktop: lg:grid-cols-4 lg:gap-4 lg:p-4
   return (
     <div className="grid grid-cols-2 gap-2 p-2 md:grid-cols-2 lg:grid-cols-4 lg:gap-4 lg:p-4 border-t-2 border-green-900 bg-gray-950">
       {/* Study Actions */}

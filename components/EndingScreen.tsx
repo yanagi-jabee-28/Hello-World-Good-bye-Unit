@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { GameState, GameStatus } from '../types';
+import { GameState, GameStatus, SubjectId } from '../types';
 import { generateGameEvaluation } from '../utils/ai';
-import { Terminal } from 'lucide-react';
+import { Terminal, FileText, Eye, EyeOff } from 'lucide-react';
+import { SUBJECTS } from '../data/subjects';
 
 interface Props {
   state: GameState;
@@ -11,6 +12,7 @@ interface Props {
 export const EndingScreen: React.FC<Props> = ({ state, onRestart }) => {
   const [evaluation, setEvaluation] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLogMode, setIsLogMode] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -37,7 +39,7 @@ export const EndingScreen: React.FC<Props> = ({ state, onRestart }) => {
     return () => {
       isMounted = false;
     };
-  }, [state.status]); // Only re-run if status changes (e.g. playing -> victory)
+  }, [state.status]);
 
   if (state.status === GameStatus.PLAYING) return null;
 
@@ -57,22 +59,73 @@ export const EndingScreen: React.FC<Props> = ({ state, onRestart }) => {
   };
 
   const msg = getMessage();
+  const lastLogs = state.logs.slice(-4).reverse(); // 直近のログを取得
+
+  // ログ確認モード時は、背景の入力を許可しつつ、操作ボタンだけを表示する
+  // ボタン位置を上部に移動し、下部のログやSYSTEM HALTED表示と重ならないようにする
+  if (isLogMode) {
+    return (
+      <div className="fixed inset-0 z-50 pointer-events-none flex flex-col justify-start items-center pt-20 md:pt-24">
+        <div className="pointer-events-auto bg-black/90 border-2 border-green-800 p-4 shadow-[0_0_20px_rgba(34,197,94,0.4)] flex gap-4 items-center rounded animate-[slideDown_0.3s_ease-out]">
+          <span className="text-green-500 font-bold text-sm animate-pulse">LOG_VIEW_MODE</span>
+          <button
+            onClick={() => setIsLogMode(false)}
+            className="bg-green-700 text-black px-4 py-2 text-sm font-bold hover:bg-green-600 transition-colors flex items-center gap-2"
+          >
+            <EyeOff size={16} />
+            結果画面に戻る
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm animate-[fadeIn_0.5s_ease-out] overflow-y-auto py-10">
-      <div className="max-w-3xl w-full border-4 border-green-800 bg-black p-8 text-center shadow-[0_0_50px_rgba(34,197,94,0.2)] m-4">
-        <div className={`text-4xl md:text-6xl font-bold mb-4 ${msg.color} tracking-tighter glitch-text`}>
+      <div className="max-w-3xl w-full border-4 border-green-800 bg-black p-6 md:p-8 text-center shadow-[0_0_50px_rgba(34,197,94,0.2)] m-4 relative">
+        
+        {/* ログ確認ボタン (タイトルと重ならないよう配置変更) */}
+        <div className="flex justify-end mb-4">
+          <button 
+            onClick={() => setIsLogMode(true)}
+            className="text-gray-500 hover:text-green-400 flex items-center gap-1 text-xs border border-gray-800 p-2 hover:border-green-500 transition-all"
+          >
+            <FileText size={14} />
+            <span className="hidden md:inline">CHECK_LOGS (ログ確認)</span>
+            <span className="md:hidden">LOGS</span>
+          </button>
+        </div>
+
+        <div className={`text-3xl md:text-6xl font-bold mb-4 ${msg.color} tracking-tighter glitch-text mt-0`}>
           {msg.title}
         </div>
-        <p className="text-sm md:text-xl text-gray-300 mb-8 font-mono">{msg.sub}</p>
+        <p className="text-sm md:text-xl text-gray-300 mb-6 font-mono">{msg.sub}</p>
         
+        {/* CAUSE OF ERROR Section - Added */}
+        <div className="text-left mb-6 bg-red-950/20 border border-red-900/50 p-3">
+           <h4 className="text-red-500 text-xs font-bold mb-2 flex items-center gap-2">
+             <Terminal size={12} /> FATAL_EXCEPTION (直近のイベント)
+           </h4>
+           <div className="space-y-1 font-mono text-xs md:text-sm text-gray-400">
+             {lastLogs.map((log, i) => (
+               <div key={log.id} className={`${i === 0 ? 'text-white font-bold' : 'opacity-70'}`}>
+                 <span className="mr-2 opacity-50">{log.timestamp}</span>
+                 {i === 0 && <span className="text-red-500 mr-1">&gt;&gt;</span>}
+                 {log.text}
+               </div>
+             ))}
+           </div>
+        </div>
+
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left mb-8 border-t border-b border-green-900 py-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left mb-6 border-t border-b border-green-900 py-4">
            <div className="space-y-2">
              <h4 className="text-gray-500 text-xs font-bold mb-2">ACADEMIC_RESULT</h4>
              {Object.entries(state.knowledge).map(([key, val]) => (
                <div key={key} className="flex justify-between font-mono text-sm">
-                 <span className="text-gray-400">{key}</span>
+                 <span className="text-gray-400">
+                   {SUBJECTS[key as SubjectId]?.name || key}
+                 </span>
                  <span className={(val as number) >= 60 ? "text-green-400 font-bold" : "text-red-500 font-bold"}>{val as number}pts</span>
                </div>
              ))}
@@ -118,12 +171,14 @@ export const EndingScreen: React.FC<Props> = ({ state, onRestart }) => {
            </div>
         </div>
 
-        <button
-          onClick={onRestart}
-          className="bg-green-700 text-black font-bold text-xl px-8 py-4 hover:bg-green-600 transition-all transform hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(34,197,94,0.4)] w-full md:w-auto"
-        >
-          sudo reboot (再起動)
-        </button>
+        <div className="flex flex-col md:flex-row gap-4 justify-center">
+          <button
+            onClick={onRestart}
+            className="bg-green-700 text-black font-bold text-xl px-8 py-3 hover:bg-green-600 transition-all transform hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(34,197,94,0.4)] w-full md:w-auto"
+          >
+            sudo reboot (再起動)
+          </button>
+        </div>
       </div>
     </div>
   );
