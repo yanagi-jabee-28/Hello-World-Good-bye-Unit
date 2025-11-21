@@ -26,12 +26,12 @@ const INIT_KNOWLEDGE = {
   [SubjectId.HUMANITIES]: 0,
 };
 
-const RANDOM_EVENT_PROBABILITY = 30; // 少し下げる
+const RANDOM_EVENT_PROBABILITY = 30;
 
 export const INITIAL_STATE: GameState = {
   day: 1,
   timeSlot: TimeSlot.MORNING,
-  money: 3000, // 初期所持金微増
+  money: 2000, 
   hp: 100,
   maxHp: 100,
   sanity: 100,
@@ -40,10 +40,10 @@ export const INITIAL_STATE: GameState = {
   knowledge: { ...INIT_KNOWLEDGE },
   relationships: { ...INIT_RELATIONSHIPS },
   inventory: {
-    [ItemId.BLACK_COFFEE]: 2,    // 1本でAWAKE到達可能に
-    [ItemId.CAFE_LATTE]: 1,      // 追加: 安定回復手段
-    [ItemId.HIGH_CACAO_CHOCO]: 1, // 小回復用
-    [ItemId.HOT_EYE_MASK]: 1,     // 休息効率アップ体験用
+    [ItemId.BLACK_COFFEE]: 1,
+    [ItemId.CAFE_LATTE]: 0,
+    [ItemId.HIGH_CACAO_CHOCO]: 1,
+    [ItemId.HOT_EYE_MASK]: 0,
   },
   activeBuffs: [],
   logs: [{
@@ -149,10 +149,23 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       .map(b => ({ ...b, duration: b.duration - 1 }))
       .filter(b => b.duration > 0);
 
-    // Caffeine Decay (Reduced from -15 to -8 to allow stacking)
+    // Caffeine Decay logic
     const cafDecay = -8; 
     newState.caffeine = clamp(newState.caffeine + cafDecay, 0, 200);
     
+    // Project Melting Brain: Toxic Slip Damage from High Caffeine
+    // The "Zone" comes with a price.
+    if (newState.caffeine >= 120) {
+       const isOverdose = newState.caffeine >= 180;
+       const toxicHp = isOverdose ? 15 : 5;
+       const toxicSan = isOverdose ? 15 : 5;
+       
+       newState.hp = clamp(newState.hp - toxicHp, 0, newState.maxHp);
+       newState.sanity = clamp(newState.sanity - toxicSan, 0, newState.maxSanity);
+       
+       // ログには出さないが、プレイヤーはHP/SANの減少で気づく設計
+    }
+
     const { slot, isNextDay } = getNextTimeSlot(state.timeSlot);
     newState.timeSlot = slot;
     if (isNextDay) {

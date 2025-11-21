@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { ActionType, SubjectId, GameStatus, GameState, ItemId } from '../types';
 import { SUBJECTS } from '../data/subjects';
 import { ITEMS } from '../data/items';
 import { getAvailability, getStudyHint } from '../logic/advisor';
+import { getWorkConfig } from '../data/work';
 import { BookOpen, Moon, Users, Gamepad2, Package, School, GraduationCap, UserPlus, AlertTriangle, ShoppingCart, Briefcase } from 'lucide-react';
 
 interface Props {
@@ -24,11 +24,18 @@ export const ActionPanel: React.FC<Props> = ({ state, onAction, onShopOpen }) =>
   if (isGameOver) return null;
 
   const ownedItems = Object.entries(state.inventory)
-    .filter(([_, count]) => (count || 0) > 0)
+    .filter(([_, count]) => ((count as number) || 0) > 0)
     .map(([id]) => id as ItemId);
 
   const { professor: isProfAvailable, senior: isSeniorAvailable, friend: isFriendAvailable } = getAvailability(timeSlot);
   const studyHint = getStudyHint(timeSlot, caffeine);
+
+  // バイトの予想報酬などを動的に表示 (data/work.tsの設定を利用)
+  const workConfig = getWorkConfig(timeSlot);
+  const workInfo = {
+    text: workConfig.label,
+    sub: `¥${workConfig.salary.toLocaleString()} / ${workConfig.description}`
+  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border-t-2 border-green-900 bg-gray-950">
@@ -80,8 +87,8 @@ export const ActionPanel: React.FC<Props> = ({ state, onAction, onShopOpen }) =>
         >
           <Briefcase size={16} className="text-orange-500" />
           <div>
-            <div className="text-xs font-bold text-orange-400">アルバイト</div>
-            <div className="text-[10px] text-gray-500">資金獲得 (+¥5000)</div>
+            <div className="text-xs font-bold text-orange-400">{workInfo.text}</div>
+            <div className="text-[10px] text-gray-500">{workInfo.sub}</div>
           </div>
         </button>
 

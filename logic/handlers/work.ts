@@ -2,22 +2,22 @@
 import { GameState } from '../../types';
 import { clamp, formatDelta, joinMessages } from '../../utils/common';
 import { pushLog } from '../stateHelpers';
+import { getWorkConfig } from '../../data/work';
 
 export const handleWork = (state: GameState): GameState => {
-  const moneyEarned = 5000; // Increased from 3500
-  const hpCost = 25;
-  const sanityCost = 15;
+  const config = getWorkConfig(state.timeSlot);
   
-  state.money += moneyEarned;
-  state.hp = clamp(state.hp - hpCost, 0, state.maxHp);
-  state.sanity = clamp(state.sanity - sanityCost, 0, state.maxSanity);
+  // State Update
+  state.money += config.salary;
+  state.hp = clamp(state.hp - config.hpCost, 0, state.maxHp);
+  state.sanity = clamp(state.sanity - config.sanityCost, 0, state.maxSanity);
   
   const details = joinMessages([
-    `資金+¥${moneyEarned}`,
-    formatDelta('HP', -hpCost),
-    formatDelta('SAN', -sanityCost)
+    `資金+¥${config.salary.toLocaleString()}`,
+    formatDelta('HP', -config.hpCost),
+    formatDelta('SAN', -config.sanityCost)
   ], ', ');
 
-  pushLog(state, `【労働】ブラックバイトで魂を切り売りした。疲労困憊だが、金は手に入った。\n(${details})`, 'info');
+  pushLog(state, `${config.logText}\n(${details})`, config.logType);
   return state;
 };

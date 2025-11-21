@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { GameState, SubjectId, ItemId, RelationshipId } from '../types';
 import { SUBJECTS, PASSING_SCORE } from '../data/subjects';
@@ -48,14 +47,27 @@ const SubjectBar: React.FC<{ subjectId: SubjectId; score: number }> = ({ subject
 
 export const StatusDisplay: React.FC<Props> = ({ state }) => {
   const ownedItems = Object.entries(state.inventory)
-    .filter(([_, count]) => (count || 0) > 0)
-    .map(([id, count]) => ({ id: id as ItemId, count }));
+    .filter(([_, count]) => ((count as number) || 0) > 0)
+    .map(([id, count]) => ({ id: id as ItemId, count: count as number }));
 
   let caffeineStatus = "NORMAL";
   let caffeineColor = "bg-yellow-700";
-  if (state.caffeine >= 50) { caffeineStatus = "AWAKE"; caffeineColor = "bg-yellow-500"; }
-  if (state.caffeine >= 100) { caffeineStatus = "ZONE"; caffeineColor = "bg-orange-500"; }
-  if (state.caffeine >= 150) { caffeineStatus = "OVERDOSE"; caffeineColor = "bg-red-600 animate-pulse"; }
+  let caffeineEffect = "";
+  
+  if (state.caffeine >= 50) { 
+      caffeineStatus = "AWAKE"; 
+      caffeineColor = "bg-yellow-500"; 
+  }
+  if (state.caffeine >= 120) { 
+      caffeineStatus = "ZONE"; 
+      caffeineColor = "bg-orange-500";
+      caffeineEffect = "animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.5)]"; 
+  }
+  if (state.caffeine >= 180) { 
+      caffeineStatus = "TOXICITY"; 
+      caffeineColor = "bg-red-600"; 
+      caffeineEffect = "animate-[pulse_0.2s_infinite] shadow-[0_0_15px_rgba(220,38,38,0.8)]";
+  }
 
   return (
     <div className="border-2 border-green-800 bg-black p-4 shadow-[0_0_15px_rgba(34,197,94,0.2)] h-full overflow-y-auto">
@@ -84,15 +96,17 @@ export const StatusDisplay: React.FC<Props> = ({ state }) => {
           label="SAN (正気度)" 
           value={state.sanity} 
           max={state.maxSanity} 
-          colorClass={state.sanity < 30 ? 'bg-red-600 animate-pulse' : 'bg-blue-500'} 
+          colorClass={state.sanity < 30 ? 'bg-purple-600 animate-pulse' : 'bg-blue-500'} 
         />
-        <ProgressBar 
-          label="CFN (カフェイン)" 
-          value={state.caffeine} 
-          max={200} 
-          subLabel={`${caffeineStatus} (${state.caffeine}mg)`}
-          colorClass={caffeineColor} 
-        />
+        <div className={caffeineEffect}>
+            <ProgressBar 
+            label="CFN (カフェイン)" 
+            value={state.caffeine} 
+            max={200} 
+            subLabel={`${caffeineStatus} (${state.caffeine}mg)`}
+            colorClass={caffeineColor} 
+            />
+        </div>
       </div>
 
       {/* Active Buffs Display */}

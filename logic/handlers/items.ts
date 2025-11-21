@@ -28,14 +28,13 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
 
   switch (itemId) {
     case ItemId.BLACK_COFFEE: {
-      // Increased from 40 to 50 to reach AWAKE threshold (50) immediately
       const cafDelta = 50;
       const hpDelta = 5;
       const sanDelta = 2;
       state.caffeine = clamp(state.caffeine + cafDelta, 0, 200);
       state.hp = clamp(state.hp + hpDelta, 0, state.maxHp);
       state.sanity = clamp(state.sanity + sanDelta, 0, state.maxSanity);
-      baseLog = `【アイテム使用】${ITEMS[itemId].name}を一気飲み。脳に電流が走る。`;
+      baseLog = `【アイテム使用】${ITEMS[itemId].name}を一気飲み。安っぽい苦味が、無理やり脳を叩き起こす。`;
       details = joinMessages([formatDelta('カフェイン', cafDelta), formatDelta('HP', hpDelta), formatDelta('SAN', sanDelta)], ', ');
       break;
     }
@@ -46,7 +45,7 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
       state.caffeine = clamp(state.caffeine + cafDelta, 0, 200);
       state.hp = clamp(state.hp + hpDelta, 0, state.maxHp);
       state.sanity = clamp(state.sanity + sanDelta, 0, state.maxSanity);
-      baseLog = `【アイテム使用】${ITEMS[itemId].name}を飲んだ。糖分とミルクが五臓六腑に染み渡る。`;
+      baseLog = `【アイテム使用】${ITEMS[itemId].name}を飲んだ。少し高いだけあって、ミルクの優しさが荒んだ心に染みる。`;
       logType = 'success';
       details = joinMessages([formatDelta('カフェイン', cafDelta), formatDelta('HP', hpDelta), formatDelta('SAN', sanDelta)], ', ');
       break;
@@ -54,12 +53,11 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
     case ItemId.HIGH_CACAO_CHOCO: {
       const hpDelta = 10;
       const sanDelta = 15;
-      // Increased from 10 to 15
       const cafDelta = 15;
       state.hp = clamp(state.hp + hpDelta, 0, state.maxHp);
       state.sanity = clamp(state.sanity + sanDelta, 0, state.maxSanity);
       state.caffeine = clamp(state.caffeine + cafDelta, 0, 200);
-      baseLog = `【アイテム使用】${ITEMS[itemId].name}を食べた。カカオの苦味が焦燥感を少し和らげる。`;
+      baseLog = `【アイテム使用】${ITEMS[itemId].name}を食べた。カカオポリフェノールが脳細胞を保護している...と信じたい。`;
       logType = 'success';
       details = joinMessages([formatDelta('HP', hpDelta), formatDelta('SAN', sanDelta), formatDelta('カフェイン', cafDelta)], ', ');
       break;
@@ -69,7 +67,7 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
       const sanDelta = 10;
       state.hp = clamp(state.hp + hpDelta, 0, state.maxHp);
       state.sanity = clamp(state.sanity + sanDelta, 0, state.maxSanity);
-      baseLog = `【アイテム使用】${ITEMS[itemId].name}を完食。スープまで飲み干し、満腹感で満たされた。`;
+      baseLog = `【アイテム使用】${ITEMS[itemId].name}をすする。ジャンクな塩分が、疲弊した肉体に活力を与える。`;
       logType = 'success';
       details = joinMessages([formatDelta('HP', hpDelta), formatDelta('SAN', sanDelta)], ', ');
       break;
@@ -81,7 +79,7 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
       state.hp = clamp(state.hp + hpDelta, 0, state.maxHp);
       state.sanity = clamp(state.sanity + sanDelta, 0, state.maxSanity);
       state.caffeine = clamp(state.caffeine + cafDelta, 0, 200);
-      baseLog = `【アイテム使用】${ITEMS[itemId].name}を注入。視界がバチバチと明滅する。圧倒的な覚醒感。`;
+      baseLog = `【アイテム使用】${ITEMS[itemId].name}を注入。視界がバチバチと明滅する。400円分の寿命を前借りした感覚だ。`;
       logType = 'warning';
       details = joinMessages([formatDelta('HP', hpDelta), formatDelta('SAN', sanDelta), formatDelta('カフェイン', cafDelta)], ', ');
       break;
@@ -89,7 +87,7 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
     case ItemId.EARPLUGS: {
       const sanDelta = 30;
       state.sanity = clamp(state.sanity + sanDelta, 0, state.maxSanity);
-      baseLog = `【アイテム使用】${ITEMS[itemId].name}を装着。静寂こそが最高の薬だ。`;
+      baseLog = `【アイテム使用】${ITEMS[itemId].name}を装着。2000円近くしただけあって、完全なる静寂が訪れた。`;
       logType = 'success';
       details = joinMessages([formatDelta('SAN', sanDelta)], ', ');
       break;
@@ -111,7 +109,7 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
         duration: 5,
         description: '毎ターンSAN-3'
       });
-      baseLog = `【アイテム使用】${ITEMS[itemId].name}を摂取。世界がスローモーションに見える。`;
+      baseLog = `【アイテム使用】${ITEMS[itemId].name}を摂取。5000円もしたのだ、効果がないと困る。世界がスローモーションに見え始めた。`;
       logType = 'warning';
       details = "5ターンの間、学習効率UP & SAN減少";
       break;
@@ -125,7 +123,7 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
         duration: 3,
         description: '休息効果 x1.8'
       });
-      baseLog = `【アイテム使用】${ITEMS[itemId].name}を装着。目の奥の凝りが溶けていく。`;
+      baseLog = `【アイテム使用】${ITEMS[itemId].name}を装着。じんわりとした温かさが、眼精疲労を溶かしていく。`;
       logType = 'success';
       details = "3ターンの間、休息回復量UP";
       break;
@@ -143,7 +141,7 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
         state.knowledge[id] = clamp(state.knowledge[id] + knowDelta, 0, 100);
       });
 
-      baseLog = `【ドーピング】${ITEMS[itemId].name}を服用。吐き気と引き換えに、思考速度が極限まで加速する。`;
+      baseLog = `【禁断】約3万円の${ITEMS[itemId].name}を震える手で服用。内臓が焼けるような感覚と共に、脳の処理能力が限界を突破する！`;
       logType = 'danger';
       details = joinMessages([formatDelta('全学力', knowDelta), formatDelta('SAN', sanDelta), formatDelta('HP', hpDelta)], ', ');
       break;
@@ -152,7 +150,7 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
       const lowestSub = Object.values(SubjectId).reduce((a, b) => state.knowledge[a] < state.knowledge[b] ? a : b);
       const kDelta = 15;
       state.knowledge[lowestSub] = clamp(state.knowledge[lowestSub] + kDelta, 0, 100);
-      baseLog = `【アイテム使用】${ITEMS[itemId].name}を熟読。${SUBJECTS[lowestSub].name}の概念が脳に直接書き込まれた。`;
+      baseLog = `【アイテム使用】${ITEMS[itemId].name}を熟読。1万円近い投資だ、一文字も見逃さない。${SUBJECTS[lowestSub].name}の理解が一気に深まった。`;
       logType = 'success';
       details = `${SUBJECTS[lowestSub].name}+${kDelta}`;
       break;
@@ -162,13 +160,13 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
           const target = Object.values(SubjectId)[Math.floor(Math.random() * 4)];
           const kDelta = 20;
           state.knowledge[target] = clamp(state.knowledge[target] + kDelta, 0, 100);
-          baseLog = `【アイテム解析】${ITEMS[itemId].name}から${SUBJECTS[target].name}の「神過去問」を発掘！勝利を確信した。`;
+          baseLog = `【アイテム解析】${ITEMS[itemId].name}から${SUBJECTS[target].name}の「神過去問」を発掘！これが先輩たちの遺産か...！`;
           logType = 'success';
           details = `${SUBJECTS[target].name}+${kDelta}`;
        } else {
           const sanDelta = -30;
           state.sanity = clamp(state.sanity + sanDelta, 0, state.maxSanity);
-          baseLog = `【アイテム解析】${ITEMS[itemId].name}の中身は...ブラクラ画像だった。精神的ダメージを受けた。`;
+          baseLog = `【アイテム解析】${ITEMS[itemId].name}の中身は...大量のブラクラ画像だった。信じていたのに...精神的ダメージを受けた。`;
           logType = 'danger';
           details = formatDelta('SAN', sanDelta) || "";
        }

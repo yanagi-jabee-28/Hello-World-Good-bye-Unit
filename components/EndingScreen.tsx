@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { GameState, GameStatus } from '../types';
 import { generateGameEvaluation } from '../utils/ai';
@@ -74,7 +73,7 @@ export const EndingScreen: React.FC<Props> = ({ state, onRestart }) => {
              {Object.entries(state.knowledge).map(([key, val]) => (
                <div key={key} className="flex justify-between font-mono text-sm">
                  <span className="text-gray-400">{key}</span>
-                 <span className={val >= 60 ? "text-green-400 font-bold" : "text-red-500 font-bold"}>{val}pts</span>
+                 <span className={(val as number) >= 60 ? "text-green-400 font-bold" : "text-red-500 font-bold"}>{val as number}pts</span>
                </div>
              ))}
            </div>

@@ -14,69 +14,76 @@ export const ITEMS: Record<ItemId, Item> = {
     name: '缶コーヒー(微糖)',
     description: '自販機の安いやつ。とりあえず脳を叩き起こす。',
     effectDescription: 'カフェイン+50, HP+5, SAN+2 (使い切り)',
-    price: 150,
+    price: 140, // 少しリアルに値上げ
   },
   [ItemId.CAFE_LATTE]: {
     id: ItemId.CAFE_LATTE,
     name: 'カフェラテ',
     description: 'ミルクの優しさが荒んだ心を癒やす。',
     effectDescription: 'カフェイン+30, HP+20, SAN+15 (使い切り)',
-    price: 350,
+    price: 350, // カフェ価格
   },
   [ItemId.HIGH_CACAO_CHOCO]: {
     id: ItemId.HIGH_CACAO_CHOCO,
     name: '高カカオチョコ',
     description: '脳のエネルギー源。苦味が意識を繋ぎ止める。',
     effectDescription: 'HP+10, SAN+15, カフェイン+15 (使い切り)',
-    price: 250,
+    price: 300, // キリの良い価格へ
   },
   [ItemId.ENERGY_DRINK]: {
     id: ItemId.ENERGY_DRINK,
     name: 'ZONe (Ver.Infinity)',
     description: 'デジタル没入エナジー。もはや合法ドラッグ。',
     effectDescription: 'カフェイン+90, HP+10, SAN-10 (使い切り)',
-    price: 400,
+    price: 400, // 据え置き
   },
   [ItemId.CUP_RAMEN]: {
     id: ItemId.CUP_RAMEN,
     name: '激辛カップ麺',
     description: '深夜の研究室の味。内臓への負担と引き換えに満足感を得る。',
     effectDescription: 'HP+40, SAN+10 (使い切り)',
-    price: 450,
+    price: 450, // 物価高騰を反映
   },
   [ItemId.EARPLUGS]: {
     id: ItemId.EARPLUGS,
     name: '高性能耳栓',
     description: '世界のノイズを遮断し、内なる宇宙と対話する。',
     effectDescription: 'SAN+30 (使い切り)',
-    price: 1200,
+    price: 1980, // 性能が良いものは高い
   },
   [ItemId.REFERENCE_BOOK]: {
     id: ItemId.REFERENCE_BOOK,
     name: '「わかる」本',
-    description: '試験直前の駆け込み寺。高いが背に腹は代えられない。',
+    description: '試験直前の駆け込み寺。専門書は高いが背に腹は代えられない。',
     effectDescription: '最低点数の科目+15 (使い切り)',
-    price: 6000,
+    price: 9800, // 深夜バイト1回分とほぼ同等に設定
   },
   [ItemId.GAMING_SUPPLEMENT]: {
     id: ItemId.GAMING_SUPPLEMENT,
     name: 'ゲーミングサプリ',
     description: '集中力ブースト。副作用で精神が少しずつ削れる。',
     effectDescription: '5ターンの間、学習効率1.5倍 & 毎ターンSAN-3',
-    price: 3500,
+    price: 5800, // 気軽には買えない価格へ
   },
   [ItemId.HOT_EYE_MASK]: {
     id: ItemId.HOT_EYE_MASK,
     name: 'ホットアイマスク',
     description: '目の疲れを癒やし、休息の質を高める。',
     effectDescription: '3ターンの間、休息コマンドの効果1.8倍',
-    price: 1000,
+    price: 1500, // 微増
   },
   [ItemId.SMART_DRUG]: {
     id: ItemId.SMART_DRUG,
     name: '怪しいサプリ',
     description: '個人輸入した未承認薬。寿命と引き換えに脳をオーバークロックする。',
     effectDescription: '全科目学力+5, HP-40, SAN-40 (使い切り)',
-    price: 15000,
+    price: 29800, // ほぼ入手不可能なレベルへ
+  },
+  [ItemId.GIFT_SWEETS]: {
+    id: ItemId.GIFT_SWEETS,
+    name: '手土産スイーツ',
+    description: 'デパ地下で買った高級菓子。先輩への貢ぎ物として最強。',
+    effectDescription: '「先輩」コマンドで使用。友好度大幅UP&成功確定',
+    price: 3500, // 手土産としての適正価格
   }
 };
