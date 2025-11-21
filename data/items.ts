@@ -1,3 +1,4 @@
+
 import { Item, ItemId } from '../types';
 
 export const ITEMS: Record<ItemId, Item> = {
@@ -179,7 +180,6 @@ export const ITEMS: Record<ItemId, Item> = {
     price: 12800,
     effects: {
       hp: -20, 
-      caffeine: 30,
       buffs: [
         {
           name: '限界突破',

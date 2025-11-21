@@ -144,10 +144,10 @@ export const ALL_EVENTS: GameEvent[] = [
   {
     id: 'senior_busy',
     trigger: 'action_senior',
-    text: "【修羅場】先輩は卒論の締め切り前で目が血走っている...声をかけられる雰囲気ではない。",
-    type: 'bad',
+    text: "【修羅場】先輩は卒論の締め切り前で死にかけている...が、机にあったチョコを「これ食って生きろ...」と分けてくれた。",
+    type: 'flavor',
     weight: 20,
-    effect: { sanity: -5 }
+    effect: { inventory: { [ItemId.HIGH_CACAO_CHOCO]: 1 }, relationships: { [RelationshipId.SENIOR]: 2 } }
   },
   {
     id: 'senior_usb_gift',
