@@ -3,7 +3,184 @@ import { GameEvent, RelationshipId, SubjectId, ItemId, TimeSlot } from '../../ty
 import { WEIGHTS, COOLDOWNS, REL_TIERS, RECOVERY_VALS, KNOWLEDGE_GAINS, REL_GAINS } from '../../config/gameBalance';
 
 export const BRANCHING_EVENTS: GameEvent[] = [
-  // --- PROFESSOR EVENTS ---
+  // --- NEW: INTERACTION MENUS (Triggered directly by handlers) ---
+  
+  // 1. Professor Menu (Rel >= 60)
+  {
+    id: 'prof_interaction_menu',
+    trigger: 'action_professor',
+    text: "【教授室】教授は在室のようだ。どうする？",
+    type: 'mixed',
+    weight: 0, // Handled manually
+    options: [
+      {
+        id: 'opt_prof_ask_exam',
+        label: '今回の試験について聞く',
+        risk: 'low',
+        description: '出題傾向を探る。確実な情報が得られる。',
+        successRate: 90,
+        successEffect: {
+          knowledge: { [SubjectId.ALGO]: KNOWLEDGE_GAINS.LARGE },
+          relationships: { [RelationshipId.PROFESSOR]: REL_GAINS.SMALL }
+        },
+        successLog: "「ここは重点的にやっておきたまえ」試験のヒントを得た。",
+        failureEffect: { relationships: { [RelationshipId.PROFESSOR]: -2 } },
+        failureLog: "「講義で言ったはずだがね」軽くあしらわれた。"
+      },
+      {
+        id: 'opt_prof_ask_paper',
+        label: '過去問をお願いする',
+        risk: 'high',
+        description: '直球勝負。成功すればデカイが、心証を損ねるリスクあり。',
+        successRate: 40,
+        successEffect: {
+          inventory: { [ItemId.USB_MEMORY]: 1 },
+          relationships: { [RelationshipId.PROFESSOR]: REL_GAINS.MEDIUM }
+        },
+        successLog: "「君の熱意に免じて特別だ」...なんと、教授自らデータをくれた！",
+        failureEffect: {
+          relationships: { [RelationshipId.PROFESSOR]: -15 },
+          sanity: -10
+        },
+        failureLog: "「学生の本分を履き違えるな！」厳しく叱責された。"
+      },
+      {
+        id: 'opt_prof_ask_book',
+        label: '参考書籍を借りる',
+        risk: 'low',
+        description: '学習資料をねだる。',
+        successRate: 60,
+        successEffect: {
+          inventory: { [ItemId.REFERENCE_BOOK]: 1 },
+          relationships: { [RelationshipId.PROFESSOR]: REL_GAINS.Qm }
+        },
+        successLog: "「これを持っていくといい」教授の著書を貸してもらった。",
+        failureEffect: { relationships: { [RelationshipId.PROFESSOR]: -5 } },
+        failureLog: "貸せる本はないと断られた。"
+      }
+    ]
+  },
+
+  // 2. Senior Menu (Rel >= 50)
+  {
+    id: 'senior_interaction_menu',
+    trigger: 'action_senior',
+    text: "【先輩】「おっ、どうした？なんか用か？」",
+    type: 'mixed',
+    weight: 0, // Handled manually
+    options: [
+      {
+        id: 'opt_senior_meal',
+        label: 'ご飯に行きましょう',
+        risk: 'safe',
+        description: '奢ってもらって回復する。',
+        successRate: 100,
+        successEffect: {
+          hp: RECOVERY_VALS.LARGE,
+          sanity: RECOVERY_VALS.SMALL,
+          relationships: { [RelationshipId.SENIOR]: REL_GAINS.MEDIUM }
+        },
+        successLog: "学食で一番高い定食を奢ってもらった。「しっかり食えよ！」"
+      },
+      {
+        id: 'opt_senior_past_paper',
+        label: '過去問ください！',
+        risk: 'low',
+        description: '先輩のコネに頼る。',
+        successRate: 60,
+        successEffect: {
+          inventory: { [ItemId.USB_MEMORY]: 1 },
+          knowledge: { [SubjectId.CIRCUIT]: KNOWLEDGE_GAINS.LARGE },
+          relationships: { [RelationshipId.SENIOR]: REL_GAINS.LARGE }
+        },
+        successLog: "「しょうがねぇなぁ」秘蔵のフォルダを共有してくれた。",
+        failureEffect: { relationships: { [RelationshipId.SENIOR]: -5 } },
+        failureLog: "「今は手元にないなー」空振りに終わった。"
+      },
+      {
+        id: 'opt_senior_item',
+        label: '何かいいモノないですか',
+        risk: 'low',
+        description: 'アイテムをねだる。',
+        successRate: 70,
+        successEffect: {
+          inventory: { [ItemId.ENERGY_DRINK]: 1 },
+          relationships: { [RelationshipId.SENIOR]: REL_GAINS.Qm }
+        },
+        successLog: "「これでも飲んで頑張れ」エナドリを恵んでくれた。",
+        failureEffect: { relationships: { [RelationshipId.SENIOR]: -2 } },
+        failureLog: "「俺が欲しいくらいだよ」と笑われた。"
+      }
+    ]
+  },
+
+  // 3. Friend Menu (Rel >= 40)
+  {
+    id: 'friend_interaction_menu',
+    trigger: 'action_friend',
+    text: "【友人】「よっ。これからどうする？」",
+    type: 'mixed',
+    weight: 0, // Handled manually
+    options: [
+      {
+        id: 'opt_friend_heal_hp',
+        label: 'HP回復 (休憩)',
+        risk: 'safe',
+        description: 'のんびり過ごして体力を回復する。',
+        successRate: 100,
+        successEffect: {
+          hp: RECOVERY_VALS.LARGE,
+          relationships: { [RelationshipId.FRIEND]: REL_GAINS.Qm }
+        },
+        successLog: "ダラダラと過ごして体力を回復した。"
+      },
+      {
+        id: 'opt_friend_heal_san',
+        label: 'SAN回復 (遊び)',
+        risk: 'safe',
+        description: 'パーッと遊んでストレス発散。',
+        successRate: 100,
+        successEffect: {
+          sanity: RECOVERY_VALS.LARGE,
+          relationships: { [RelationshipId.FRIEND]: REL_GAINS.Qm }
+        },
+        successLog: "愚痴を言い合ってスッキリした。"
+      },
+      {
+        id: 'opt_friend_study',
+        label: '一緒に勉強する',
+        risk: 'low',
+        description: '真面目に課題をこなす。',
+        successRate: 90,
+        successEffect: {
+          knowledge: { [SubjectId.HUMANITIES]: KNOWLEDGE_GAINS.MEDIUM },
+          relationships: { [RelationshipId.FRIEND]: REL_GAINS.MEDIUM }
+        },
+        successLog: "一人でやるより捗った気がする。",
+        failureEffect: { sanity: -5 },
+        failureLog: "結局お喋りして終わってしまった..."
+      },
+      {
+        id: 'opt_friend_random',
+        label: 'おまかせ',
+        risk: 'high',
+        description: '友人の提案に乗る。何が起こるかわからない。',
+        successRate: 50,
+        successEffect: {
+          money: 1000,
+          relationships: { [RelationshipId.FRIEND]: REL_GAINS.LARGE }
+        },
+        successLog: "「パチンコで勝ったから奢るわ！」ラッキーだ。",
+        failureEffect: {
+          hp: -10,
+          sanity: -10
+        },
+        failureLog: "変なトラブルに巻き込まれて疲弊した..."
+      }
+    ]
+  },
+
+  // --- PROFESSOR EVENTS (Existing) ---
   {
     id: 'prof_special_task',
     trigger: 'action_professor',
@@ -59,7 +236,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     ]
   },
 
-  // --- SENIOR EVENTS ---
+  // --- SENIOR EVENTS (Existing) ---
   {
     id: 'senior_gamble_offer',
     trigger: 'action_senior',
@@ -100,7 +277,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     ]
   },
 
-  // --- FRIEND EVENTS ---
+  // --- FRIEND EVENTS (Existing) ---
   {
     id: 'friend_long_call',
     trigger: 'action_friend',
@@ -178,7 +355,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     ]
   },
 
-  // --- TURN END EVENTS (REPLACED NEGATIVE EVENTS) ---
+  // --- TURN END EVENTS (Existing) ---
   {
     id: 'branching_git_conflict',
     trigger: 'turn_end',
@@ -303,6 +480,24 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         successLog: "快適な移動。出費は痛いが、体調には代えられない。"
       },
       {
+        id: 'opt_rain_call_friend',
+        label: '友人に電話する',
+        risk: 'low',
+        description: '迎えに来てもらい、そのまま遊びに行く。',
+        conditions: { minRelationship: REL_TIERS.MID }, // 30
+        successRate: 75,
+        successEffect: {
+          sanity: RECOVERY_VALS.LARGE,
+          relationships: { [RelationshipId.FRIEND]: REL_GAINS.MEDIUM }
+        },
+        successLog: "「おっ、いいぜ！」友人が車で颯爽と登場。そのままカラオケで雨宿りした。",
+        failureEffect: {
+          hp: -10,
+          sanity: -10
+        },
+        failureLog: "電話は繋がらなかった...。雨の中、孤独を噛み締めながら帰った。"
+      },
+      {
         id: 'opt_rain_run',
         label: '走って帰る',
         risk: 'high',
@@ -374,8 +569,6 @@ export const BRANCHING_EVENTS: GameEvent[] = [
       }
     ]
   },
-
-  // --- TURN END: WALLET (Existing) ---
   {
     id: 'turn_end_lost_wallet',
     trigger: 'turn_end',

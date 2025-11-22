@@ -1,10 +1,11 @@
 
 import { GameState, RelationshipId, SubjectId, ItemId } from '../../types';
 import { clamp, formatDelta, joinMessages } from '../../utils/common';
-import { executeEvent } from '../eventManager';
+import { executeEvent, recordEventOccurrence } from '../eventManager';
 import { pushLog } from '../stateHelpers';
 import { ITEMS } from '../../data/items';
 import { SUBJECTS } from '../../data/subjects';
+import { ALL_EVENTS } from '../../data/events';
 
 export const handleAskProfessor = (state: GameState): GameState => {
   // 手土産スイーツ処理
@@ -42,13 +43,22 @@ export const handleAskProfessor = (state: GameState): GameState => {
     return state;
   }
 
-  // 通常処理
+  // --- 友好度判定による強制分岐メニュー (Rel >= 60) ---
+  if (state.relationships[RelationshipId.PROFESSOR] >= 60) {
+    const menuEvent = ALL_EVENTS.find(e => e.id === 'prof_interaction_menu');
+    if (menuEvent) {
+      // 統計記録
+      const recordedState = recordEventOccurrence(state, menuEvent.id);
+      recordedState.pendingEvent = menuEvent;
+      return recordedState;
+    }
+  }
+
+  // 通常処理 (ランダム)
   const newState = executeEvent(state, 'action_professor', "教授室は留守のようだ。");
   
   // Bonus if relationship improved (教授の機嫌が良い時)
-  // イベントが成功し、かつ友好度が上がった場合、追加で少しヒントをもらえることがある
   if (newState.relationships[RelationshipId.PROFESSOR] > state.relationships[RelationshipId.PROFESSOR]) {
-      // ランダムで「ここ大事だぞ」と言われる
       if (Math.random() < 0.3) {
           const subIds = Object.values(SubjectId);
           const target = subIds[Math.floor(Math.random() * subIds.length)];
@@ -66,7 +76,6 @@ export const handleAskSenior = (state: GameState): GameState => {
     const relBonus = 25;
     const sanityBonus = 10;
     // ランダムなアイテムを入手（お返し）
-    // USBメモリが出る確率を高める
     let receivedItem = ItemId.BLACK_COFFEE;
     if (Math.random() < 0.3) receivedItem = ItemId.USB_MEMORY;
     else if (Math.random() < 0.6) receivedItem = ItemId.REFERENCE_BOOK;
@@ -75,9 +84,6 @@ export const handleAskSenior = (state: GameState): GameState => {
     state.relationships[RelationshipId.SENIOR] = clamp(state.relationships[RelationshipId.SENIOR] + relBonus, 0, 100);
     state.sanity = clamp(state.sanity + sanityBonus, 0, state.maxSanity);
     state.inventory[receivedItem] = (state.inventory[receivedItem] || 0) + 1;
-
-    // USBメモリを入手した場合、フラグも立てる可能性があるが、USB使用時に判定する設計
-    // ここではアイテム入手のみ
 
     const details = joinMessages([
         formatDelta('先輩友好度', relBonus),
@@ -89,11 +95,20 @@ export const handleAskSenior = (state: GameState): GameState => {
     return state;
   }
 
-  // 通常処理
+  // --- 友好度判定による強制分岐メニュー (Rel >= 50) ---
+  if (state.relationships[RelationshipId.SENIOR] >= 50) {
+    const menuEvent = ALL_EVENTS.find(e => e.id === 'senior_interaction_menu');
+    if (menuEvent) {
+      const recordedState = recordEventOccurrence(state, menuEvent.id);
+      recordedState.pendingEvent = menuEvent;
+      return recordedState;
+    }
+  }
+
+  // 通常処理 (ランダム)
   const newState = executeEvent(state, 'action_senior', "先輩は見当たらなかった。");
 
   // 過去問イベントが発生したかチェック (ID: senior_past_exam)
-  // eventHistory の最新を確認
   if (newState.eventHistory[0] === 'senior_past_exam') {
     newState.flags.hasPastPapers = true;
   }
@@ -102,6 +117,17 @@ export const handleAskSenior = (state: GameState): GameState => {
 };
 
 export const handleRelyFriend = (state: GameState): GameState => {
+  // --- 友好度判定による強制分岐メニュー (Rel >= 40) ---
+  if (state.relationships[RelationshipId.FRIEND] >= 40) {
+    const menuEvent = ALL_EVENTS.find(e => e.id === 'friend_interaction_menu');
+    if (menuEvent) {
+      const recordedState = recordEventOccurrence(state, menuEvent.id);
+      recordedState.pendingEvent = menuEvent;
+      return recordedState;
+    }
+  }
+
+  // 通常処理 (ランダム)
   const newState = executeEvent(state, 'action_friend', "友人は忙しいようだ。");
 
   // 友人経由で過去問を入手した場合のフラグ処理 (ID: friend_cloud_leak)
