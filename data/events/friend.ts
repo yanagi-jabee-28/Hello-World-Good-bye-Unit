@@ -32,18 +32,6 @@ export const FRIEND_EVENTS: GameEvent[] = [
       hp: RECOVERY_VALS.MINOR 
     }
   },
-  {
-    id: 'friend_depressed',
-    trigger: 'action_friend',
-    text: "【共鳴】「もう無理、単位落とす」友人のネガティブ発言に引きずられ、共に絶望の淵を覗く。",
-    type: 'bad',
-    weight: WEIGHTS.UNCOMMON,
-    conditions: { maxSanity: 40 }, // SAN値が低いと発生しやすい
-    effect: { 
-      sanity: -RECOVERY_VALS.MODERATE, 
-      relationships: { [RelationshipId.FRIEND]: REL_GAINS.Qm } 
-    }
-  },
 
   // --- TIER: MID (30+) ---
   {

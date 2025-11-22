@@ -1,6 +1,6 @@
 
-import { GameEvent, RelationshipId, SubjectId, ItemId } from '../../types';
-import { WEIGHTS, COOLDOWNS, REL_TIERS } from '../../config/gameBalance';
+import { GameEvent, RelationshipId, SubjectId, ItemId, TimeSlot } from '../../types';
+import { WEIGHTS, COOLDOWNS, REL_TIERS, RECOVERY_VALS, KNOWLEDGE_GAINS, REL_GAINS } from '../../config/gameBalance';
 
 export const BRANCHING_EVENTS: GameEvent[] = [
   // --- PROFESSOR EVENTS ---
@@ -139,8 +139,243 @@ export const BRANCHING_EVENTS: GameEvent[] = [
       }
     ]
   },
+  {
+    id: 'branching_friend_depressed',
+    trigger: 'action_friend',
+    text: "【共鳴】「もう無理、単位落とす...」友人が深い闇に落ちている。このままだと自分も引きずり込まれそうだ。",
+    type: 'mixed',
+    weight: WEIGHTS.UNCOMMON,
+    conditions: { maxSanity: 40 },
+    options: [
+      {
+        id: 'opt_friend_cheerup',
+        label: '励ます',
+        risk: 'low',
+        description: 'ポジティブな言葉をかける。成功すれば双方回復。',
+        successRate: 70,
+        successEffect: {
+          sanity: 10,
+          relationships: { [RelationshipId.FRIEND]: REL_GAINS.MEDIUM }
+        },
+        successLog: "「...だよな、やるしかないか」友人の目に光が戻った。",
+        failureEffect: {
+          sanity: -15,
+          hp: -5
+        },
+        failureLog: "励ましが逆効果だった。「お前は余裕そうでいいよな...」空気が凍った。"
+      },
+      {
+        id: 'opt_friend_escape',
+        label: 'そっとしておく',
+        risk: 'safe',
+        description: '距離を取って自分の精神を守る。',
+        successRate: 100,
+        successEffect: {
+          sanity: -5
+        },
+        successLog: "触らぬ神に祟りなし。今は距離を置こう。"
+      }
+    ]
+  },
 
-  // --- TURN END EVENTS ---
+  // --- TURN END EVENTS (REPLACED NEGATIVE EVENTS) ---
+  {
+    id: 'branching_git_conflict',
+    trigger: 'turn_end',
+    text: "【衝突】Gitで巨大なコンフリクト発生！マージに失敗し、数時間の作業が消える危機。",
+    type: 'mixed',
+    category: 'tech_trouble',
+    weight: WEIGHTS.RARE,
+    conditions: { timeSlots: [TimeSlot.AFTER_SCHOOL, TimeSlot.NIGHT, TimeSlot.LATE_NIGHT] },
+    coolDownTurns: COOLDOWNS.MEDIUM,
+    options: [
+      {
+        id: 'opt_git_manual_fix',
+        label: '手動で解消',
+        risk: 'low',
+        description: 'Diffを丁寧に読んで修正する。時間はかかるが確実性は高い。',
+        successRate: 70,
+        successEffect: {
+          hp: -15,
+          knowledge: { [SubjectId.ALGO]: KNOWLEDGE_GAINS.SMALL }
+        },
+        successLog: "地道な作業の末、なんとかマージできた。コードへの理解も深まった気がする。",
+        failureEffect: {
+          sanity: -15,
+          hp: -20
+        },
+        failureLog: "修正中に新たなバグを埋め込んでしまった...。泥沼だ。"
+      },
+      {
+        id: 'opt_git_force_push',
+        label: 'Force Push',
+        risk: 'high',
+        description: '「俺のコードが正しい」全てを上書きする賭け。',
+        successRate: 30,
+        successEffect: {
+          sanity: 10,
+          hp: -5
+        },
+        successLog: "神に祈りながらEnterッ！...奇跡的に動いた。強引だが解決だ。",
+        failureEffect: {
+          sanity: -30,
+          knowledge: { [SubjectId.ALGO]: -5 }
+        },
+        failureLog: "必要なコードまで消し飛んだ。取り返しがつかない..."
+      },
+      {
+        id: 'opt_git_giveup',
+        label: '諦めて寝る',
+        risk: 'safe',
+        description: '今日の作業はなかったことにする。精神的ダメージは最小限。',
+        successRate: 100,
+        successEffect: {
+          sanity: 5
+        },
+        successLog: "「git reset --hard」...美しい虚無だ。寝よう。"
+      }
+    ]
+  },
+  {
+    id: 'branching_sudden_drowsiness',
+    trigger: 'turn_end',
+    text: "【睡魔】抗いがたい眠気が襲う。意識が飛びそうだ。どうする？",
+    type: 'mixed',
+    category: 'drowsiness',
+    weight: WEIGHTS.UNCOMMON,
+    conditions: { timeSlots: [TimeSlot.AFTERNOON, TimeSlot.NIGHT], caffeineMax: 20 },
+    coolDownTurns: COOLDOWNS.SHORT,
+    options: [
+      {
+        id: 'opt_drowsiness_slap',
+        label: '頬を叩く',
+        risk: 'low',
+        description: '物理的衝撃で目を覚ます。',
+        successRate: 60,
+        successEffect: {
+          hp: -5,
+          sanity: 5
+        },
+        successLog: "バチン！痛みが脳を刺激し、意識がクリアになった。",
+        failureEffect: {
+          hp: -5,
+          sanity: -10
+        },
+        failureLog: "痛いだけで眠気は消えない。惨めだ..."
+      },
+      {
+        id: 'opt_drowsiness_nap',
+        label: '5分仮眠',
+        risk: 'high',
+        description: '短時間の睡眠で回復を狙う。寝過ごすリスクあり。',
+        successRate: 40,
+        successEffect: {
+          sanity: 15,
+          hp: 5
+        },
+        successLog: "完璧なパワーナップ。脳が再起動した。",
+        failureEffect: {
+          sanity: -15
+        },
+        failureLog: "気づけば1時間経っていた...。自己嫌悪でSAN値が減る。"
+      }
+    ]
+  },
+  { 
+    id: 'branching_rainy_day', 
+    trigger: 'turn_end',
+    text: "【天候】ゲリラ豪雨。傘を持っていない。", 
+    type: 'mixed',
+    weight: WEIGHTS.UNCOMMON,
+    conditions: { timeSlots: [TimeSlot.MORNING, TimeSlot.AFTER_SCHOOL, TimeSlot.NIGHT] },
+    coolDownTurns: COOLDOWNS.MEDIUM,
+    options: [
+      {
+        id: 'opt_rain_taxi',
+        label: 'タクシーを使う',
+        risk: 'safe',
+        description: '金を払って快適に帰る。',
+        successRate: 100,
+        successEffect: {
+          money: -2000,
+          hp: 5
+        },
+        successLog: "快適な移動。出費は痛いが、体調には代えられない。"
+      },
+      {
+        id: 'opt_rain_run',
+        label: '走って帰る',
+        risk: 'high',
+        description: '気合で乗り切る。',
+        successRate: 50,
+        successEffect: {
+          hp: -5,
+          sanity: 5
+        },
+        successLog: "ずぶ濡れだが、なんだか爽やかな気分だ。風邪も引かなそうだ。",
+        failureEffect: {
+          hp: -20,
+          sanity: -5
+        },
+        failureLog: "完全に冷えた。明日熱が出るかもしれない..."
+      }
+    ]
+  },
+  {
+    id: 'branching_blue_screen',
+    trigger: 'turn_end',
+    text: "【絶望】レポート保存直前にブルースクリーン！画面が青一色に染まる。",
+    type: 'mixed',
+    weight: 2, // Very Rare
+    maxOccurrences: 1,
+    options: [
+      {
+        id: 'opt_bsod_wait',
+        label: '待つ',
+        risk: 'low',
+        description: 'OSの復旧機能を信じる。',
+        successRate: 60,
+        successEffect: {
+          sanity: -5
+        },
+        successLog: "再起動後、自動保存ファイルが残っていた！OSに感謝。",
+        failureEffect: {
+          sanity: -25
+        },
+        failureLog: "データは消えていた。虚無だけが残った。"
+      },
+      {
+        id: 'opt_bsod_hit',
+        label: '叩く',
+        risk: 'high',
+        description: '昭和の修理法。精密機器には逆効果の可能性大。',
+        successRate: 20,
+        successEffect: {
+          sanity: 20
+        },
+        successLog: "ガンッ！...画面が戻った！？奇跡だ。",
+        failureEffect: {
+          money: -5000,
+          sanity: -30
+        },
+        failureLog: "バキッという嫌な音がした。PCが物理的に壊れた..."
+      },
+      {
+        id: 'opt_bsod_giveup',
+        label: '諦めてスマホを見る',
+        risk: 'safe',
+        description: '現実逃避。PCのことは忘れる。',
+        successRate: 100,
+        successEffect: {
+          sanity: 10,
+          hp: 5
+        },
+        successLog: "今日はもう店じまいだ。猫の動画を見て癒やされた。"
+      }
+    ]
+  },
+
+  // --- TURN END: WALLET (Existing) ---
   {
     id: 'turn_end_lost_wallet',
     trigger: 'turn_end',

@@ -60,28 +60,6 @@ export const TURN_END_EVENTS: GameEvent[] = [
     coolDownTurns: COOLDOWNS.LONG
   },
   {
-    id: 'sudden_drowsiness',
-    trigger: 'turn_end',
-    text: "【睡魔】抗いがたい眠気が襲う。カフェインが切れたか...。",
-    type: 'bad',
-    category: 'drowsiness',
-    weight: WEIGHTS.UNCOMMON,
-    conditions: { timeSlots: [TimeSlot.AFTERNOON, TimeSlot.NIGHT], caffeineMax: 20 },
-    effect: { sanity: -RECOVERY_VALS.MODERATE },
-    coolDownTurns: COOLDOWNS.SHORT
-  },
-  { 
-    id: 'git_conflict', 
-    trigger: 'turn_end',
-    text: "【悲報】Gitで巨大なコンフリクト発生。マージに失敗し、数時間の作業が虚無に消えた。", 
-    type: 'bad',
-    category: 'tech_trouble',
-    weight: WEIGHTS.RARE,
-    conditions: { timeSlots: [TimeSlot.AFTER_SCHOOL, TimeSlot.NIGHT, TimeSlot.LATE_NIGHT] },
-    effect: { sanity: -25 }, // Critical sanity hit
-    coolDownTurns: COOLDOWNS.MEDIUM
-  },
-  {
     id: 'stackoverflow_god',
     trigger: 'turn_end',
     text: "【解決】Stack Overflowで全く同じエラーの解決策を発見。ありがとう、名もなき先人。",
@@ -112,24 +90,5 @@ export const TURN_END_EVENTS: GameEvent[] = [
     conditions: { caffeineMin: 100 }, // Occurs when caffeine is high
     effect: { hp: -RECOVERY_VALS.MODERATE, sanity: -RECOVERY_VALS.MODERATE },
     coolDownTurns: COOLDOWNS.SHORT
-  },
-  { 
-    id: 'rainy_day', 
-    trigger: 'turn_end',
-    text: "【天候】ゲリラ豪雨。傘がなく、濡れた服が体力を奪う。", 
-    type: 'bad',
-    weight: WEIGHTS.UNCOMMON,
-    conditions: { timeSlots: [TimeSlot.MORNING, TimeSlot.AFTER_SCHOOL, TimeSlot.NIGHT] },
-    effect: { hp: -RECOVERY_VALS.MODERATE },
-    coolDownTurns: COOLDOWNS.MEDIUM
-  },
-  {
-    id: 'blue_screen',
-    trigger: 'turn_end',
-    text: "【絶望】レポート保存直前にブルースクリーン。バックアップ？ とってないよ。",
-    type: 'bad',
-    weight: 1, // Very Rare but fatal
-    effect: { sanity: -40 },
-    maxOccurrences: 1
   }
 ];
