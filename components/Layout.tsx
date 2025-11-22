@@ -1,51 +1,72 @@
 
 import React, { ReactNode } from 'react';
-import { GameState, TimeSlot } from '../types';
-import { Clock, Calendar } from 'lucide-react';
+import { GameState } from '../types';
+import { Clock, Calendar, Save, Menu } from 'lucide-react';
 
 interface Props {
+  state: GameState;
   children: ReactNode;
   overlays?: ReactNode;
-  state: GameState;
+  onMenuOpen?: () => void; // New
 }
 
-export const Layout: React.FC<Props> = ({ children, overlays, state }) => {
-  const isLateNight = state.timeSlot === TimeSlot.LATE_NIGHT;
-
+export const Layout: React.FC<Props> = ({ state, children, overlays, onMenuOpen }) => {
   return (
-    // h-screen で高さを固定し、内部スクロールさせることでスマホアプリのような操作感にする
-    // p-0 md:p-4 に変更し、スマホでは画面端まで有効活用する
-    <div className={`h-screen flex flex-col bg-black text-green-500 p-0 md:p-4 transition-colors duration-1000 overflow-hidden ${isLateNight ? 'shadow-[inset_0_0_100px_rgba(50,0,0,0.2)]' : ''}`}>
+    <div className="flex flex-col h-screen w-screen bg-black text-green-500 font-mono overflow-hidden selection:bg-green-900 selection:text-white">
       {/* Header */}
-      <header className="shrink-0 flex justify-between items-center border-b-2 border-green-800 bg-gray-950/80 p-3 md:p-4 backdrop-blur-sm z-20">
-        <h1 className="text-base md:text-2xl font-bold tracking-tighter flex items-center gap-2">
-          <span className="bg-green-700 text-black px-1.5 py-0.5 text-xs md:text-base">SYS.ROOT</span>
-          <span className="truncate max-w-[150px] md:max-w-none">HELLO_WORLD</span>
+      <header className="flex-none h-12 border-b-2 border-green-800 flex items-center justify-between px-4 bg-gray-900 z-20 relative shadow-[0_0_20px_rgba(34,197,94,0.2)]">
+        <h1 className="font-bold text-lg tracking-wider flex items-center gap-2 text-shadow-glow overflow-hidden whitespace-nowrap">
+          <span className="w-3 h-3 bg-green-500 inline-block animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.8)] shrink-0"></span>
+          <span className="truncate">RSA_ADVENTURE</span>
+          <span className="text-xs text-green-700 ml-2 hidden sm:inline">v1.1.0</span>
         </h1>
         
-        <div className="flex gap-3 text-xs md:text-base font-mono shrink-0">
-          <div className="flex items-center gap-1 md:gap-2">
-            <Calendar size={14} className="md:w-5 md:h-5" />
-            <span className={state.day > 5 ? 'text-red-500 animate-pulse' : ''}>{state.day}日</span>
+        <div className="flex items-center gap-4 shrink-0 ml-2">
+          {/* Date/Time Info */}
+          <div className="hidden md:flex items-center gap-3 md:gap-6 text-sm">
+            <div className="flex items-center gap-1.5 text-green-400">
+              <Calendar size={14} />
+              <span className="font-bold">DAY {state.day}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-yellow-400 w-20 justify-end">
+              <Clock size={14} />
+              <span className="font-bold">{state.timeSlot}</span>
+            </div>
           </div>
-          <div className="flex items-center gap-1 md:gap-2 w-16 md:w-32 justify-end">
-            <Clock size={14} className="md:w-5 md:h-5" />
-            <span className={isLateNight ? 'text-purple-400' : ''}>{state.timeSlot}</span>
-          </div>
+
+          {/* Menu Button */}
+          <button 
+            onClick={onMenuOpen}
+            className="flex items-center gap-2 bg-green-900/50 border border-green-700 px-3 py-1 hover:bg-green-700 transition-colors text-xs font-bold text-green-300 hover:text-black"
+          >
+            <Menu size={14} />
+            MENU
+          </button>
         </div>
       </header>
 
-      {/* Main Content - overflow-hidden で親スクロールを抑制 */}
-      <main className="flex-1 flex flex-col overflow-hidden relative z-10 bg-black/50">
+      {/* Main Content */}
+      <main className="flex-1 min-h-0 relative flex flex-col overflow-hidden">
         {children}
       </main>
 
-      {/* Footer - PCのみ表示、スマホはボトムバーがあるので非表示 */}
-      <footer className="hidden md:block shrink-0 mt-4 text-[10px] text-center text-gray-600 border-t border-gray-900 pt-2">
-        MEMORY_USAGE: 256MB | THREADS: 4 | NO_SLEEP_DETECTED
+      {/* Footer */}
+      <footer className="flex-none h-8 border-t border-green-900 bg-black flex items-center justify-between px-4 text-[10px] text-gray-500 z-20 relative">
+        <div className="flex items-center gap-4">
+           <div className="flex items-center gap-1.5 text-green-700" title="State is automatically saved to LocalStorage">
+             <Save size={10} />
+             <span>AUTO_SAVE: ACTIVE</span>
+           </div>
+        </div>
+        
+        {/* Mobile Date/Time (Shown in footer on small screens) */}
+        <div className="md:hidden flex items-center gap-3">
+           <span>DAY {state.day}</span>
+           <span className="text-yellow-600">{state.timeSlot}</span>
+        </div>
       </footer>
 
-      {/* Overlays (Modals) */}
+      {/* Overlays (Modals, etc) */}
       {overlays}
     </div>
   );

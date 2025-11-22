@@ -152,6 +152,7 @@ export enum ActionType {
   WORK = 'WORK',
   BUY_ITEM = 'BUY_ITEM',
   RESOLVE_EVENT = 'RESOLVE_EVENT', // イベントの選択肢を決定
+  LOAD_STATE = 'LOAD_STATE', // New: セーブデータロード用
 }
 
 // Discriminated Union for strict typing
@@ -166,7 +167,8 @@ export type GameAction =
   | { type: ActionType.RESTART }
   | { type: ActionType.WORK }
   | { type: ActionType.BUY_ITEM; payload: ItemId }
-  | { type: ActionType.RESOLVE_EVENT; payload: { optionId: string } };
+  | { type: ActionType.RESOLVE_EVENT; payload: { optionId: string } }
+  | { type: ActionType.LOAD_STATE; payload: GameState }; // New
 
 export interface GameEventEffect {
   hp?: number;

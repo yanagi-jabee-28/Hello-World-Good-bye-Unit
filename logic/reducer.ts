@@ -133,6 +133,27 @@ const processEffect = (state: GameState, effect: GameEventEffect): string[] => {
 };
 
 export const gameReducer = (state: GameState, action: GameAction): GameState => {
+  // セーブデータのロード
+  if (action.type === ActionType.LOAD_STATE) {
+    // ロードされたステートをそのまま適用するが、
+    // バージョン違いなどでフィールドが足りない場合の保険としてINITIAL_STATEとマージする
+    const loadedState = action.payload;
+    return { 
+      ...INITIAL_STATE, 
+      ...loadedState,
+      // ログもロードするが、システムメッセージを追加
+      logs: [
+        ...loadedState.logs,
+        {
+          id: Math.random().toString(36).substr(2, 9),
+          text: "【SYSTEM】セーブデータをロードしました。",
+          type: 'system',
+          timestamp: `DAY ${loadedState.day} ${loadedState.timeSlot}`
+        }
+      ]
+    };
+  }
+
   if (action.type === ActionType.RESTART) {
     const inheritedKnowledge = { ...INIT_KNOWLEDGE };
     let inherited = false;

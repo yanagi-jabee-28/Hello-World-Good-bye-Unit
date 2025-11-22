@@ -7,9 +7,10 @@ import { ActionPanel } from './components/ActionPanel';
 import { EndingScreen } from './components/EndingScreen';
 import { ShopModal } from './components/ShopModal';
 import { DebugPanel } from './components/DebugPanel';
-import { EventDialog } from './components/EventDialog'; // New
+import { EventDialog } from './components/EventDialog';
+import { SaveLoadModal } from './components/SaveLoadModal'; // New
 import { useGameEngine } from './hooks/useGameEngine';
-import { ActionType, GameAction, ItemId } from './types';
+import { ActionType, GameAction, ItemId, GameState } from './types';
 import { Terminal, Activity } from 'lucide-react';
 
 // ミニステータスバーコンポーネント（スマホ用）
@@ -28,6 +29,7 @@ const MiniBar = ({ value, max, color, label }: { value: number; max: number; col
 const App: React.FC = () => {
   const { state, dispatch } = useGameEngine();
   const [isShopOpen, setIsShopOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // New
   const [mobileTab, setMobileTab] = useState<'terminal' | 'status'>('terminal');
 
   const handleAction = (type: ActionType, payload?: any) => {
@@ -42,6 +44,10 @@ const App: React.FC = () => {
      dispatch({ type: ActionType.RESOLVE_EVENT, payload: { optionId }});
   };
 
+  const handleLoadState = (loadedState: GameState) => {
+    dispatch({ type: ActionType.LOAD_STATE, payload: loadedState });
+  };
+
   const overlays = (
     <>
       {isShopOpen && (
@@ -49,6 +55,13 @@ const App: React.FC = () => {
           money={state.money} 
           onClose={() => setIsShopOpen(false)} 
           onBuy={handleBuyItem} 
+        />
+      )}
+      {isMenuOpen && (
+        <SaveLoadModal
+          currentState={state}
+          onClose={() => setIsMenuOpen(false)}
+          onLoad={handleLoadState}
         />
       )}
       {state.pendingEvent && (
@@ -63,7 +76,7 @@ const App: React.FC = () => {
   );
 
   return (
-    <Layout state={state} overlays={overlays}>
+    <Layout state={state} overlays={overlays} onMenuOpen={() => setIsMenuOpen(true)}>
       {/* --- DESKTOP LAYOUT (Large Screen) --- */}
       <div className="hidden lg:grid flex-1 grid-cols-12 gap-4 h-full min-h-0">
         {/* Left Column: Status (3 cols) */}
