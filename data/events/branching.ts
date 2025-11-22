@@ -102,9 +102,9 @@ export const BRANCHING_EVENTS: GameEvent[] = [
 
   // --- FRIEND EVENTS ---
   {
-    id: 'friend_midnight_call',
+    id: 'friend_long_call',
     trigger: 'action_friend',
-    text: "【着信】深夜2時、友人から通話がかかってきた。間違いなく愚痴か遊びの誘いだ。",
+    text: "【着信】友人から執拗な通知が届く。「今ヒマ？ 話聞いて！」間違いなく愚痴か、現実逃避への誘いだ。",
     type: 'mixed',
     weight: WEIGHTS.UNCOMMON,
     options: [
@@ -112,30 +112,30 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         id: 'opt_friend_call_answer',
         label: '出る',
         risk: 'low',
-        description: '朝まで付き合う。SAN値は回復するが、体力は削れる。',
+        description: '長電話に付き合う。SAN値は回復するが、体力を消耗する。',
         successRate: 100,
         successEffect: {
           sanity: 30,
           hp: -20,
           relationships: { [RelationshipId.FRIEND]: 10 }
         },
-        successLog: "朝までゲームと愚痴で盛り上がった。ストレスは吹き飛んだが、目の下がクマだらけだ。"
+        successLog: "延々とくだらない話で盛り上がった。精神的なデトックスにはなったが、通話を終えるとどっと疲れが出た。"
       },
       {
         id: 'opt_friend_call_ignore',
-        label: '無視して寝る',
+        label: '今は無理',
         risk: 'safe',
-        description: '睡眠を優先する。',
+        description: '学習時間を優先する。',
         successRate: 80,
         successEffect: {
           hp: 5
         },
-        successLog: "着信を無視して熟睡した。体調は万全だ。",
+        successLog: "心を鬼にして通知を無視した。進捗は守られた。",
         failureEffect: {
           sanity: -5,
           relationships: { [RelationshipId.FRIEND]: -2 }
         },
-        failureLog: "着信音が気になって少し寝不足だ...。"
+        failureLog: "着信が気になって集中力が削がれた...。"
       }
     ]
   },

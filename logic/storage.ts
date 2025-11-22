@@ -4,6 +4,9 @@ import { GameState } from '../types';
 const AUTO_SAVE_KEY = 'rsa_adventure_save_v1'; // Legacy & Auto
 const SAVE_PREFIX = 'rsa_save_slot_';
 
+// リセット操作中のオートセーブ（データ復活）を防ぐためのフラグ
+let isResetting = false;
+
 export type SaveSlotId = 'auto' | '1' | '2' | '3' | '4' | '5';
 
 export interface SaveMetadata {
@@ -18,6 +21,8 @@ export interface SaveMetadata {
  * 内部使用: 実際の保存処理
  */
 const persist = (key: string, state: GameState) => {
+  if (isResetting) return; // リセット中は保存をブロック
+
   try {
     const wrapper = {
       state,
@@ -117,10 +122,16 @@ export const deleteSave = (slotId: SaveSlotId): void => {
  * 全データ消去 (Factory Reset)
  */
 export const clearAllData = (): void => {
-  localStorage.removeItem(AUTO_SAVE_KEY);
-  ['1', '2', '3', '4', '5'].forEach(id => {
-    localStorage.removeItem(`${SAVE_PREFIX}${id}`);
-  });
+  isResetting = true; // 以降の保存処理をブロック
+  
+  try {
+    localStorage.removeItem(AUTO_SAVE_KEY);
+    ['1', '2', '3', '4', '5'].forEach(id => {
+      localStorage.removeItem(`${SAVE_PREFIX}${id}`);
+    });
+  } catch (e) {
+    console.error("Clear data failed", e);
+  }
 };
 
 /**
