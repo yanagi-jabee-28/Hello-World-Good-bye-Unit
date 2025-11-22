@@ -125,8 +125,9 @@ const processEffect = (state: GameState, effect: GameEventEffect): string[] => {
     });
   }
   if (effect.money) {
-    state.money += effect.money;
-    messages.push(`資金${effect.money > 0 ? '+' : ''}¥${effect.money.toLocaleString()}`);
+    const actualChange = state.money + effect.money < 0 ? -state.money : effect.money;
+    state.money += actualChange;
+    messages.push(`資金${actualChange > 0 ? '+' : ''}¥${actualChange.toLocaleString()}`);
   }
 
   return messages.filter(m => m !== '');

@@ -7,7 +7,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
   {
     id: 'prof_special_task',
     trigger: 'action_professor',
-    text: "【打診】教授から研究室のデータ整理を手伝わないかと誘われた。「君なら信用できると思ってね」",
+    text: "【打診】教授から研究室のデータ整理を手伝わされた。「君なら信用できると思ってね」",
     type: 'mixed',
     weight: WEIGHTS.UNCOMMON,
     conditions: { minRelationship: REL_TIERS.MID },
@@ -66,25 +66,25 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     text: "【賭け】「おい、ちょっと面白いバイトがあるんだが」先輩が怪しい話を持ちかけてきた。ハイリスク・ハイリターンな匂いがする。",
     type: 'mixed',
     weight: WEIGHTS.RARE,
-    conditions: { minRelationship: REL_TIERS.MID },
+    conditions: { minRelationship: REL_TIERS.MID, minMoney: 1000 },
     options: [
       {
         id: 'opt_senior_gamble_yes',
         label: '乗る',
         risk: 'high',
-        description: '成功率50%。成功で大金、失敗で時間と体力を浪費。',
+        description: '成功率50%。勝てば臨時収入、負ければ損失。',
         successRate: 50,
         successEffect: {
-          money: 10000,
+          money: 5000,
           relationships: { [RelationshipId.SENIOR]: 10 }
         },
-        successLog: "予想外に上手くいった！濡れ手に粟の大金を手に入れた。",
+        successLog: "予想外に上手くいった！割の良いバイトだった。",
         failureEffect: {
-          hp: -40,
-          money: -2000,
-          sanity: -20
+          hp: -15,
+          money: -1000,
+          sanity: -10
         },
-        failureLog: "完全に騙された。タダ働きさせられた挙句、自腹を切る羽目に..."
+        failureLog: "完全に騙された。タダ働きさせられた挙句、経費を引かれた..."
       },
       {
         id: 'opt_senior_gamble_no',
@@ -92,8 +92,10 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         risk: 'safe',
         description: '君子危うきに近寄らず。',
         successRate: 100,
-        successEffect: {},
-        successLog: "「ちぇっ、つまんねーの」先輩は肩をすくめて去っていった。"
+        successEffect: {
+          sanity: 5
+        },
+        successLog: "丁重に断った。リスク管理もエンジニアの素養だ。"
       }
     ]
   },
@@ -121,19 +123,19 @@ export const BRANCHING_EVENTS: GameEvent[] = [
       },
       {
         id: 'opt_friend_call_ignore',
-        label: '無視する',
-        risk: 'low',
-        description: '睡眠を優先する。孤独感が増すかもしれない。',
+        label: '無視して寝る',
+        risk: 'safe',
+        description: '睡眠を優先する。',
         successRate: 80,
         successEffect: {
           hp: 5
         },
-        successLog: "着信を無視して寝た。英断だ。",
+        successLog: "着信を無視して熟睡した。体調は万全だ。",
         failureEffect: {
           sanity: -5,
-          relationships: { [RelationshipId.FRIEND]: -5 }
+          relationships: { [RelationshipId.FRIEND]: -2 }
         },
-        failureLog: "着信音が鳴り止まず、罪悪感で眠れなかった..."
+        failureLog: "着信音が気になって少し寝不足だ...。"
       }
     ]
   },
@@ -145,35 +147,54 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     text: "【紛失】財布が見当たらない...。最後に立ち寄ったコンビニか？",
     type: 'bad',
     weight: WEIGHTS.RARE,
+    conditions: { minMoney: 3000 },
     options: [
       {
         id: 'opt_wallet_search',
-        label: '必死に探す',
+        label: '必死に探す (ハイリスク)',
         risk: 'high',
-        description: '見つかる確率は五分五分。見つからなければ徒労に終わる。',
+        description: '見つかれば被害なし。失敗すると徒労に終わる。',
         successRate: 60,
         successEffect: {
-          sanity: -5,
+          sanity: 10,
           hp: -10
         },
-        successLog: "ゴミ箱の横に落ちていた！中身も無事だ。心底ホッとした。",
+        successLog: "ゴミ箱の横に落ちていた！中身も無事だ。奇跡的だ。",
         failureEffect: {
-          sanity: -20,
+          sanity: -15,
           hp: -20,
-          money: -5000
+          money: -2000
         },
-        failureLog: "数時間探し回ったが見つからなかった...。金も時間も失った。"
+        failureLog: "数時間探し回ったが見つからなかった...。再発行手続きの手間と交通費だけが掛かった。"
       },
       {
-        id: 'opt_wallet_ignore',
-        label: '諦めて寝る',
+        id: 'opt_wallet_retrace',
+        label: '冷静に考え直す (堅実)',
+        risk: 'low',
+        description: '置き忘れの可能性を探る。',
+        successRate: 75,
+        successEffect: {
+          sanity: 5,
+          hp: -5
+        },
+        successLog: "学食に忘れていたのを確保！冷静でいて良かった。",
+        failureEffect: {
+          sanity: -10,
+          money: -1500
+        },
+        failureLog: "思い当たる場所になかった。諦めてカードを止めた。"
+      },
+      {
+        id: 'opt_wallet_giveup',
+        label: '即座に諦める',
         risk: 'safe',
-        description: '金は諦める。メンタルケアを優先。',
+        description: '時間を優先し、再発行手続きを行う。',
         successRate: 100,
         successEffect: {
-          money: -5000
+          money: -3000,
+          sanity: -5
         },
-        successLog: "「勉強代だ」と割り切って寝ることにした。悔しいが、時間は貴重だ。"
+        successLog: "「厄落としだ」と割り切って手続きした。高い勉強代だった。"
       }
     ]
   }

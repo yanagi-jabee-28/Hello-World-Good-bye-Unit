@@ -199,6 +199,7 @@ export interface GameEventCondition {
   caffeineMax?: number;
   timeSlots?: TimeSlot[];
   itemRequired?: ItemId[];
+  minMoney?: number;
 }
 
 export interface GameEventOption {

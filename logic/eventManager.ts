@@ -53,6 +53,9 @@ const checkConditions = (state: GameState, event: GameEvent, trigger: EventTrigg
     }
   }
 
+  // Money Check
+  if (conditions.minMoney !== undefined && state.money < conditions.minMoney) return false;
+
   return true;
 };
 
@@ -205,8 +208,9 @@ export const applyEventEffect = (state: GameState, event: GameEvent): { newState
   }
 
   if (effect.money) {
-    newState.money += effect.money;
-    messages.push(`資金${effect.money > 0 ? '+' : ''}¥${effect.money.toLocaleString()}`);
+    const actualChange = newState.money + effect.money < 0 ? -newState.money : effect.money;
+    newState.money += actualChange;
+    messages.push(`資金${actualChange > 0 ? '+' : ''}¥${actualChange.toLocaleString()}`);
   }
 
   return { newState, messages };
