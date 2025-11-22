@@ -18,3 +18,12 @@ View your app in AI Studio: https://ai.studio/apps/drive/1yG2LboAdFPmDJlR49Hp5GM
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+
+## Deploy to GitHub Pages ✅
+
+This repository is set up to deploy to GitHub Pages automatically using GitHub Actions. On pushes to the `main` branch the site is built and published using the official Pages actions.
+
+Visit the site after the first deployment at:
+`https://yanagi-jabee-28.github.io/Hello-World-Good-bye-Unit/`
+
+If you rename the repository or want to change the base path, update the `base` option in `vite.config.ts` accordingly.

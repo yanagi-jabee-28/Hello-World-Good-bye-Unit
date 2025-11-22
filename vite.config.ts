@@ -5,6 +5,10 @@ import react from '@vitejs/plugin-react';
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
+      // For GitHub Pages we need to set the base to the repo name when building for production.
+      // This ensures asset paths (CSS/JS) and links resolve properly under /<repo>/.
+      // If you change the repo name, update this path accordingly.
+      base: mode === 'production' ? '/Hello-World-Good-bye-Unit/' : '/',
       server: {
         port: 3000,
         host: '0.0.0.0',
