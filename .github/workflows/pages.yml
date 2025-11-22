@@ -24,6 +24,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install rollup native binary for Linux (fix for optional dependency mismatch)
+        # When package-lock.json was generated on a different platform, npm may skip
+        # platform-specific optional dependencies and the rollup native binary is missing
+        # on the Linux runner. Installing the Linux-specific package ensures the native
+        # module is present and prevents the runtime `MODULE_NOT_FOUND` error.
+        run: |
+          # Install the rollup native linux package to satisfy rollup's optional dependency
+          npm install --no-save @rollup/rollup-linux-x64-gnu || true
+
       - name: Build
         run: npm run build
 
