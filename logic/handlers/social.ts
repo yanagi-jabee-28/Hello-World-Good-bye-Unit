@@ -6,6 +6,7 @@ import { pushLog } from '../stateHelpers';
 import { ITEMS } from '../../data/items';
 import { SUBJECTS } from '../../data/subjects';
 import { ALL_EVENTS } from '../../data/events';
+import { KNOWLEDGE_GAINS, REL_GAINS } from '../../config/gameBalance';
 
 export const handleAskProfessor = (state: GameState): GameState => {
   // 手土産スイーツ処理
@@ -97,8 +98,50 @@ export const handleAskSenior = (state: GameState): GameState => {
 
   // --- 友好度判定による強制分岐メニュー (Rel >= 50) ---
   if (state.relationships[RelationshipId.SENIOR] >= 50) {
-    const menuEvent = ALL_EVENTS.find(e => e.id === 'senior_interaction_menu');
-    if (menuEvent) {
+    const menuEventOriginal = ALL_EVENTS.find(e => e.id === 'senior_interaction_menu');
+    if (menuEventOriginal) {
+      // イベント定義を動的に書き換えるためにディープコピー
+      // JSON.parse(JSON.stringify()) は簡易コピーだが、この用途では十分
+      const menuEvent = JSON.parse(JSON.stringify(menuEventOriginal));
+      
+      // 「過去問ください！」オプション (opt_senior_past_paper) の報酬をランダム化
+      const pastPaperOpt = menuEvent.options?.find((o: any) => o.id === 'opt_senior_past_paper');
+      
+      if (pastPaperOpt) {
+        const rand = Math.random();
+        // ランダム分岐ロジック
+        if (rand < 0.4) {
+           // 40%: USBメモリ (Default - 大当たり)
+           // branching.ts の定義をそのまま使用
+           pastPaperOpt.successLog = "「しょうがねぇなぁ」秘蔵のフォルダを共有してくれた。神データだ！";
+        } 
+        else if (rand < 0.7) {
+           // 30%: 参考書 (当たり)
+           pastPaperOpt.successEffect = {
+             inventory: { [ItemId.REFERENCE_BOOK]: 1 },
+             knowledge: { [SubjectId.CIRCUIT]: KNOWLEDGE_GAINS.MEDIUM },
+             relationships: { [RelationshipId.SENIOR]: REL_GAINS.MEDIUM }
+           };
+           pastPaperOpt.successLog = "「これやるよ。俺にはもう不要だからな」使い込まれた参考書を譲り受けた！";
+        } 
+        else if (rand < 0.9) {
+           // 20%: 消耗品セット (小当たり)
+           pastPaperOpt.successEffect = {
+             inventory: { [ItemId.ENERGY_DRINK]: 1, [ItemId.HOT_EYE_MASK]: 1 },
+             relationships: { [RelationshipId.SENIOR]: REL_GAINS.Qm }
+           };
+           pastPaperOpt.successLog = "「過去問はないけど、これで気合入れろよ」差し入れを貰った。";
+        } 
+        else {
+           // 10%: 知識のみ (アイテムなしだが知識量多め)
+           pastPaperOpt.successEffect = {
+             knowledge: { [SubjectId.CIRCUIT]: KNOWLEDGE_GAINS.HUGE },
+             relationships: { [RelationshipId.SENIOR]: REL_GAINS.MEDIUM }
+           };
+           pastPaperOpt.successLog = "「データは無いけど、ここ絶対出るぞ」先輩がノートを見せてくれた。";
+        }
+      }
+
       const recordedState = recordEventOccurrence(state, menuEvent.id);
       recordedState.pendingEvent = menuEvent;
       return recordedState;
