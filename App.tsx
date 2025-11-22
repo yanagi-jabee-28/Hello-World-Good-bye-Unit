@@ -7,6 +7,7 @@ import { ActionPanel } from './components/ActionPanel';
 import { EndingScreen } from './components/EndingScreen';
 import { ShopModal } from './components/ShopModal';
 import { DebugPanel } from './components/DebugPanel';
+import { EventDialog } from './components/EventDialog'; // New
 import { useGameEngine } from './hooks/useGameEngine';
 import { ActionType, GameAction, ItemId } from './types';
 import { Terminal, Activity } from 'lucide-react';
@@ -37,6 +38,10 @@ const App: React.FC = () => {
     dispatch({ type: ActionType.BUY_ITEM, payload: itemId });
   };
 
+  const handleResolveEvent = (optionId: string) => {
+     dispatch({ type: ActionType.RESOLVE_EVENT, payload: { optionId }});
+  };
+
   const overlays = (
     <>
       {isShopOpen && (
@@ -44,6 +49,12 @@ const App: React.FC = () => {
           money={state.money} 
           onClose={() => setIsShopOpen(false)} 
           onBuy={handleBuyItem} 
+        />
+      )}
+      {state.pendingEvent && (
+        <EventDialog 
+          event={state.pendingEvent} 
+          onResolve={handleResolveEvent} 
         />
       )}
       <EndingScreen state={state} onRestart={() => handleAction(ActionType.RESTART)} />

@@ -1,8 +1,10 @@
+
 import { GameEvent } from '../types';
 import { PROFESSOR_EVENTS } from './events/professor';
 import { SENIOR_EVENTS } from './events/senior';
 import { FRIEND_EVENTS } from './events/friend';
 import { TURN_END_EVENTS } from './events/turnEnd';
+import { BRANCHING_EVENTS } from './events/branching';
 
 export const LOG_MESSAGES = {
   start: "ブートシーケンス完了。これより7日間の地獄の試験対策期間を開始します。",
@@ -40,5 +42,6 @@ export const ALL_EVENTS: GameEvent[] = [
   ...PROFESSOR_EVENTS,
   ...SENIOR_EVENTS,
   ...FRIEND_EVENTS,
-  ...TURN_END_EVENTS
+  ...TURN_END_EVENTS,
+  ...BRANCHING_EVENTS
 ];

@@ -1,9 +1,11 @@
 
-import { GameState, ActionType, GameAction, TimeSlot, GameStatus, SubjectId, RelationshipId, ItemId } from '../types';
+import { GameState, ActionType, GameAction, TimeSlot, GameStatus, SubjectId, RelationshipId, ItemId, GameEventEffect } from '../types';
 import { LOG_MESSAGES } from '../data/events';
-import { clamp, chance } from '../utils/common';
+import { clamp, chance, joinMessages, formatDelta } from '../utils/common';
 import { getNextTimeSlot } from './time';
-import { executeEvent } from './eventManager';
+import { executeEvent, applyEventEffect } from './eventManager';
+import { SUBJECTS } from '../data/subjects';
+import { ITEMS } from '../data/items';
 import { pushLog } from './stateHelpers';
 import { CAFFEINE_DECAY, CAFFEINE_THRESHOLDS, EVENT_CONSTANTS } from '../config/gameConstants';
 import { evaluateExam } from './examEvaluation';
@@ -65,7 +67,69 @@ export const INITIAL_STATE: GameState = {
     hasPastPapers: false,
     madnessStack: 0,
     examRisk: false,
+  },
+  pendingEvent: null,
+};
+
+const RELATIONSHIP_NAMES: Record<RelationshipId, string> = {
+  [RelationshipId.PROFESSOR]: '教授友好度',
+  [RelationshipId.SENIOR]: '先輩友好度',
+  [RelationshipId.FRIEND]: '友人友好度',
+};
+
+// Helper to process effect and create log string
+const processEffect = (state: GameState, effect: GameEventEffect): string[] => {
+  const messages: string[] = [];
+  
+  if (effect.hp) {
+    state.hp = clamp(state.hp + effect.hp, 0, state.maxHp);
+    messages.push(formatDelta('HP', effect.hp) || '');
   }
+  if (effect.sanity) {
+    state.sanity = clamp(state.sanity + effect.sanity, 0, state.maxSanity);
+    messages.push(formatDelta('SAN', effect.sanity) || '');
+  }
+  if (effect.caffeine) {
+    state.caffeine = clamp(state.caffeine + effect.caffeine, 0, 200);
+    messages.push(formatDelta('カフェイン', effect.caffeine) || '');
+  }
+  if (effect.knowledge) {
+    Object.entries(effect.knowledge).forEach(([key, val]) => {
+      if (val) {
+        const sId = key as SubjectId;
+        state.knowledge[sId] = clamp(state.knowledge[sId] + val, 0, 100);
+        const subjectName = SUBJECTS[sId].name;
+        messages.push(formatDelta(subjectName, val) || '');
+      }
+    });
+  }
+  if (effect.relationships) {
+    Object.entries(effect.relationships).forEach(([key, val]) => {
+      if (val) {
+        const rId = key as RelationshipId;
+        state.relationships[rId] = clamp(state.relationships[rId] + val, 0, 100);
+        const relName = RELATIONSHIP_NAMES[rId];
+        messages.push(formatDelta(relName, val) || '');
+      }
+    });
+  }
+  if (effect.inventory) {
+    Object.entries(effect.inventory).forEach(([key, val]) => {
+      if (val) {
+        const iId = key as ItemId;
+        const current = state.inventory[iId] || 0;
+        state.inventory[iId] = current + val;
+        const item = ITEMS[iId];
+        messages.push(`${item.name}${val > 0 ? '入手' : '消費'}`);
+      }
+    });
+  }
+  if (effect.money) {
+    state.money += effect.money;
+    messages.push(`資金${effect.money > 0 ? '+' : ''}¥${effect.money.toLocaleString()}`);
+  }
+
+  return messages.filter(m => m !== '');
 };
 
 export const gameReducer = (state: GameState, action: GameAction): GameState => {
@@ -112,12 +176,43 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
   newState.logs = [...state.logs];
   newState.flags = { ...state.flags };
   
+  // 分岐イベント選択の処理
+  if (action.type === ActionType.RESOLVE_EVENT) {
+    const { optionId } = action.payload;
+    const event = newState.pendingEvent;
+    
+    if (event && event.options) {
+      const option = event.options.find(o => o.id === optionId);
+      if (option) {
+        // 成功判定
+        const isSuccess = Math.random() * 100 < option.successRate;
+        const effect = isSuccess ? option.successEffect : (option.failureEffect || option.successEffect); // 失敗効果がない場合は成功効果を使う（または何も起きない）
+        const logText = isSuccess ? option.successLog : (option.failureLog || "失敗...");
+        const logType = isSuccess ? 'success' : 'danger';
+
+        const details = processEffect(newState, effect);
+        
+        // 統合ログメッセージ
+        pushLog(newState, `${event.text}\n\n▶ 選択: ${option.label}\n${logText}\n(${details.join(', ')})`, logType);
+      }
+    }
+
+    newState.pendingEvent = null;
+    // イベント解決後は時間経過しない（イベント発生時に既に時間が進む処理の途中で止まっているか、あるいはイベント自体が時間を消費するかは設計によるが、
+    // 現状の設計ではイベントはアクションの「結果」として発生するため、ここでは時間を進めない）
+    return newState;
+  }
+
+  // pendingEventがある場合、他のアクションはブロックする（UI側で制御すべきだが念のため）
+  if (newState.pendingEvent) {
+    return state;
+  }
+
   let timeAdvanced = true;
 
   switch (action.type) {
     case ActionType.STUDY:
       newState = handleStudy(newState, action.payload);
-      // 勉強すると狂気スタックがたまりやすい(SAN値が低い場合)
       if (newState.sanity < 30) {
         newState.flags.madnessStack = Math.min(4, newState.flags.madnessStack + 1);
       }
@@ -133,15 +228,15 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       break;
     case ActionType.ASK_PROFESSOR:
       newState = handleAskProfessor(newState);
-      newState.lastSocialTurn = newState.turnCount; // 更新
+      newState.lastSocialTurn = newState.turnCount; 
       break;
     case ActionType.ASK_SENIOR:
       newState = handleAskSenior(newState);
-      newState.lastSocialTurn = newState.turnCount; // 更新
+      newState.lastSocialTurn = newState.turnCount; 
       break;
     case ActionType.RELY_FRIEND:
       newState = handleRelyFriend(newState);
-      newState.lastSocialTurn = newState.turnCount; // 更新
+      newState.lastSocialTurn = newState.turnCount; 
       break;
     case ActionType.BUY_ITEM:
       newState = handleBuyItem(newState, action.payload);
@@ -155,10 +250,6 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
 
   if (timeAdvanced) {
     // --- Hidden Mechanics Update ---
-    
-    // 1. Sleep Debt Accumulation
-    // REST以外のアクションで時間が進むと、わずかに負債がたまる
-    // 特に深夜に行動すると負債が増えやすい
     if (action.type !== ActionType.REST) {
       let debtIncrease = 0.2; // Base
       if (newState.timeSlot === TimeSlot.LATE_NIGHT) {
@@ -167,37 +258,28 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       newState.flags.sleepDebt += debtIncrease;
     }
 
-    // 2. Madness Reduction (REST or ESCAPISM heals madness)
     if (action.type === ActionType.REST || action.type === ActionType.ESCAPISM) {
         if (newState.flags.madnessStack > 0) {
              newState.flags.madnessStack = Math.max(0, newState.flags.madnessStack - 1);
         }
     }
 
-    // 3. Caffeine Dependence
-    // カフェイン中毒状態で一定期間過ごすと依存症フラグ
     if (newState.caffeine >= CAFFEINE_THRESHOLDS.TOXICITY) {
        if (chance(10)) newState.flags.caffeineDependent = true;
     }
 
-    // --- End Hidden Mechanics ---
-
-    // Buff Effects
     newState.activeBuffs.forEach(buff => {
       if (buff.type === 'SANITY_DRAIN') {
          newState.sanity = clamp(newState.sanity - buff.value, 0, newState.maxSanity);
       }
     });
 
-    // Clean up buffs
     newState.activeBuffs = newState.activeBuffs
       .map(b => ({ ...b, duration: b.duration - 1 }))
       .filter(b => b.duration > 0);
 
-    // Caffeine Decay logic
     newState.caffeine = clamp(newState.caffeine - CAFFEINE_DECAY, 0, 200);
     
-    // Slip Damage from High Caffeine
     if (newState.caffeine >= CAFFEINE_THRESHOLDS.ZONE) {
        const isOverdose = newState.caffeine >= CAFFEINE_THRESHOLDS.TOXICITY;
        const toxicHp = isOverdose ? 12 : 3; 
@@ -207,7 +289,6 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
        newState.sanity = clamp(newState.sanity - toxicSan, 0, newState.maxSanity);
     }
 
-    // --- 孤独システム (Isolation Logic) ---
     const turnsSinceSocial = newState.turnCount - newState.lastSocialTurn;
     if (turnsSinceSocial > EVENT_CONSTANTS.ISOLATION_THRESHOLD) {
       const lonelinessDmg = EVENT_CONSTANTS.ISOLATION_DAMAGE;

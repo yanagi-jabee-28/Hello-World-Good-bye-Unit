@@ -137,6 +137,7 @@ export interface GameState {
   eventStats: Record<string, EventStats>; // イベントごとの発生統計（ロジック制御用）
   statsHistory: StatsSnapshot[]; // 履歴データ
   flags: GameFlags; // Hidden mechanics flags
+  pendingEvent: GameEvent | null; // 選択待ちのイベント
 }
 
 export enum ActionType {
@@ -150,6 +151,7 @@ export enum ActionType {
   RESTART = 'RESTART',
   WORK = 'WORK',
   BUY_ITEM = 'BUY_ITEM',
+  RESOLVE_EVENT = 'RESOLVE_EVENT', // イベントの選択肢を決定
 }
 
 // Discriminated Union for strict typing
@@ -163,7 +165,8 @@ export type GameAction =
   | { type: ActionType.USE_ITEM; payload: ItemId }
   | { type: ActionType.RESTART }
   | { type: ActionType.WORK }
-  | { type: ActionType.BUY_ITEM; payload: ItemId };
+  | { type: ActionType.BUY_ITEM; payload: ItemId }
+  | { type: ActionType.RESOLVE_EVENT; payload: { optionId: string } };
 
 export interface GameEventEffect {
   hp?: number;
@@ -193,16 +196,31 @@ export interface GameEventCondition {
   caffeineMin?: number;
   caffeineMax?: number;
   timeSlots?: TimeSlot[];
+  itemRequired?: ItemId[];
+}
+
+export interface GameEventOption {
+  id: string;
+  label: string;
+  description?: string; // ボタン下の補足
+  risk: 'safe' | 'low' | 'high'; // リスクレベル表示
+  successRate: number; // 0-100
+  conditions?: GameEventCondition; // 選択条件（アイテム必須など）
+  successEffect: GameEventEffect;
+  successLog: string;
+  failureEffect?: GameEventEffect;
+  failureLog?: string;
 }
 
 export interface GameEvent {
   id: string;
   trigger: EventTriggerType;
   text: string;
-  type: 'good' | 'bad' | 'flavor';
+  type: 'good' | 'bad' | 'flavor' | 'mixed';
   category?: string; // グルーピング用（flavor, tech_troubleなど）
   conditions?: GameEventCondition;
-  effect?: GameEventEffect;
+  effect?: GameEventEffect; // 即時効果（または選択肢が出る前の導入効果）
+  options?: GameEventOption[]; // 選択肢（ある場合はこれが優先され、ユーザー選択待ちになる）
   weight: number; // 基本発生確率の重み (1-100程度)
   coolDownTurns?: number; // 再発生までの最低ターン数
   maxOccurrences?: number; // ゲーム中最大発生回数 (undefinedなら無限)

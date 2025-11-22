@@ -46,6 +46,13 @@ const checkConditions = (state: GameState, event: GameEvent, trigger: EventTrigg
     if (conditions.maxRelationship !== undefined && targetRelValue > conditions.maxRelationship) return false;
   }
 
+  // Item Required
+  if (conditions.itemRequired) {
+    for (const itemId of conditions.itemRequired) {
+      if ((state.inventory[itemId] || 0) <= 0) return false;
+    }
+  }
+
   return true;
 };
 
@@ -212,6 +219,13 @@ export const executeEvent = (state: GameState, trigger: EventTriggerType, fallba
   const event = selectEvent(state, ALL_EVENTS, trigger);
   
   if (event) {
+     // 分岐イベントの場合、即時適用せず pendingEvent にセットして終了
+     if (event.options && event.options.length > 0) {
+       const newState = recordEventOccurrence(state, event.id); // 発生記録だけつける
+       newState.pendingEvent = event;
+       return newState;
+     }
+
      const { newState: appliedState, messages } = applyEventEffect(state, event);
      const details = joinMessages(messages, ', ');
      const logType = event.type === 'good' ? 'success' : event.type === 'bad' ? 'danger' : 'info';
