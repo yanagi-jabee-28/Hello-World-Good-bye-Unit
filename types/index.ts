@@ -154,6 +154,8 @@ export enum ActionType {
   RESOLVE_EVENT = 'RESOLVE_EVENT', // イベントの選択肢を決定
   LOAD_STATE = 'LOAD_STATE', // New: セーブデータロード用
   FULL_RESET = 'FULL_RESET', // New: 全データ消去・完全リセット用
+  SOFT_RESET = 'SOFT_RESET', // New: セーブデータ残して強くてニューゲーム相当のリセット
+  HARD_RESTART = 'HARD_RESTART', // New: 継承なしの強くてニューゲーム（周回諦め）
 }
 
 // Discriminated Union for strict typing
@@ -170,7 +172,9 @@ export type GameAction =
   | { type: ActionType.BUY_ITEM; payload: ItemId }
   | { type: ActionType.RESOLVE_EVENT; payload: { optionId: string } }
   | { type: ActionType.LOAD_STATE; payload: GameState }
-  | { type: ActionType.FULL_RESET }; // New
+  | { type: ActionType.FULL_RESET }
+  | { type: ActionType.SOFT_RESET }
+  | { type: ActionType.HARD_RESTART };
 
 export interface GameEventEffect {
   hp?: number;

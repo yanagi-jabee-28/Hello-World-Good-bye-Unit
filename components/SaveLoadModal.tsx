@@ -2,21 +2,23 @@
 import React, { useState, useEffect } from 'react';
 import { GameState, ActionType } from '../types';
 import { SaveSlotId, getSaveList, saveToSlot, loadGame, deleteSave, exportSaveData, importSaveData, clearAllData, SaveMetadata } from '../logic/storage';
-import { X, Save, Upload, Download, Trash2, HardDrive, AlertOctagon, FileJson } from 'lucide-react';
+import { X, Save, Upload, Download, Trash2, HardDrive, AlertOctagon, FileJson, RefreshCw, PlayCircle } from 'lucide-react';
 
 interface Props {
   currentState: GameState;
   onClose: () => void;
   onLoad: (state: GameState) => void;
   onReset: () => void;
+  onSoftReset: () => void;
+  onHardReset: () => void;
 }
 
 type Tab = 'SAVE' | 'LOAD' | 'SYSTEM';
 
-export const SaveLoadModal: React.FC<Props> = ({ currentState, onClose, onLoad, onReset }) => {
+export const SaveLoadModal: React.FC<Props> = ({ currentState, onClose, onLoad, onReset, onSoftReset, onHardReset }) => {
   const [activeTab, setActiveTab] = useState<Tab>('SAVE');
   const [saveList, setSaveList] = useState<SaveMetadata[]>([]);
-  const [confirmAction, setConfirmAction] = useState<{ type: 'overwrite' | 'delete' | 'load' | 'reset', slotId?: SaveSlotId } | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ type: 'overwrite' | 'delete' | 'load' | 'reset' | 'soft_reset' | 'hard_restart', slotId?: SaveSlotId } | null>(null);
 
   useEffect(() => {
     refreshList();
@@ -75,6 +77,14 @@ export const SaveLoadModal: React.FC<Props> = ({ currentState, onClose, onLoad, 
 
   const handleFactoryReset = () => {
     setConfirmAction({ type: 'reset' });
+  };
+
+  const handleSoftReset = () => {
+    setConfirmAction({ type: 'soft_reset' });
+  };
+
+  const handleHardRestart = () => {
+    setConfirmAction({ type: 'hard_restart' });
   };
 
   // --- RENDER HELPERS ---
@@ -164,45 +174,84 @@ export const SaveLoadModal: React.FC<Props> = ({ currentState, onClose, onLoad, 
         <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
            {activeTab === 'SYSTEM' ? (
              <div className="space-y-6 p-2">
-                {/* Export */}
-                <div className="border border-gray-800 p-4 rounded bg-gray-900/30">
-                  <h3 className="text-green-400 font-bold mb-2 flex items-center gap-2">
-                    <Download size={16} /> DATA_EXPORT
-                  </h3>
-                  <p className="text-xs text-gray-500 mb-3">
-                    現在の進行状況をJSONファイルとしてダウンロードします。バックアップや別端末への移動に使用できます。
-                  </p>
-                  <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-green-900/50 border border-green-700 text-green-400 text-xs hover:bg-green-800 transition-colors">
-                    JSON保存 (.json)
-                  </button>
+                
+                {/* --- CURRENT SESSION CONTROLS --- */}
+                <div>
+                  <div className="text-xs font-bold text-gray-500 mb-2 border-b border-gray-800 pb-1">RUN_CONTROLS (現在の周回操作)</div>
+                  
+                  {/* Soft Reset */}
+                  <div className="border border-indigo-900/50 p-4 rounded bg-indigo-900/10 mb-4">
+                    <h3 className="text-indigo-400 font-bold mb-2 flex items-center gap-2">
+                      <RefreshCw size={16} /> RESTART (Inherit)
+                    </h3>
+                    <p className="text-xs text-gray-500 mb-3">
+                      現在の周回を中断し、<span className="text-indigo-300 font-bold">強くてニューゲーム（学習データ50%継承）</span>を行います。
+                      <br/>※スロット1〜5のセーブデータは保持されます。
+                    </p>
+                    <button onClick={handleSoftReset} className="flex items-center gap-2 px-4 py-2 bg-indigo-900/30 border border-indigo-700 text-indigo-400 text-xs hover:bg-indigo-800 transition-colors">
+                      <RefreshCw size={14} /> 強くてニューゲーム
+                    </button>
+                  </div>
+
+                  {/* Hard Restart */}
+                  <div className="border border-orange-900/50 p-4 rounded bg-orange-900/10">
+                    <h3 className="text-orange-400 font-bold mb-2 flex items-center gap-2">
+                      <PlayCircle size={16} /> FRESH_START (No Inherit)
+                    </h3>
+                    <p className="text-xs text-gray-500 mb-3">
+                      現在の周回を諦め、<span className="text-orange-300 font-bold">DAY 1 からやり直します（継承なし）</span>。
+                      <br/>※現在のオートセーブは上書きされますが、スロット1〜5のセーブデータは保持されます。
+                    </p>
+                    <button onClick={handleHardRestart} className="flex items-center gap-2 px-4 py-2 bg-orange-900/30 border border-orange-700 text-orange-400 text-xs hover:bg-orange-800 transition-colors">
+                      <PlayCircle size={14} /> ニューゲーム (最初から)
+                    </button>
+                  </div>
                 </div>
 
-                {/* Import */}
-                <div className="border border-gray-800 p-4 rounded bg-gray-900/30">
-                  <h3 className="text-blue-400 font-bold mb-2 flex items-center gap-2">
-                    <Upload size={16} /> DATA_IMPORT
-                  </h3>
-                  <p className="text-xs text-gray-500 mb-3">
-                    エクスポートしたJSONファイルを読み込み、状態を復元します。現在の進行状況は上書きされます。
-                  </p>
-                  <label className="flex items-center gap-2 px-4 py-2 bg-blue-900/50 border border-blue-700 text-blue-400 text-xs hover:bg-blue-800 transition-colors w-fit cursor-pointer">
-                    <FileJson size={14} />
-                    ファイルを選択してロード
-                    <input type="file" accept=".json" onChange={handleImport} className="hidden" />
-                  </label>
-                </div>
+                {/* --- DATA MANAGEMENT --- */}
+                <div className="mt-8">
+                   <div className="text-xs font-bold text-gray-500 mb-2 border-b border-gray-800 pb-1">DATA_MANAGEMENT (データ管理)</div>
+                   
+                   {/* Export */}
+                   <div className="border border-gray-800 p-4 rounded bg-gray-900/30 mb-4">
+                     <h3 className="text-green-400 font-bold mb-2 flex items-center gap-2">
+                       <Download size={16} /> DATA_EXPORT
+                     </h3>
+                     <p className="text-xs text-gray-500 mb-3">
+                       現在の進行状況をJSONファイルとしてダウンロードします。バックアップや別端末への移動に使用できます。
+                     </p>
+                     <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-green-900/50 border border-green-700 text-green-400 text-xs hover:bg-green-800 transition-colors">
+                       JSON保存 (.json)
+                     </button>
+                   </div>
 
-                {/* Factory Reset */}
-                <div className="border border-red-900/50 p-4 rounded bg-red-900/10 mt-8">
-                  <h3 className="text-red-500 font-bold mb-2 flex items-center gap-2">
-                    <AlertOctagon size={16} /> FACTORY_RESET
-                  </h3>
-                  <p className="text-xs text-gray-500 mb-3">
-                    【危険】全てのセーブデータとシステム設定（強くてニューゲーム状態含む）を完全に削除し、初期化します。この操作は取り消せません。
-                  </p>
-                  <button onClick={handleFactoryReset} className="flex items-center gap-2 px-4 py-2 bg-red-900/20 border border-red-700 text-red-500 text-xs hover:bg-red-900/50 transition-colors">
-                    <Trash2 size={14} /> 全データ完全消去
-                  </button>
+                   {/* Import */}
+                   <div className="border border-gray-800 p-4 rounded bg-gray-900/30 mb-4">
+                     <h3 className="text-blue-400 font-bold mb-2 flex items-center gap-2">
+                       <Upload size={16} /> DATA_IMPORT
+                     </h3>
+                     <p className="text-xs text-gray-500 mb-3">
+                       エクスポートしたJSONファイルを読み込み、状態を復元します。現在の進行状況は上書きされます。
+                     </p>
+                     <label className="flex items-center gap-2 px-4 py-2 bg-blue-900/50 border border-blue-700 text-blue-400 text-xs hover:bg-blue-800 transition-colors w-fit cursor-pointer">
+                       <FileJson size={14} />
+                       ファイルを選択してロード
+                       <input type="file" accept=".json" onChange={handleImport} className="hidden" />
+                     </label>
+                   </div>
+
+                   {/* Factory Reset */}
+                   <div className="border border-red-900/50 p-4 rounded bg-red-900/10">
+                     <h3 className="text-red-500 font-bold mb-2 flex items-center gap-2">
+                       <AlertOctagon size={16} /> FACTORY_RESET
+                     </h3>
+                     <p className="text-xs text-gray-500 mb-3">
+                       【危険】全てのセーブデータとシステム設定（強くてニューゲーム状態含む）を完全に削除し、初期化します。この操作は取り消せません。
+                     </p>
+                     <button onClick={handleFactoryReset} className="flex items-center gap-2 px-4 py-2 bg-red-900/20 border border-red-700 text-red-500 text-xs hover:bg-red-900/50 transition-colors">
+                       <Trash2 size={14} /> 全データ完全消去
+                     </button>
+                   </div>
                 </div>
              </div>
            ) : (
@@ -222,6 +271,9 @@ export const SaveLoadModal: React.FC<Props> = ({ currentState, onClose, onLoad, 
                <p className="text-sm text-gray-300 mb-6 leading-relaxed whitespace-pre-wrap">
                  {confirmAction.type === 'overwrite' && 'このスロットに上書きしますか？\n古いデータは完全に失われます。'}
                  {confirmAction.type === 'delete' && 'このデータを削除しますか？\n復元することはできません。'}
+                 {confirmAction.type === 'load' && 'このデータをロードしますか？\n現在の進行状況は失われます。'}
+                 {confirmAction.type === 'soft_reset' && '現在の周回を中断し、強くてニューゲーム（継承あり）を実行しますか？\n現在の進行状況は失われますが、セーブスロットは保持されます。'}
+                 {confirmAction.type === 'hard_restart' && '現在の周回を諦め、継承なしで最初からやり直しますか？\nこの操作は現在のオートセーブを上書きします。'}
                  {confirmAction.type === 'reset' && '全てのセーブデータと進行状況を完全に削除し、初期化します。\nこの操作は絶対に取り消せません。\n本当によろしいですか？'}
                </p>
                <div className="flex gap-3 justify-end">
@@ -235,6 +287,15 @@ export const SaveLoadModal: React.FC<Props> = ({ currentState, onClose, onLoad, 
                    onClick={() => {
                      if (confirmAction.type === 'overwrite' && confirmAction.slotId) handleSave(confirmAction.slotId);
                      if (confirmAction.type === 'delete' && confirmAction.slotId) handleDelete(confirmAction.slotId);
+                     
+                     if (confirmAction.type === 'soft_reset') {
+                       onSoftReset();
+                       onClose();
+                     }
+                     if (confirmAction.type === 'hard_restart') {
+                       onHardReset();
+                       onClose();
+                     }
                      if (confirmAction.type === 'reset') {
                         clearAllData();
                         onReset(); // In-memory reset

@@ -52,6 +52,14 @@ const App: React.FC = () => {
     dispatch({ type: ActionType.FULL_RESET });
   };
 
+  const handleSoftReset = () => {
+    dispatch({ type: ActionType.SOFT_RESET });
+  };
+
+  const handleHardRestart = () => {
+    dispatch({ type: ActionType.HARD_RESTART });
+  };
+
   const overlays = (
     <>
       {isShopOpen && (
@@ -67,6 +75,8 @@ const App: React.FC = () => {
           onClose={() => setIsMenuOpen(false)}
           onLoad={handleLoadState}
           onReset={handleFullReset}
+          onSoftReset={handleSoftReset}
+          onHardReset={handleHardRestart}
         />
       )}
       {state.pendingEvent && (

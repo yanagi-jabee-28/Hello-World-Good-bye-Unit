@@ -186,6 +186,80 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     };
   }
 
+  // 強くてニューゲーム（手動ソフトリセット）
+  if (action.type === ActionType.SOFT_RESET) {
+    const inheritedKnowledge = { ...INIT_KNOWLEDGE };
+    let inherited = false;
+    
+    (Object.keys(state.knowledge) as SubjectId[]).forEach((id) => {
+      if (state.knowledge[id] > 0) {
+        inheritedKnowledge[id] = Math.floor(state.knowledge[id] / 2);
+        inherited = true;
+      }
+    });
+
+    const resetLogText = inherited 
+      ? `${LOG_MESSAGES.start}\n【強くてニューゲーム】現在の状態から学習データを50%継承し、DAY 1へループしました。`
+      : LOG_MESSAGES.start;
+
+    return {
+      ...INITIAL_STATE,
+      knowledge: inheritedKnowledge,
+      relationships: { ...INIT_RELATIONSHIPS },
+      inventory: { ...INITIAL_STATE.inventory },
+      logs: [{
+        id: Math.random().toString(36).substr(2, 9),
+        text: resetLogText,
+        type: 'system',
+        timestamp: 'DAY 1 08:00'
+      }],
+      // フラグ等は初期化
+      activeBuffs: [],
+      eventHistory: [],
+      eventStats: {},
+      statsHistory: [],
+      flags: {
+        sleepDebt: 0,
+        lastSleepQuality: 1.0,
+        caffeineDependent: false,
+        hasPastPapers: false,
+        madnessStack: 0,
+        examRisk: false,
+      },
+      pendingEvent: null
+    };
+  }
+
+  // ニューゲーム（手動ハードリスタート）
+  if (action.type === ActionType.HARD_RESTART) {
+    return {
+      ...INITIAL_STATE,
+      knowledge: { ...INIT_KNOWLEDGE },
+      relationships: { ...INIT_RELATIONSHIPS },
+      inventory: { ...INITIAL_STATE.inventory },
+      logs: [{
+        id: Math.random().toString(36).substr(2, 9),
+        text: `${LOG_MESSAGES.start}\n【再履修】周回を諦め、新たな気持ちでDAY 1から開始します。（継承なし）`,
+        type: 'system',
+        timestamp: 'DAY 1 08:00'
+      }],
+      // 状態の完全初期化
+      activeBuffs: [],
+      eventHistory: [],
+      eventStats: {},
+      statsHistory: [],
+      flags: {
+        sleepDebt: 0,
+        lastSleepQuality: 1.0,
+        caffeineDependent: false,
+        hasPastPapers: false,
+        madnessStack: 0,
+        examRisk: false,
+      },
+      pendingEvent: null
+    };
+  }
+
   if (action.type === ActionType.RESTART) {
     const inheritedKnowledge = { ...INIT_KNOWLEDGE };
     let inherited = false;
