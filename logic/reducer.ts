@@ -155,6 +155,37 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     };
   }
 
+  // 完全リセット（Factory Reset）
+  if (action.type === ActionType.FULL_RESET) {
+    return {
+      ...INITIAL_STATE,
+      knowledge: { ...INIT_KNOWLEDGE },
+      relationships: { ...INIT_RELATIONSHIPS },
+      inventory: { ...INITIAL_STATE.inventory },
+      // 完全に新しいログ
+      logs: [{
+        id: Math.random().toString(36).substr(2, 9),
+        text: LOG_MESSAGES.start,
+        type: 'system',
+        timestamp: 'DAY 1 08:00'
+      }],
+      // 状態の完全初期化
+      activeBuffs: [],
+      eventHistory: [],
+      eventStats: {},
+      statsHistory: [],
+      flags: {
+        sleepDebt: 0,
+        lastSleepQuality: 1.0,
+        caffeineDependent: false,
+        hasPastPapers: false,
+        madnessStack: 0,
+        examRisk: false,
+      },
+      pendingEvent: null
+    };
+  }
+
   if (action.type === ActionType.RESTART) {
     const inheritedKnowledge = { ...INIT_KNOWLEDGE };
     let inherited = false;

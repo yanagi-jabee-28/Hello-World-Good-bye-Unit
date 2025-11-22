@@ -8,11 +8,12 @@ interface Props {
   currentState: GameState;
   onClose: () => void;
   onLoad: (state: GameState) => void;
+  onReset: () => void;
 }
 
 type Tab = 'SAVE' | 'LOAD' | 'SYSTEM';
 
-export const SaveLoadModal: React.FC<Props> = ({ currentState, onClose, onLoad }) => {
+export const SaveLoadModal: React.FC<Props> = ({ currentState, onClose, onLoad, onReset }) => {
   const [activeTab, setActiveTab] = useState<Tab>('SAVE');
   const [saveList, setSaveList] = useState<SaveMetadata[]>([]);
   const [confirmAction, setConfirmAction] = useState<{ type: 'overwrite' | 'delete' | 'load' | 'reset', slotId?: SaveSlotId } | null>(null);
@@ -73,10 +74,7 @@ export const SaveLoadModal: React.FC<Props> = ({ currentState, onClose, onLoad }
   };
 
   const handleFactoryReset = () => {
-    if (confirm('【警告】全てのセーブデータを削除し、初期状態に戻します。\n本当によろしいですか？')) {
-       clearAllData();
-       window.location.reload();
-    }
+    setConfirmAction({ type: 'reset' });
   };
 
   // --- RENDER HELPERS ---
@@ -216,17 +214,20 @@ export const SaveLoadModal: React.FC<Props> = ({ currentState, onClose, onLoad }
 
         {/* Confirmation Overlay */}
         {confirmAction && (
-          <div className="absolute inset-0 z-10 bg-black/80 flex items-center justify-center p-8">
-             <div className="border border-green-500 bg-black p-6 max-w-sm w-full shadow-[0_0_30px_rgba(34,197,94,0.3)]">
-               <h3 className="text-lg font-bold text-white mb-2">CONFIRMATION</h3>
-               <p className="text-sm text-gray-400 mb-6">
-                 {confirmAction.type === 'overwrite' && 'このスロットに上書きしますか？古いデータは失われます。'}
-                 {confirmAction.type === 'delete' && 'このデータを削除しますか？復元できません。'}
+          <div className="absolute inset-0 z-10 bg-black/80 flex items-center justify-center p-8 animate-[fadeIn_0.2s]">
+             <div className={`border-2 ${confirmAction.type === 'reset' ? 'border-red-600 shadow-[0_0_30px_rgba(220,38,38,0.4)]' : 'border-green-500 shadow-[0_0_30px_rgba(34,197,94,0.3)]'} bg-black p-6 max-w-sm w-full`}>
+               <h3 className={`text-lg font-bold ${confirmAction.type === 'reset' ? 'text-red-500 animate-pulse' : 'text-white'} mb-2`}>
+                 {confirmAction.type === 'reset' ? '⚠ DANGER ZONE ⚠' : 'CONFIRMATION'}
+               </h3>
+               <p className="text-sm text-gray-300 mb-6 leading-relaxed whitespace-pre-wrap">
+                 {confirmAction.type === 'overwrite' && 'このスロットに上書きしますか？\n古いデータは完全に失われます。'}
+                 {confirmAction.type === 'delete' && 'このデータを削除しますか？\n復元することはできません。'}
+                 {confirmAction.type === 'reset' && '全てのセーブデータと進行状況を完全に削除し、初期化します。\nこの操作は絶対に取り消せません。\n本当によろしいですか？'}
                </p>
                <div className="flex gap-3 justify-end">
                  <button 
                    onClick={() => setConfirmAction(null)}
-                   className="px-4 py-2 text-xs text-gray-500 hover:text-white transition-colors"
+                   className="px-4 py-2 text-xs font-bold text-gray-500 hover:text-white transition-colors border border-transparent hover:border-gray-600"
                  >
                    CANCEL
                  </button>
@@ -234,8 +235,17 @@ export const SaveLoadModal: React.FC<Props> = ({ currentState, onClose, onLoad }
                    onClick={() => {
                      if (confirmAction.type === 'overwrite' && confirmAction.slotId) handleSave(confirmAction.slotId);
                      if (confirmAction.type === 'delete' && confirmAction.slotId) handleDelete(confirmAction.slotId);
+                     if (confirmAction.type === 'reset') {
+                        clearAllData();
+                        onReset(); // In-memory reset
+                        onClose();
+                     }
                    }}
-                   className="px-4 py-2 bg-green-700 text-black text-xs font-bold hover:bg-green-500 transition-colors"
+                   className={`px-6 py-2 text-xs font-bold transition-all transform hover:scale-105 ${
+                     confirmAction.type === 'reset' 
+                       ? 'bg-red-700 text-white hover:bg-red-600 shadow-lg shadow-red-900/50' 
+                       : 'bg-green-700 text-black hover:bg-green-500 shadow-lg shadow-green-900/50'
+                   }`}
                  >
                    EXECUTE
                  </button>

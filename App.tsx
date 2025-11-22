@@ -48,6 +48,10 @@ const App: React.FC = () => {
     dispatch({ type: ActionType.LOAD_STATE, payload: loadedState });
   };
 
+  const handleFullReset = () => {
+    dispatch({ type: ActionType.FULL_RESET });
+  };
+
   const overlays = (
     <>
       {isShopOpen && (
@@ -62,6 +66,7 @@ const App: React.FC = () => {
           currentState={state}
           onClose={() => setIsMenuOpen(false)}
           onLoad={handleLoadState}
+          onReset={handleFullReset}
         />
       )}
       {state.pendingEvent && (
