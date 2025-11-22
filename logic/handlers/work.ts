@@ -3,6 +3,7 @@ import { GameState, TimeSlot } from '../../types';
 import { clamp, formatDelta, joinMessages, chance } from '../../utils/common';
 import { pushLog } from '../stateHelpers';
 import { getWorkConfig } from '../../data/work';
+import { CAFFEINE_THRESHOLDS } from '../../config/gameConstants';
 
 type WorkResultType = 'CRITICAL_SUCCESS' | 'SUCCESS' | 'NORMAL' | 'FAILURE' | 'CRITICAL_FAILURE';
 
@@ -119,11 +120,30 @@ const getFlavorText = (config: ReturnType<typeof getWorkConfig>, result: WorkRes
 export const handleWork = (state: GameState): GameState => {
   const config = getWorkConfig(state.timeSlot);
   const result = getWorkResult(state.timeSlot);
+
+  // --- Caffeine Logic ---
+  let caffeineSalaryMult = 1.0;
+  let caffeineCostMult = 1.0;
+  let caffeineMsg: string | null = null;
+
+  if (state.caffeine >= CAFFEINE_THRESHOLDS.TOXICITY) {
+    caffeineSalaryMult = 1.5;
+    caffeineCostMult = 1.5;
+    caffeineMsg = "中毒稼働(報酬UP/消耗大)";
+  } else if (state.caffeine >= CAFFEINE_THRESHOLDS.ZONE) {
+    caffeineSalaryMult = 1.3;
+    caffeineCostMult = 1.2;
+    caffeineMsg = "ZONE稼働(報酬UP)";
+  } else if (state.caffeine >= CAFFEINE_THRESHOLDS.AWAKE) {
+    caffeineSalaryMult = 1.1;
+    caffeineCostMult = 1.1;
+    caffeineMsg = "覚醒稼働";
+  }
   
   // Calculate final values
-  const finalSalary = Math.floor(config.salary * result.salaryMult);
-  const finalHpCost = Math.floor(config.hpCost * result.hpCostMult);
-  const finalSanityCost = Math.floor(config.sanityCost * result.sanityCostMult);
+  const finalSalary = Math.floor(config.salary * result.salaryMult * caffeineSalaryMult);
+  const finalHpCost = Math.floor(config.hpCost * result.hpCostMult * caffeineCostMult);
+  const finalSanityCost = Math.floor(config.sanityCost * result.sanityCostMult * caffeineCostMult);
 
   // State Update
   state.money += finalSalary;
@@ -138,6 +158,7 @@ export const handleWork = (state: GameState): GameState => {
     formatDelta('SAN', -finalSanityCost),
     result.type === 'CRITICAL_SUCCESS' ? '(大成功!)' : null,
     result.type === 'CRITICAL_FAILURE' ? '(大失敗...)' : null,
+    caffeineMsg,
   ], ', ');
 
   pushLog(state, `${result.logPrefix} ${flavorText}\n(${details})`, result.logType);
