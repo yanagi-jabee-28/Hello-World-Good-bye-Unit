@@ -3,6 +3,12 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+  workflow_dispatch: # 手動実行を許可
+
+# 同時実行制御: 同じブランチへの複数デプロイを防ぐ
+concurrency:
+  group: pages-deployment
+  cancel-in-progress: false # デプロイ中のものはキャンセルせず、新規を待機させる
 
 permissions:
   contents: read
@@ -10,39 +16,95 @@ permissions:
   id-token: write
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+    outputs:
+      has-changes: ${{ steps.verify.outputs.has-changes }}
 
-      - name: Use Node.js
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 差分検出のため履歴を取得
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: "npm" # npm キャッシュを有効化
 
       - name: Install dependencies
         run: npm ci
+        env:
+          # CI環境でのインストール最適化
+          HUSKY: 0
 
-      - name: Install rollup native binary for Linux (fix for optional dependency mismatch)
-        # When package-lock.json was generated on a different platform, npm may skip
-        # platform-specific optional dependencies and the rollup native binary is missing
-        # on the Linux runner. Installing the Linux-specific package ensures the native
-        # module is present and prevents the runtime `MODULE_NOT_FOUND` error.
+      - name: Install rollup native binary for Linux
+        # Why: package-lock.jsonが異なるプラットフォームで生成された場合、
+        # プラットフォーム固有のオプショナル依存関係がスキップされる可能性がある。
+        # Linux固有パッケージを明示的にインストールすることで、
+        # ランタイムでの MODULE_NOT_FOUND エラーを防ぐ。
         run: |
-          # Install the rollup native linux package to satisfy rollup's optional dependency
           npm install --no-save @rollup/rollup-linux-x64-gnu || true
 
-      - name: Build
+      - name: Build application
         run: npm run build
+        env:
+          NODE_ENV: production
 
-      - name: Configure Pages
-        uses: actions/configure-pages@v3
+      - name: Verify build output
+        id: verify
+        run: |
+          if [ -d "dist" ] && [ "$(ls -A dist)" ]; then
+            echo "has-changes=true" >> $GITHUB_OUTPUT
+            echo "✅ Build artifacts generated successfully"
+            ls -lh dist/
+          else
+            echo "has-changes=false" >> $GITHUB_OUTPUT
+            echo "⚠️ No build artifacts found"
+            exit 1
+          fi
 
-      - name: Upload artifact
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: dist/
+          retention-days: 1 # ビルド成果物は1日のみ保持（コスト削減）
+          if-no-files-found: error
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.has-changes == 'true'
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          path: dist/
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload to GitHub Pages
         uses: actions/upload-pages-artifact@v4
         with:
-          path: ./dist
+          path: dist/
 
-      - name: Deploy to Pages
+      - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Deployment summary
+        run: |
+          echo "### 🚀 Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL**: ${{ steps.deployment.outputs.page_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
