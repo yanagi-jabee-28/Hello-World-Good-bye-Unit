@@ -570,59 +570,55 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     ]
   },
   {
-    id: 'turn_end_lost_wallet',
+    id: 'turn_end_mystery_junk',
     trigger: 'turn_end',
-    text: "【紛失】財布が見当たらない...。最後に立ち寄ったコンビニか？",
-    type: 'bad',
-    weight: WEIGHTS.RARE,
-    conditions: { minMoney: 3000 },
+    text: "【発掘】実験室のジャンク箱から、型番不明の謎のICチップを発見した。オーラを感じる。",
+    type: 'mixed',
+    weight: WEIGHTS.UNCOMMON, // Replaces Lost Wallet with same/similar weight
     options: [
       {
-        id: 'opt_wallet_search',
-        label: '必死に探す (ハイリスク)',
-        risk: 'high',
-        description: '見つかれば被害なし。失敗すると徒労に終わる。',
-        successRate: 60,
-        successEffect: {
-          sanity: 10,
-          hp: -10
-        },
-        successLog: "ゴミ箱の横に落ちていた！中身も無事だ。奇跡的だ。",
-        failureEffect: {
-          sanity: -15,
-          hp: -20,
-          money: -2000
-        },
-        failureLog: "数時間探し回ったが見つからなかった...。再発行手続きの手間と交通費だけが掛かった。"
-      },
-      {
-        id: 'opt_wallet_retrace',
-        label: '冷静に考え直す (堅実)',
-        risk: 'low',
-        description: '置き忘れの可能性を探る。',
-        successRate: 75,
-        successEffect: {
-          sanity: 5,
-          hp: -5
-        },
-        successLog: "学食に忘れていたのを確保！冷静でいて良かった。",
-        failureEffect: {
-          sanity: -10,
-          money: -1500
-        },
-        failureLog: "思い当たる場所になかった。諦めてカードを止めた。"
-      },
-      {
-        id: 'opt_wallet_giveup',
-        label: '即座に諦める',
+        id: 'opt_junk_datasheet',
+        label: '型番を特定する',
         risk: 'safe',
-        description: '時間を優先し、再発行手続きを行う。',
+        description: '顕微鏡とテスターを使って地道に調べる。回路の勉強になる。',
         successRate: 100,
         successEffect: {
-          money: -3000,
+          knowledge: { [SubjectId.CIRCUIT]: KNOWLEDGE_GAINS.MEDIUM },
+           sanity: -5 // Tiresome
+        },
+        successLog: "地道な測定の結果、廃盤になったレアなオペアンプだと判明した。回路特性への理解が深まった。"
+      },
+      {
+        id: 'opt_junk_test',
+        label: '通電してみる',
+        risk: 'high',
+        description: '男なら一発勝負。回路に組み込んで電源ON。',
+        successRate: 30,
+        successEffect: {
+          knowledge: { [SubjectId.CIRCUIT]: KNOWLEDGE_GAINS.LARGE },
+          sanity: 15
+        },
+        successLog: "動いた！しかもこれ、超高性能なFPGAだ！この感動はプライスレス。",
+        failureEffect: {
+          hp: -15,
+          sanity: -10
+        },
+        failureLog: "「逆電圧か！？」強烈な異臭と共にチップが破裂。飛散した破片が頬をかすめた。顔が煤だらけだ。"
+      },
+      {
+        id: 'opt_junk_auction',
+        label: 'ヤフオクに出す',
+        risk: 'low',
+        description: '「動作未確認ジャンク」として出品。小銭を稼ぐ。',
+        successRate: 80,
+        successEffect: {
+          money: 3000
+        },
+        successLog: "「NCNR（ノークレーム・ノーリターン）」で出品したら、マニアが即決価格で落札してくれた。",
+        failureEffect: {
           sanity: -5
         },
-        successLog: "「厄落としだ」と割り切って手続きした。高い勉強代だった。"
+        failureLog: "「送料の方が高い」とクレームが来て、結局廃棄する羽目になった。徒労だ。"
       }
     ]
   }

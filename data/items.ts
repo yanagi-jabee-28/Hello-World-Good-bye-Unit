@@ -81,7 +81,7 @@ export const ITEMS: Record<ItemId, Item> = {
     description: 'デジタル没入エナジー。カフェインを大量摂取し、一気に集中モードへ。',
     price: 400,
     effects: {
-      caffeine: 85, // Nerfed: 100 -> 85. 0からだと15足りない(Normal) -> 微調整アイテムとの併用を促す
+      caffeine: 120, // Buffed: 85 -> 120. 一発でZONE(100)へ突入し、数ターン維持可能に。
       hp: 10,
       sanity: -5 
     }
