@@ -1,9 +1,11 @@
+
 import React, { useEffect, useState } from 'react';
 import { GameState, GameStatus, SubjectId } from '../types';
 import { generateGameEvaluation } from '../utils/ai';
 import { evaluateExam } from '../logic/examEvaluation';
 import { Terminal, FileText, Eye, EyeOff, CheckCircle, AlertTriangle, AlertOctagon } from 'lucide-react';
 import { SUBJECTS } from '../data/subjects';
+import { Sound } from '../utils/sound';
 
 interface Props {
   state: GameState;
@@ -21,6 +23,14 @@ export const EndingScreen: React.FC<Props> = ({ state, onRestart }) => {
       return evaluateExam(state);
     }
     return null;
+  }, [state.status]);
+
+  useEffect(() => {
+    if (state.status === GameStatus.VICTORY) {
+      Sound.play('success');
+    } else if (state.status !== GameStatus.PLAYING) {
+      Sound.play('game_over');
+    }
   }, [state.status]);
 
   useEffect(() => {

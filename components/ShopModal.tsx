@@ -4,6 +4,7 @@ import { ItemId } from '../types';
 import { ITEMS } from '../data/items';
 import { getItemEffectDescription } from '../utils/common';
 import { ShoppingCart, X, DollarSign } from 'lucide-react';
+import { Sound } from '../utils/sound';
 
 interface Props {
   money: number;
@@ -15,6 +16,11 @@ export const ShopModal: React.FC<Props> = ({ money, onClose, onBuy }) => {
   // Sellable items (exclude USB which is special)
   const shopItems = Object.values(ITEMS).filter(item => item.price > 0 && item.price < 90000);
 
+  const handleClose = () => {
+    Sound.play('button_click');
+    onClose();
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out] p-4">
       <div className="max-w-2xl w-full border-2 border-cyan-800 bg-black shadow-[0_0_30px_rgba(6,182,212,0.3)] flex flex-col max-h-[90vh]">
@@ -23,7 +29,7 @@ export const ShopModal: React.FC<Props> = ({ money, onClose, onBuy }) => {
           <h2 className="text-xl font-bold text-cyan-400 flex items-center gap-2">
             <ShoppingCart /> CO-OP_NET (生協オンライン)
           </h2>
-          <button onClick={onClose} className="text-cyan-600 hover:text-cyan-300">
+          <button onClick={handleClose} className="text-cyan-600 hover:text-cyan-300">
             <X size={24} />
           </button>
         </div>

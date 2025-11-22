@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Layout } from './components/Layout';
 import { StatusDisplay } from './components/StatusDisplay';
 import { LogWindow } from './components/LogWindow';
@@ -8,10 +8,11 @@ import { EndingScreen } from './components/EndingScreen';
 import { ShopModal } from './components/ShopModal';
 import { DebugPanel } from './components/DebugPanel';
 import { EventDialog } from './components/EventDialog';
-import { SaveLoadModal } from './components/SaveLoadModal'; // New
+import { SaveLoadModal } from './components/SaveLoadModal';
 import { useGameEngine } from './hooks/useGameEngine';
 import { ActionType, GameAction, ItemId, GameState } from './types';
 import { Terminal, Activity } from 'lucide-react';
+import { Sound } from './utils/sound';
 
 // ミニステータスバーコンポーネント（スマホ用）
 const MiniBar = ({ value, max, color, label }: { value: number; max: number; color: string; label: string }) => (
@@ -29,36 +30,81 @@ const MiniBar = ({ value, max, color, label }: { value: number; max: number; col
 const App: React.FC = () => {
   const { state, dispatch } = useGameEngine();
   const [isShopOpen, setIsShopOpen] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false); // New
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState<'terminal' | 'status'>('terminal');
+  
+  // Sound System: Watch logs for feedback
+  const lastLogIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const latestLog = state.logs[state.logs.length - 1];
+    if (latestLog && latestLog.id !== lastLogIdRef.current) {
+       lastLogIdRef.current = latestLog.id;
+       
+       // Don't play sound on init
+       if (state.logs.length > 1) {
+          if (latestLog.type === 'success') Sound.play('success');
+          else if (latestLog.type === 'danger') Sound.play('failure');
+          else if (latestLog.type === 'warning') Sound.play('alert');
+          else if (latestLog.text.includes('回復')) Sound.play('hp_recovery');
+          else if (latestLog.text.includes('入手')) Sound.play('item_use');
+       }
+    }
+  }, [state.logs]);
+
+  // Watch day change for turn_end sound
+  const lastDayRef = useRef(state.day);
+  useEffect(() => {
+    if (state.day > lastDayRef.current) {
+      Sound.play('turn_end');
+      lastDayRef.current = state.day;
+    }
+  }, [state.day]);
 
   const handleAction = (type: ActionType, payload?: any) => {
+    Sound.play('button_click');
     dispatch({ type, payload } as GameAction);
   };
 
   const handleBuyItem = (itemId: ItemId) => {
+    Sound.play('button_click');
     dispatch({ type: ActionType.BUY_ITEM, payload: itemId });
   };
 
   const handleResolveEvent = (optionId: string) => {
+     Sound.play('button_click');
      dispatch({ type: ActionType.RESOLVE_EVENT, payload: { optionId }});
   };
 
   const handleLoadState = (loadedState: GameState) => {
+    Sound.play('event_trigger');
     dispatch({ type: ActionType.LOAD_STATE, payload: loadedState });
   };
 
   const handleFullReset = () => {
+    Sound.play('game_over');
     dispatch({ type: ActionType.FULL_RESET });
   };
 
   const handleSoftReset = () => {
+    Sound.play('event_trigger');
     dispatch({ type: ActionType.SOFT_RESET });
   };
 
   const handleHardRestart = () => {
+    Sound.play('event_trigger');
     dispatch({ type: ActionType.HARD_RESTART });
   };
+
+  const handleMenuOpen = () => {
+    Sound.play('button_click');
+    setIsMenuOpen(true);
+  }
+
+  const handleShopOpen = () => {
+    Sound.play('button_click');
+    setIsShopOpen(true);
+  }
 
   const overlays = (
     <>
@@ -91,7 +137,7 @@ const App: React.FC = () => {
   );
 
   return (
-    <Layout state={state} overlays={overlays} onMenuOpen={() => setIsMenuOpen(true)}>
+    <Layout state={state} overlays={overlays} onMenuOpen={handleMenuOpen}>
       {/* --- DESKTOP LAYOUT (Large Screen) --- */}
       <div className="hidden lg:grid flex-1 grid-cols-12 gap-4 h-full min-h-0">
         {/* Left Column: Status (3 cols) */}
@@ -112,7 +158,7 @@ const App: React.FC = () => {
             <ActionPanel 
               state={state} 
               onAction={handleAction} 
-              onShopOpen={() => setIsShopOpen(true)}
+              onShopOpen={handleShopOpen}
             />
           </div>
         </div>
@@ -136,7 +182,7 @@ const App: React.FC = () => {
                   <ActionPanel 
                     state={state} 
                     onAction={handleAction} 
-                    onShopOpen={() => setIsShopOpen(true)}
+                    onShopOpen={handleShopOpen}
                   />
                 </div>
              </div>
@@ -175,7 +221,7 @@ const App: React.FC = () => {
           {/* Tab Buttons */}
           <div className="grid grid-cols-2 gap-3">
              <button
-                onClick={() => setMobileTab('terminal')}
+                onClick={() => { Sound.play('button_click'); setMobileTab('terminal'); }}
                 className={`p-2.5 text-xs font-bold border flex items-center justify-center gap-2 transition-all duration-200 ${
                    mobileTab === 'terminal' 
                    ? 'bg-green-900/40 border-green-500 text-green-400 shadow-[0_0_10px_rgba(34,197,94,0.2)]' 
@@ -185,7 +231,7 @@ const App: React.FC = () => {
                 <Terminal size={16} /> TERMINAL
              </button>
              <button
-                onClick={() => setMobileTab('status')}
+                onClick={() => { Sound.play('button_click'); setMobileTab('status'); }}
                 className={`p-2.5 text-xs font-bold border flex items-center justify-center gap-2 transition-all duration-200 ${
                    mobileTab === 'status' 
                    ? 'bg-green-900/40 border-green-500 text-green-400 shadow-[0_0_10px_rgba(34,197,94,0.2)]' 

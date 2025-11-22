@@ -1,7 +1,8 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { GameEvent, ActionType } from '../types';
 import { AlertTriangle, CheckCircle, Shield, Zap } from 'lucide-react';
+import { Sound } from '../utils/sound';
 
 interface Props {
   event: GameEvent;
@@ -9,6 +10,10 @@ interface Props {
 }
 
 export const EventDialog: React.FC<Props> = ({ event, onResolve }) => {
+  useEffect(() => {
+    Sound.play('event_trigger');
+  }, []);
+
   if (!event.options) return null;
 
   return (
