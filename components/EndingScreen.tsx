@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { GameState, GameStatus, SubjectId } from '../types';
 import { generateGameEvaluation } from '../utils/ai';
@@ -122,7 +121,7 @@ export const EndingScreen: React.FC<Props> = ({ state, onRestart }) => {
                     {Object.entries(examMetrics.rawKnowledge).map(([sid, score]) => (
                        <div key={sid} className="flex justify-between">
                           <span className="text-gray-400">{SUBJECTS[sid as SubjectId].name}</span>
-                          <span className="text-white">{score.toFixed(0)}</span>
+                          <span className="text-white">{(score as number).toFixed(0)}</span>
                        </div>
                     ))}
                     <div className="flex justify-between border-t border-gray-700 mt-1 pt-1">

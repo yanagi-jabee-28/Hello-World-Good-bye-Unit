@@ -60,7 +60,8 @@ export const ALL_EVENTS: GameEvent[] = [
     text: "【雑談】廊下でバッタリ会った。「最近顔色が悪いぞ」と缶コーヒーを奢ってくれた。",
     type: 'good',
     weight: 50,
-    effect: { relationships: { [RelationshipId.PROFESSOR]: 8 }, caffeine: 10, hp: 5 }
+    // Fix: カフェイン直接増加だとターン経過減衰で相殺されて気づかないため、アイテム入手に変更
+    effect: { relationships: { [RelationshipId.PROFESSOR]: 8 }, inventory: { [ItemId.BLACK_COFFEE]: 1 } }
   },
   {
     id: 'prof_advice_future',
@@ -297,12 +298,13 @@ export const ALL_EVENTS: GameEvent[] = [
   {
     id: 'care_package',
     trigger: 'turn_end',
-    text: "【補給】実家から救援物資が届いた。段ボール一杯の食料に涙が出る。",
+    text: "【補給】実家から救援物資が届いた。段ボールに入った食料と手紙に涙が出る。",
     type: 'good',
     category: 'health_recovery',
     weight: 10,
     conditions: { maxHp: 40 },
-    effect: { hp: 40, sanity: 20 },
+    // Fix: 実際のアイテム入手を追加
+    effect: { hp: 20, sanity: 20, inventory: { [ItemId.CUP_RAMEN]: 1, [ItemId.PROTEIN_BAR]: 1 } },
     coolDownTurns: 10
   },
   {
@@ -341,12 +343,13 @@ export const ALL_EVENTS: GameEvent[] = [
   {
     id: 'energy_sale',
     trigger: 'turn_end',
-    text: "【補給】生協でエナドリが箱売りされている。思わず箱買いしてしまった。",
+    text: "【補給】生協でエナドリがセール中だ。思わずまとめ買いしてしまった。",
     type: 'good',
     category: 'item_get',
     weight: 10,
     conditions: { timeSlots: [TimeSlot.NOON, TimeSlot.AFTER_SCHOOL], caffeineMax: 100 },
-    effect: { caffeine: 40, money: -500 },
+    // Fix: お金が減ってアイテムが増えるように変更（その場で飲むわけではない）
+    effect: { inventory: { [ItemId.ENERGY_DRINK]: 2 }, money: -600 },
     coolDownTurns: 8
   },
   {
