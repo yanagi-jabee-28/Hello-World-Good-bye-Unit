@@ -1,4 +1,3 @@
-
 import { GameState, TimeSlot } from '../../types';
 import { clamp, formatDelta, joinMessages, chance } from '../../utils/common';
 import { pushLog } from '../stateHelpers';
@@ -50,7 +49,7 @@ const getWorkResult = (timeSlot: TimeSlot): WorkResult => {
     };
     return { // 15% 大失敗 (システム崩壊)
       type: 'CRITICAL_FAILURE',
-      salaryMult: 0.5, hpCostMult: 2.0, sanityCostMult: 2.0, // 減給＆大ダメージ
+      salaryMult: 0.5, hpCostMult: 1.8, sanityCostMult: 1.8, // 緩和: 2.0 -> 1.8. Max Dmg: HP 81, SAN 72
       logPrefix: "【炎上】", logType: 'danger'
     };
   }

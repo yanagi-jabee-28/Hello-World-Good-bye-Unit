@@ -1,30 +1,37 @@
 
 import React from 'react';
-import { ActionType, SubjectId, GameStatus, GameState, ItemId, TimeSlot } from '../types';
+import { GameState, ItemId, SubjectId, TimeSlot } from '../types';
 import { SUBJECTS } from '../data/subjects';
 import { ITEMS } from '../data/items';
 import { getAvailability, getStudyHint } from '../logic/advisor';
 import { getWorkConfig } from '../data/work';
 import { getItemEffectDescription } from '../utils/common';
 import { getExamWarnings } from '../logic/warningSystem';
-import { BookOpen, Moon, Users, Gamepad2, Package, School, GraduationCap, UserPlus, AlertTriangle, ShoppingCart, Briefcase, Bed, Sun, BatteryCharging, Ban } from 'lucide-react';
+import { BookOpen, Users, Gamepad2, Package, School, GraduationCap, UserPlus, AlertTriangle, ShoppingCart, Briefcase, Bed, Sun, Moon, BatteryCharging, Ban, Coffee } from 'lucide-react';
+import { Button } from './ui/Button';
+import { Badge } from './ui/Badge';
 
 interface Props {
   state: GameState;
-  onAction: {
-    (type: ActionType.STUDY, payload: SubjectId): void;
-    (type: ActionType.USE_ITEM, payload: ItemId): void;
-    (type: ActionType.WORK): void;
-    (type: Exclude<ActionType, ActionType.STUDY | ActionType.USE_ITEM | ActionType.WORK>): void;
+  actions: {
+    study: (id: SubjectId) => void;
+    rest: () => void;
+    work: () => void;
+    escapism: () => void;
+    askProfessor: () => void;
+    askSenior: () => void;
+    relyFriend: () => void;
+    useItem: (id: ItemId) => void;
+    openShop: () => void;
   };
-  onShopOpen: () => void;
 }
 
-export const ActionPanel: React.FC<Props> = ({ state, onAction, onShopOpen }) => {
-  const isGameOver = state.status !== GameStatus.PLAYING;
+export const ActionPanel: React.FC<Props> = ({ state, actions }) => {
+  const { timeSlot, caffeine, status } = state;
+  const isGameOver = status !== 'PLAYING';
   const warnings = getExamWarnings(state);
   const hasCriticalWarning = warnings.some(w => w.severity === 'critical' || w.severity === 'danger');
-  
+
   if (isGameOver) {
     return (
       <div className="h-full w-full p-4 border-t-2 border-red-900 bg-black flex items-center justify-center">
@@ -37,232 +44,154 @@ export const ActionPanel: React.FC<Props> = ({ state, onAction, onShopOpen }) =>
     );
   }
 
-  const { timeSlot, caffeine } = state;
+  // Helpers
   const ownedItems = Object.entries(state.inventory)
     .filter(([_, count]) => ((count as number) || 0) > 0)
     .map(([id]) => id as ItemId);
 
   const { professor: isProfAvailable, senior: isSeniorAvailable, friend: isFriendAvailable } = getAvailability(timeSlot);
   const studyHint = getStudyHint(timeSlot, caffeine);
-
   const workConfig = getWorkConfig(timeSlot);
-  const workInfo = {
-    text: workConfig.label,
-    sub: `¥${workConfig.salary.toLocaleString()} / ${workConfig.description}`
-  };
 
   const getRestConfig = (slot: TimeSlot) => {
     switch (slot) {
-      case TimeSlot.LATE_NIGHT:
-        return {
-          label: "就寝 (布団)",
-          desc: "1日を終了し深く眠る",
-          effect: "HP大/SAN大 回復",
-          icon: Bed,
-          style: "border-blue-800 hover:bg-blue-900/30"
-        };
-      case TimeSlot.MORNING:
-        return {
-          label: "二度寝",
-          desc: "登校時間まで粘る",
-          effect: "HP中/SAN小 回復",
-          icon: Sun,
-          style: "border-blue-900 hover:bg-blue-900/20"
-        };
-      case TimeSlot.NOON:
-        return {
-          label: "昼寝",
-          desc: "午後の講義に備える",
-          effect: "HP小/SAN中 回復",
-          icon: Moon,
-          style: "border-blue-900 hover:bg-blue-900/20"
-        };
-      default:
-        return {
-          label: "仮眠 (机)",
-          desc: "隙間時間で回復",
-          effect: "HP小/SAN微 回復",
-          icon: BatteryCharging,
-          style: "border-blue-900 hover:bg-blue-900/20"
-        };
+      case TimeSlot.LATE_NIGHT: return { label: "就寝 (布団)", desc: "HP大/SAN大", icon: <Bed size={16} />, variant: 'secondary' as const };
+      case TimeSlot.MORNING: return { label: "二度寝", desc: "HP中/SAN小", icon: <Sun size={16} />, variant: 'secondary' as const };
+      case TimeSlot.NOON: return { label: "昼寝", desc: "HP小/SAN中", icon: <Moon size={16} />, variant: 'secondary' as const };
+      default: return { label: "仮眠 (机)", desc: "HP小/SAN微", icon: <BatteryCharging size={16} />, variant: 'secondary' as const };
     }
   };
-
   const restConfig = getRestConfig(timeSlot);
-  const RestIcon = restConfig.icon;
 
   return (
     <div className="grid grid-cols-2 gap-2 p-2 md:grid-cols-2 lg:grid-cols-4 lg:gap-4 lg:p-4 border-t-2 border-green-900 bg-gray-950">
       
-      {/* 警告バナー（DAY 5以降） */}
+      {/* Warnings */}
       {warnings.length > 0 && (
         <div className="col-span-2 lg:col-span-4 mb-2">
-          <div className={`p-3 border-2 rounded ${
-            hasCriticalWarning ? 'border-red-700 bg-red-900/20 animate-pulse' : 'border-yellow-700 bg-yellow-900/20'
-          }`}>
-            <div className="flex items-center gap-2 mb-2">
-              <AlertTriangle size={16} className={hasCriticalWarning ? 'text-red-500' : 'text-yellow-500'} />
-              <span className="text-xs font-bold text-white">
-                試験準備警告 ({warnings.length})
-              </span>
-            </div>
-            <div className="text-[10px] space-y-1">
-              {warnings.slice(0, 3).map((w, i) => (
-                <div key={i} className="text-gray-300 flex items-center gap-2">
-                  <span>{w.icon}</span>
-                  <span>{w.message}</span>
-                </div>
-              ))}
-              {warnings.length > 3 && (
-                <div className="text-gray-500 italic">
-                  ...他 {warnings.length - 3} 件（デバッグパネルで確認）
-                </div>
-              )}
+          <div className={`p-2 rounded border flex items-start gap-3 ${hasCriticalWarning ? 'bg-red-900/20 border-red-800' : 'bg-yellow-900/20 border-yellow-800'}`}>
+            <AlertTriangle className={hasCriticalWarning ? 'text-red-500' : 'text-yellow-500'} size={18} />
+            <div className="flex-1">
+              <div className="text-xs font-bold text-gray-200 mb-1">WARNINGS DETECTED ({warnings.length})</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
+                {warnings.slice(0, 4).map((w, i) => (
+                  <div key={i} className="text-[10px] text-gray-400 flex items-center gap-1">
+                    <span>{w.icon}</span> {w.message}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Study Actions */}
+      {/* ACADEMIC */}
       <div className="col-span-2 lg:col-span-1 space-y-2">
-        <h3 className="text-xs text-gray-500 font-bold mb-1 flex items-center gap-2">
-           <BookOpen size={12} />
-           ACADEMIC
-        </h3>
-        <div className="text-[10px] text-green-600 mb-1 bg-green-900/10 p-1 border border-green-900/30 text-center">
-           {studyHint}
+        <div className="flex justify-between items-center text-xs text-gray-500 font-bold mb-1 px-1">
+           <span className="flex items-center gap-2"><BookOpen size={12} /> ACADEMIC</span>
+           <Badge variant={caffeine > 100 ? 'warning' : 'outline'}>{studyHint.split('(')[0]}</Badge>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-1 gap-2">
           {Object.values(SUBJECTS).map((sub) => (
-            <button
+            <Button
               key={sub.id}
-              onClick={() => onAction(ActionType.STUDY, sub.id)}
-              className="w-full flex items-center gap-2 p-2 border border-green-800 hover:bg-green-900/30 text-left group transition-colors"
-            >
-              <School size={16} className="text-green-500 shrink-0" />
-              <div className="overflow-hidden">
-                <div className="text-xs font-bold text-green-400 truncate">{sub.name}</div>
-                <div className="text-[9px] text-gray-500">Diff: {sub.difficulty}x</div>
-              </div>
-            </button>
+              onClick={() => actions.study(sub.id)}
+              label={sub.name}
+              subLabel={`Diff: ${sub.difficulty}x`}
+              icon={<School size={16} />}
+              variant="primary"
+              fullWidth
+            />
           ))}
         </div>
       </div>
 
-      {/* Life & Economy Actions */}
+      {/* LIFE & ECONOMY */}
       <div className="space-y-2">
-        <h3 className="text-xs text-gray-500 font-bold mb-1 flex items-center gap-2">
-           <Briefcase size={12} />
-           LIFE & ECONOMY
-        </h3>
-        
-        <button
-          onClick={() => onAction(ActionType.REST)}
-          className={`w-full flex items-center gap-2 p-2 border text-left group transition-colors ${restConfig.style}`}
-        >
-          <div className="relative shrink-0">
-              <RestIcon size={16} className="text-blue-500" />
-              {caffeine > 80 && <AlertTriangle size={10} className="absolute -top-1 -right-1 text-yellow-500" />}
-          </div>
-          <div className="overflow-hidden">
-            <div className="text-xs font-bold text-blue-400 truncate">{restConfig.label}</div>
-            <div className="text-[9px] text-gray-400 truncate">{restConfig.desc}</div>
-            <div className="text-[9px] text-blue-300 font-bold mt-0.5 truncate">{restConfig.effect}</div>
-          </div>
-        </button>
-
-        <button
-          onClick={() => onAction(ActionType.WORK)}
-          className="w-full flex items-center gap-2 p-2 border border-orange-900 hover:bg-orange-900/20 text-left"
-        >
-          <Briefcase size={16} className="text-orange-500 shrink-0" />
-          <div className="overflow-hidden">
-            <div className="text-xs font-bold text-orange-400 truncate">{workInfo.text}</div>
-            <div className="text-[9px] text-gray-500 truncate">{workInfo.sub}</div>
-          </div>
-        </button>
-
-        <button
-          onClick={onShopOpen}
-          className="w-full flex items-center gap-2 p-2 border border-cyan-900 hover:bg-cyan-900/20 text-left"
-        >
-          <ShoppingCart size={16} className="text-cyan-500 shrink-0" />
-          <div className="overflow-hidden">
-            <div className="text-xs font-bold text-cyan-400">生協オンライン</div>
-            <div className="text-[9px] text-gray-500">アイテム購入</div>
-          </div>
-        </button>
+        <div className="text-xs text-gray-500 font-bold mb-1 flex items-center gap-2 px-1">
+           <Briefcase size={12} /> LIFE & ECONOMY
+        </div>
+        <Button
+          onClick={actions.rest}
+          label={restConfig.label}
+          subLabel={restConfig.desc}
+          icon={restConfig.icon}
+          variant="secondary"
+          fullWidth
+        />
+        <Button
+          onClick={actions.work}
+          label={workConfig.label}
+          subLabel={`¥${workConfig.salary.toLocaleString()}`}
+          icon={<Briefcase size={16} />}
+          variant="outline"
+          className="border-orange-900 text-orange-400 hover:border-orange-700"
+          fullWidth
+        />
+        <Button
+          onClick={actions.openShop}
+          label="生協オンライン"
+          subLabel="アイテム購入"
+          icon={<ShoppingCart size={16} />}
+          variant="outline"
+          className="border-cyan-900 text-cyan-400 hover:border-cyan-700"
+          fullWidth
+        />
       </div>
 
-      {/* Social Actions */}
+      {/* SOCIAL */}
       <div className="space-y-2">
-        <h3 className="text-xs text-gray-500 font-bold mb-1 flex items-center gap-2">
-           <Users size={12} />
-           SOCIAL
-        </h3>
-
-        <button
-          onClick={() => onAction(ActionType.ASK_PROFESSOR)}
+        <div className="text-xs text-gray-500 font-bold mb-1 flex items-center gap-2 px-1">
+           <Users size={12} /> SOCIAL
+        </div>
+        <Button
+          onClick={actions.askProfessor}
           disabled={!isProfAvailable}
-          className={`w-full flex items-center gap-2 p-2 border text-left transition-colors ${!isProfAvailable ? 'border-gray-800 opacity-40 cursor-not-allowed' : 'border-indigo-900 hover:bg-indigo-900/20'}`}
-        >
-          <GraduationCap size={16} className="text-indigo-500 shrink-0" />
-          <div className="overflow-hidden">
-            <div className="text-xs font-bold text-indigo-400">教授に質問</div>
-            <div className="text-[9px] text-gray-500 truncate">
-               {isProfAvailable ? "理解度UP" : "不在(時間外)"}
-            </div>
-          </div>
-        </button>
-
-        <button
-          onClick={() => onAction(ActionType.ASK_SENIOR)}
+          label="教授に質問"
+          subLabel={isProfAvailable ? "理解度UP" : "不在"}
+          icon={<GraduationCap size={16} />}
+          variant={isProfAvailable ? "outline" : "ghost"}
+          className={isProfAvailable ? "border-indigo-900 text-indigo-400 hover:border-indigo-700" : ""}
+          fullWidth
+        />
+        <Button
+          onClick={actions.askSenior}
           disabled={!isSeniorAvailable}
-          className={`w-full flex items-center gap-2 p-2 border text-left transition-colors ${!isSeniorAvailable ? 'border-gray-800 opacity-40 cursor-not-allowed' : 'border-purple-900 hover:bg-purple-900/20'}`}
-        >
-          <Users size={16} className="text-purple-500 shrink-0" />
-          <div className="overflow-hidden">
-            <div className="text-xs font-bold text-purple-400">先輩を頼る</div>
-            <div className="text-[9px] text-gray-500 truncate">
-              {isSeniorAvailable ? "アイテム入手" : "不在(午前)"}
-            </div>
-          </div>
-        </button>
-
-        <button
-          onClick={() => onAction(ActionType.RELY_FRIEND)}
+          label="先輩を頼る"
+          subLabel={isSeniorAvailable ? "アイテム/情報" : "不在"}
+          icon={<Users size={16} />}
+          variant={isSeniorAvailable ? "outline" : "ghost"}
+          className={isSeniorAvailable ? "border-purple-900 text-purple-400 hover:border-purple-700" : ""}
+          fullWidth
+        />
+        <Button
+          onClick={actions.relyFriend}
           disabled={!isFriendAvailable}
-          className={`w-full flex items-center gap-2 p-2 border text-left transition-colors ${!isFriendAvailable ? 'border-gray-800 opacity-40 cursor-not-allowed' : 'border-pink-900 hover:bg-pink-900/20'}`}
-        >
-          <UserPlus size={16} className="text-pink-500 shrink-0" />
-          <div className="overflow-hidden">
-            <div className="text-xs font-bold text-pink-400">友人と協力</div>
-            <div className="text-[9px] text-gray-500 truncate">
-              {isFriendAvailable ? "SAN回復" : "睡眠中"}
-            </div>
-          </div>
-        </button>
-
-        <button
-          onClick={() => onAction(ActionType.ESCAPISM)}
-          className="w-full flex items-center gap-2 p-2 border border-pink-900 hover:bg-pink-900/20 text-left"
-        >
-          <Gamepad2 size={16} className="text-pink-500 shrink-0" />
-          <div className="overflow-hidden">
-            <div className="text-xs font-bold text-pink-400">現実逃避</div>
-            <div className="text-[9px] text-gray-500 truncate">SAN回復/時間経過</div>
-          </div>
-        </button>
+          label="友人と協力"
+          subLabel={isFriendAvailable ? "SAN回復" : "睡眠中"}
+          icon={<UserPlus size={16} />}
+          variant={isFriendAvailable ? "outline" : "ghost"}
+          className={isFriendAvailable ? "border-pink-900 text-pink-400 hover:border-pink-700" : ""}
+          fullWidth
+        />
+        <Button
+          onClick={actions.escapism}
+          label="現実逃避"
+          subLabel="時間経過/SAN回復"
+          icon={<Gamepad2 size={16} />}
+          variant="outline"
+          className="border-pink-900/50 text-pink-400/70 hover:border-pink-700 hover:text-pink-300"
+          fullWidth
+        />
       </div>
 
-      {/* Item Actions */}
+      {/* INVENTORY */}
       <div className="col-span-2 lg:col-span-1 space-y-2">
-        <h3 className="text-xs text-gray-500 font-bold mb-1 flex items-center gap-2">
-           <Package size={12} />
-           INVENTORY
-        </h3>
+        <div className="text-xs text-gray-500 font-bold mb-1 flex items-center gap-2 px-1">
+           <Package size={12} /> INVENTORY
+        </div>
         {ownedItems.length === 0 ? (
-           <div className="text-xs text-gray-600 p-2 border border-gray-800 border-dashed text-center">
+           <div className="text-xs text-gray-600 p-4 border border-gray-800 border-dashed text-center rounded">
              NO ITEMS
            </div>
         ) : (
@@ -270,21 +199,16 @@ export const ActionPanel: React.FC<Props> = ({ state, onAction, onShopOpen }) =>
             {ownedItems.map((itemId) => {
               const item = ITEMS[itemId];
               return (
-                <button
+                <Button
                   key={itemId}
-                  onClick={() => onAction(ActionType.USE_ITEM, itemId)}
-                  className="flex items-start gap-2 p-2 border border-gray-700 hover:bg-gray-900 text-left transition-colors"
-                >
-                  <Package size={14} className="text-orange-400 mt-1 shrink-0" />
-                  <div className="overflow-hidden">
-                    <div className="text-xs font-bold text-orange-300 truncate">
-                      {item.name} x{state.inventory[itemId]}
-                    </div>
-                    <div className="text-[9px] text-gray-400 leading-tight truncate">
-                      {getItemEffectDescription(item)}
-                    </div>
-                  </div>
-                </button>
+                  onClick={() => actions.useItem(itemId)}
+                  label={`${item.name} x${state.inventory[itemId]}`}
+                  subLabel={getItemEffectDescription(item)}
+                  icon={<Package size={14} />}
+                  variant="outline"
+                  className="border-gray-700 text-gray-300 hover:border-gray-500"
+                  fullWidth
+                />
               );
             })}
           </div>

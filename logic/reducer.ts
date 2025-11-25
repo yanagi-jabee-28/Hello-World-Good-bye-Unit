@@ -313,14 +313,24 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       if (option) {
         // 成功判定
         const isSuccess = Math.random() * 100 < option.successRate;
-        const effect = isSuccess ? option.successEffect : (option.failureEffect || option.successEffect); // 失敗効果がない場合は成功効果を使う（または何も起きない）
-        const logText = isSuccess ? option.successLog : (option.failureLog || "失敗...");
-        const logType = isSuccess ? 'success' : 'danger';
-
-        const details = processEffect(newState, effect);
         
-        // 統合ログメッセージ
-        pushLog(newState, `${event.text}\n\n▶ 選択: ${option.label}\n${logText}\n(${details.join(', ')})`, logType);
+        if (isSuccess) {
+          // 成功時
+          const effect = option.successEffect;
+          const details = effect ? processEffect(newState, effect) : [];
+          pushLog(newState, `${event.text}\n\n▶ 選択: ${option.label}\n${option.successLog}\n(${details.join(', ')})`, 'success');
+
+          // Chain Trigger (ランダムイベント抽選へ)
+          if (option.chainTrigger) {
+             newState = executeEvent(newState, option.chainTrigger, "特に何も起きなかった...");
+          }
+
+        } else {
+          // 失敗時
+          const effect = option.failureEffect || option.successEffect; // 失敗効果がない場合は成功効果を使う（または何も起きない）
+          const details = effect ? processEffect(newState, effect) : [];
+          pushLog(newState, `${event.text}\n\n▶ 選択: ${option.label}\n${option.failureLog || "失敗..."}\n(${details.join(', ')})`, 'danger');
+        }
       }
     }
 

@@ -82,6 +82,11 @@ export const handleAskSenior = (state: GameState): GameState => {
     else if (Math.random() < 0.6) receivedItem = ItemId.REFERENCE_BOOK;
     else receivedItem = ItemId.ENERGY_DRINK;
 
+    // 過去問既所持の場合、USBメモリは出ないように制御
+    if (receivedItem === ItemId.USB_MEMORY && state.flags.hasPastPapers) {
+        receivedItem = ItemId.ENERGY_DRINK; // 代替品
+    }
+
     state.relationships[RelationshipId.SENIOR] = clamp(state.relationships[RelationshipId.SENIOR] + relBonus, 0, 100);
     state.sanity = clamp(state.sanity + sanityBonus, 0, state.maxSanity);
     state.inventory[receivedItem] = (state.inventory[receivedItem] || 0) + 1;
@@ -101,44 +106,61 @@ export const handleAskSenior = (state: GameState): GameState => {
     const menuEventOriginal = ALL_EVENTS.find(e => e.id === 'senior_interaction_menu');
     if (menuEventOriginal) {
       // イベント定義を動的に書き換えるためにディープコピー
-      // JSON.parse(JSON.stringify()) は簡易コピーだが、この用途では十分
       const menuEvent = JSON.parse(JSON.stringify(menuEventOriginal));
       
-      // 「過去問ください！」オプション (opt_senior_past_paper) の報酬をランダム化
+      // 「過去問ください！」オプション (opt_senior_past_paper) の報酬制御
       const pastPaperOpt = menuEvent.options?.find((o: any) => o.id === 'opt_senior_past_paper');
       
       if (pastPaperOpt) {
-        const rand = Math.random();
-        // ランダム分岐ロジック
-        if (rand < 0.4) {
-           // 40%: USBメモリ (Default - 大当たり)
-           // branching.ts の定義をそのまま使用
-           pastPaperOpt.successLog = "「しょうがねぇなぁ」秘蔵のフォルダを共有してくれた。神データだ！";
-        } 
-        else if (rand < 0.7) {
-           // 30%: 参考書 (当たり)
-           pastPaperOpt.successEffect = {
-             inventory: { [ItemId.REFERENCE_BOOK]: 1 },
-             knowledge: { [SubjectId.CIRCUIT]: KNOWLEDGE_GAINS.MEDIUM },
-             relationships: { [RelationshipId.SENIOR]: REL_GAINS.MEDIUM }
-           };
-           pastPaperOpt.successLog = "「これやるよ。俺にはもう不要だからな」使い込まれた参考書を譲り受けた！";
-        } 
-        else if (rand < 0.9) {
-           // 20%: 消耗品セット (小当たり)
-           pastPaperOpt.successEffect = {
-             inventory: { [ItemId.ENERGY_DRINK]: 1, [ItemId.HOT_EYE_MASK]: 1 },
-             relationships: { [RelationshipId.SENIOR]: REL_GAINS.Qm }
-           };
-           pastPaperOpt.successLog = "「過去問はないけど、これで気合入れろよ」差し入れを貰った。";
-        } 
-        else {
-           // 10%: 知識のみ (アイテムなしだが知識量多め)
-           pastPaperOpt.successEffect = {
-             knowledge: { [SubjectId.CIRCUIT]: KNOWLEDGE_GAINS.HUGE },
-             relationships: { [RelationshipId.SENIOR]: REL_GAINS.MEDIUM }
-           };
-           pastPaperOpt.successLog = "「データは無いけど、ここ絶対出るぞ」先輩がノートを見せてくれた。";
+        // 既に過去問を持っている場合は、USBの代わりにアイテムや知識を与える
+        if (state.flags.hasPastPapers) {
+           const rand = Math.random();
+           if (rand < 0.5) {
+              pastPaperOpt.successEffect = {
+                inventory: { [ItemId.REFERENCE_BOOK]: 1 },
+                knowledge: { [SubjectId.CIRCUIT]: KNOWLEDGE_GAINS.MEDIUM },
+                relationships: { [RelationshipId.SENIOR]: REL_GAINS.MEDIUM }
+              };
+              pastPaperOpt.successLog = "「過去問はもう持ってるだろ？これでも読んどけ」と参考書を貸してくれた。";
+           } else {
+              pastPaperOpt.successEffect = {
+                inventory: { [ItemId.ENERGY_DRINK]: 2 },
+                relationships: { [RelationshipId.SENIOR]: REL_GAINS.MEDIUM }
+              };
+              pastPaperOpt.successLog = "「データは渡したろ？あとは気合だ」エナドリを2本押し付けられた。";
+           }
+        } else {
+           // 通常ロジック (ランダム化)
+           const rand = Math.random();
+           if (rand < 0.4) {
+              // 40%: USBメモリ (Default - 大当たり)
+              pastPaperOpt.successLog = "「しょうがねぇなぁ」秘蔵のフォルダを共有してくれた。神データだ！";
+           } 
+           else if (rand < 0.7) {
+              // 30%: 参考書 (当たり)
+              pastPaperOpt.successEffect = {
+                inventory: { [ItemId.REFERENCE_BOOK]: 1 },
+                knowledge: { [SubjectId.CIRCUIT]: KNOWLEDGE_GAINS.MEDIUM },
+                relationships: { [RelationshipId.SENIOR]: REL_GAINS.MEDIUM }
+              };
+              pastPaperOpt.successLog = "「これやるよ。俺にはもう不要だからな」使い込まれた参考書を譲り受けた！";
+           } 
+           else if (rand < 0.9) {
+              // 20%: 消耗品セット (小当たり)
+              pastPaperOpt.successEffect = {
+                inventory: { [ItemId.ENERGY_DRINK]: 1, [ItemId.HOT_EYE_MASK]: 1 },
+                relationships: { [RelationshipId.SENIOR]: REL_GAINS.Qm }
+              };
+              pastPaperOpt.successLog = "「過去問はないけど、これで気合入れろよ」差し入れを貰った。";
+           } 
+           else {
+              // 10%: 知識のみ (アイテムなしだが知識量多め)
+              pastPaperOpt.successEffect = {
+                knowledge: { [SubjectId.CIRCUIT]: KNOWLEDGE_GAINS.HUGE },
+                relationships: { [RelationshipId.SENIOR]: REL_GAINS.MEDIUM }
+              };
+              pastPaperOpt.successLog = "「データは無いけど、ここ絶対出るぞ」先輩がノートを見せてくれた。";
+           }
         }
       }
 

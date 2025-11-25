@@ -1,4 +1,3 @@
-
 import { TimeSlot, LogEntry } from '../types';
 
 export interface WorkConfig {
@@ -14,40 +13,40 @@ export interface WorkConfig {
 const MORNING_CONFIG: WorkConfig = {
   label: "早朝・午前シフト",
   description: "軽作業",
-  salary: 2800,
-  hpCost: 10,
+  salary: 2200, // Reduced: 2800 -> 2200
+  hpCost: 15,   // Increased cost: 10 -> 15
   sanityCost: 5,
-  logText: "【早朝シフト】生協で商品の搬入作業を行った。眠いが、小銭にはなる。",
+  logText: "【早朝シフト】眠い目をこすりながら搬入作業。割に合わない気がするが、背に腹は代えられない。",
   logType: 'info'
 };
 
 const DAY_CONFIG: WorkConfig = {
   label: "日中シフト",
   description: "肉体労働",
-  salary: 4200,
-  hpCost: 30,
-  sanityCost: 10,
-  logText: "【日中シフト】学食のランチラッシュ。戦場のような厨房でひたすら皿を洗った。時給以上の働きを強いられた気がする。",
+  salary: 3500, // Reduced: 4200 -> 3500
+  hpCost: 35,   // Increased cost: 30 -> 35
+  sanityCost: 15,
+  logText: "【日中シフト】戦場のようなランチラッシュを捌いた。身体が鉛のように重い。",
   logType: 'info'
 };
 
 const EVENING_CONFIG: WorkConfig = {
   label: "塾講師バイト",
   description: "精神労働",
-  salary: 6000,
+  salary: 5000, // Reduced: 6000 -> 5000
   hpCost: 15,
-  sanityCost: 25,
-  logText: "【塾講師バイト】生意気な受験生に数学を教えた。「先生、それ説明わかりにくい」と言われ、精神を削られた。",
+  sanityCost: 30, // Increased cost: 25 -> 30
+  logText: "【塾講師バイト】「先生、ここ学校で習ってない」...理不尽なクレームに笑顔で耐え、精神を削った。",
   logType: 'warning'
 };
 
 const NIGHT_CONFIG: WorkConfig = {
   label: "深夜緊急案件",
   description: "危険手当",
-  salary: 10000,
-  hpCost: 50,
-  sanityCost: 45,
-  logText: "【深夜・緊急案件】「サーバーが落ちた」と叩き起こされ、朝までトラブルシューティング。報酬はいいが、寿命が縮んだ音がした。",
+  salary: 8500, // Reduced: 10000 -> 8500
+  hpCost: 45,   // Adjusted: 60 -> 45 (To prevent insta-death on critical fail)
+  sanityCost: 40, // Adjusted: 50 -> 40
+  logText: "【深夜・緊急案件】スパゲッティコードの海を泳ぎ切った。報酬は手に入れたが、人間として大切な何かを失った気がする。",
   logType: 'danger'
 };
 
@@ -65,10 +64,10 @@ export const getWorkConfig = (slot: TimeSlot): WorkConfig => {
   return WORK_CONFIGS[slot] || {
     label: "アルバイト",
     description: "資金獲得",
-    salary: 2000,
+    salary: 1500,
     hpCost: 20,
     sanityCost: 10,
-    logText: "【労働】臨時バイトをこなした。",
+    logText: "【労働】単発バイトをこなした。",
     logType: 'info'
   };
 };

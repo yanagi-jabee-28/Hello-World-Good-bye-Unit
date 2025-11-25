@@ -165,17 +165,9 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         label: 'おまかせ',
         risk: 'high',
         description: '友人の提案に乗る。何が起こるかわからない。',
-        successRate: 50,
-        successEffect: {
-          money: 1000,
-          relationships: { [RelationshipId.FRIEND]: REL_GAINS.LARGE }
-        },
-        successLog: "「パチンコで勝ったから奢るわ！」ラッキーだ。",
-        failureEffect: {
-          hp: -10,
-          sanity: -10
-        },
-        failureLog: "変なトラブルに巻き込まれて疲弊した..."
+        successRate: 100,
+        chainTrigger: 'action_friend', // ランダムイベントを連鎖させる
+        successLog: "友人の提案に乗ってみることにした。"
       }
     ]
   },

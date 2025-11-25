@@ -16,7 +16,7 @@ export const ITEMS: Record<ItemId, Item> = {
     description: 'カフェイン濃度を中和(-50mg)し、リセットする。',
     price: 110,
     effects: {
-      caffeine: -50, // 計算しやすいよう50刻み
+      caffeine: -50,
       hp: 5,
       sanity: 2
     }
@@ -24,11 +24,11 @@ export const ITEMS: Record<ItemId, Item> = {
   [ItemId.BLACK_COFFEE]: {
     id: ItemId.BLACK_COFFEE,
     name: '缶コーヒー(微糖)',
-    description: '覚醒剤代わり。1本で覚醒状態(40mg~)へ。2ターン効果が続く。',
-    price: 150, // 微増 140 -> 150
+    description: '覚醒剤代わり。1本で覚醒状態(40mg~)へ。',
+    price: 160, // Increased: 150 -> 160
     effects: {
-      caffeine: 50, // 0 -> 50(Awake) -> 40(Awake) -> 30(Normal)
-      hp: 5,
+      caffeine: 50,
+      hp: 2,
       sanity: 2
     }
   },
@@ -36,9 +36,9 @@ export const ITEMS: Record<ItemId, Item> = {
     id: ItemId.GUMMY_CANDY,
     name: 'ハードグミ',
     description: '噛むことでストレスを軽減。顎が疲れるくらいの弾力が良い。',
-    price: 160,
+    price: 180, // Increased: 160 -> 180
     effects: {
-      sanity: 12, 
+      sanity: 15, // Buffed: 12 -> 15
       hp: 2
     }
   },
@@ -47,27 +47,27 @@ export const ITEMS: Record<ItemId, Item> = {
     id: ItemId.PROTEIN_BAR,
     name: 'プロテインバー',
     description: '手軽にタンパク質補給。勉強に必要なのは根性ではなく筋肉だ。',
-    price: 220,
+    price: 250, // Increased: 220 -> 250
     effects: {
-      hp: 30, // HP回復強化
+      hp: 35, // Buffed: 30 -> 35
     }
   },
   [ItemId.HIGH_CACAO_CHOCO]: {
     id: ItemId.HIGH_CACAO_CHOCO,
     name: '高カカオチョコ',
     description: '脳のエネルギー源。苦味が意識を繋ぎ止める。',
-    price: 300,
+    price: 320, // Increased: 300 -> 320
     effects: {
       hp: 5,
-      sanity: 15,
-      caffeine: 20 // 微調整用
+      sanity: 18, // Buffed: 15 -> 18
+      caffeine: 15 
     }
   },
   [ItemId.CAFE_LATTE]: {
     id: ItemId.CAFE_LATTE,
     name: 'カフェラテ',
     description: 'ミルクの優しさが荒んだ心を癒やす。バランスが良い。',
-    price: 350,
+    price: 380, // Increased: 350 -> 380
     effects: {
       caffeine: 30, 
       hp: 15,
@@ -79,9 +79,9 @@ export const ITEMS: Record<ItemId, Item> = {
     id: ItemId.ENERGY_DRINK,
     name: 'ZONe (Ver.Infinity)',
     description: 'デジタル没入エナジー。カフェインを大量摂取し、一気に集中モードへ。',
-    price: 400,
+    price: 550, // Increased significantly: 400 -> 550
     effects: {
-      caffeine: 120, // Buffed: 85 -> 120. 一発でZONE(100)へ突入し、数ターン維持可能に。
+      caffeine: 120,
       hp: 10,
       sanity: -5 
     }
@@ -90,10 +90,10 @@ export const ITEMS: Record<ItemId, Item> = {
     id: ItemId.HERBAL_TEA,
     name: '高級ハーブティー',
     description: 'カモミールとラベンダーの香り。カフェインを強力に排出(-100mg)。',
-    price: 450,
+    price: 600, // Increased: 450 -> 600 (Sanity is valuable)
     effects: {
-      caffeine: -100, // 強力なリセット
-      sanity: 30,
+      caffeine: -100,
+      sanity: 35, // Buffed: 30 -> 35
       hp: 5
     }
   },
@@ -101,9 +101,9 @@ export const ITEMS: Record<ItemId, Item> = {
     id: ItemId.CUP_RAMEN,
     name: '激辛カップ麺',
     description: '深夜の研究室の味。内臓への負担と引き換えに満足感を得る。',
-    price: 450,
+    price: 480, // Increased: 450 -> 480
     effects: {
-      hp: 50, 
+      hp: 55, // Buffed: 50 -> 55
       sanity: 5
     }
   },
@@ -112,14 +112,14 @@ export const ITEMS: Record<ItemId, Item> = {
     id: ItemId.HOT_EYE_MASK,
     name: 'ホットアイマスク',
     description: '目の疲れを癒やし、休息の質を高める。',
-    price: 1200, // Rebalanced: 1500 -> 1200 (More accessible)
+    price: 1500, // Reverted to higher price: 1200 -> 1500
     effects: {
       buffs: [
         {
           name: '温熱効果',
           type: 'REST_EFFICIENCY',
           value: 1.5,
-          duration: 4, // Extended: 3 -> 4
+          duration: 4,
           description: '休息効果1.5倍'
         }
       ]
@@ -129,9 +129,9 @@ export const ITEMS: Record<ItemId, Item> = {
     id: ItemId.EARPLUGS,
     name: '高性能耳栓',
     description: '世界のノイズを遮断し、内なる宇宙と対話する。',
-    price: 1980,
+    price: 2200, // Increased: 1980 -> 2200
     effects: {
-      sanity: 40 
+      sanity: 45 // Buffed: 40 -> 45
     }
   },
   [ItemId.GIFT_SWEETS]: {
@@ -139,28 +139,28 @@ export const ITEMS: Record<ItemId, Item> = {
     name: '手土産スイーツ',
     description: 'デパ地下で買った高級菓子。目上の人への貢ぎ物として最強。',
     specialEffectDescription: '「先輩」または「教授」コマンドで使用。友好度大幅UP&成功確定',
-    price: 3000, // Rebalanced: 3500 -> 3000
+    price: 3500, // Increased: 3000 -> 3500
   },
   [ItemId.GAMING_SUPPLEMENT]: {
     id: ItemId.GAMING_SUPPLEMENT,
     name: 'ゲーミングサプリ',
     description: '集中力ブースト。副作用で精神が少しずつ削れる。',
-    price: 3800, // Rebalanced: 5800 -> 3800 (Make it mid-game viable)
+    price: 4500, // Increased: 3800 -> 4500
     effects: {
       buffs: [
         {
           name: '集中モード',
           type: 'STUDY_EFFICIENCY',
-          value: 1.3, 
-          duration: 4, // Reduced duration for balance: 5 -> 4
-          description: '学習効率1.3倍'
+          value: 1.2,
+          duration: 4,
+          description: '学習効率1.2倍'
         },
         {
           name: '反動',
           type: 'SANITY_DRAIN',
-          value: 2,
+          value: 4, // Increased drain: 3 -> 4
           duration: 4,
-          description: '毎ターンSAN-2'
+          description: '毎ターンSAN-4'
         }
       ]
     }
@@ -171,29 +171,29 @@ export const ITEMS: Record<ItemId, Item> = {
     name: '「わかる」本',
     description: '試験直前の駆け込み寺。専門書は高いが背に腹は代えられない。',
     specialEffectDescription: '最低点数の科目+15 (使い切り)',
-    price: 8800, // Rebalanced: 9800 -> 8800
+    price: 10800, // Increased: 8800 -> 10800 (Hard to buy with just part-time job)
   },
   [ItemId.SMART_DRUG]: {
     id: ItemId.SMART_DRUG,
     name: '怪しいサプリ',
     description: '脳内物質を強制分泌させる未承認薬。学習効率が劇的に向上するが、反動も大きい。',
-    price: 12800,
+    price: 15800, // Increased: 12800 -> 15800
     effects: {
-      hp: -30, 
+      hp: -40,
       buffs: [
         {
           name: '限界突破',
           type: 'STUDY_EFFICIENCY',
           value: 2.0,
-          duration: 4,
+          duration: 3,
           description: '学習効率2倍'
         },
         {
           name: '精神崩壊',
           type: 'SANITY_DRAIN',
-          value: 8, 
-          duration: 4,
-          description: '毎ターンSAN-8'
+          value: 12, // Increased drain: 10 -> 12
+          duration: 3,
+          description: '毎ターンSAN-12'
         }
       ]
     },

@@ -1,8 +1,9 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { LogEntry } from '../types';
-import { Volume2, Loader2 } from 'lucide-react';
+import { Volume2, Loader2, Terminal } from 'lucide-react';
 import { playLogAudio } from '../utils/tts';
+import { Panel } from './ui/Panel';
 
 interface Props {
   logs: LogEntry[];
@@ -14,11 +15,10 @@ export const LogWindow: React.FC<Props> = ({ logs }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Auto scroll to new logs if log count changes
     if (bottomRef.current) {
        bottomRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [logs.length]); // Trigger when log count changes
+  }, [logs.length]);
 
   const handlePlay = async (log: LogEntry) => {
     if (playingId || isLoading) return;
@@ -41,25 +41,28 @@ export const LogWindow: React.FC<Props> = ({ logs }) => {
       case 'warning': return 'text-yellow-400';
       case 'danger': return 'text-red-500 font-bold';
       case 'system': return 'text-blue-400';
-      default: return 'text-green-600'; // Darker green for normal info
+      default: return 'text-green-600';
     }
   };
 
   return (
-    <div className="flex flex-col h-full border-2 border-green-800 bg-black shadow-[0_0_15px_rgba(34,197,94,0.1)] relative overflow-hidden">
-      <div className="absolute top-0 left-0 right-0 bg-green-900 text-black text-xs px-2 py-1 font-bold z-10 flex justify-between items-center">
-        <span>CONSOLE_OUT (実行ログ)</span>
+    <Panel 
+      title="CONSOLE_OUT" 
+      className="h-full" 
+      noPadding
+      rightAction={
         <span className="text-[10px] opacity-70 flex items-center gap-1">
-          <Volume2 size={10} /> TTS_MODULE: ONLINE
+          <Volume2 size={10} /> TTS: ONLINE
         </span>
-      </div>
-      
-      <div className="flex-1 overflow-y-auto p-4 pt-8 font-mono text-sm space-y-3">
-        {/* Standard terminal order: Oldest at top, Newest at bottom */}
+      }
+    >
+      <div className="p-4 pt-2 font-mono text-sm space-y-3">
         {logs.map((log) => (
-          <div key={log.id} className="border-l-2 border-green-900 pl-2 animate-[fadeIn_0.3s_ease-out] group relative hover:bg-green-900/10 transition-colors">
-            <div className="flex justify-between items-start mb-0.5">
-                <div className="text-xs text-gray-600">[{log.timestamp}]</div>
+          <div key={log.id} className="border-l-2 border-green-900/30 pl-3 py-1 animate-[fadeIn_0.3s_ease-out] group relative hover:bg-green-900/10 transition-colors">
+            <div className="flex justify-between items-start mb-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
+                <div className="text-[10px] text-gray-500 flex items-center gap-2">
+                   <span className="text-green-800">[{log.timestamp}]</span>
+                </div>
                 <button 
                     onClick={() => handlePlay(log)}
                     disabled={isLoading && playingId !== log.id}
@@ -67,16 +70,17 @@ export const LogWindow: React.FC<Props> = ({ logs }) => {
                       ${playingId === log.id ? 'opacity-100 text-green-400' : 'opacity-0 group-hover:opacity-100 text-gray-600'}`}
                     title="読み上げ再生"
                 >
-                    {playingId === log.id ? <Loader2 size={14} className="animate-spin" /> : <Volume2 size={14} />}
+                    {playingId === log.id ? <Loader2 size={12} className="animate-spin" /> : <Volume2 size={12} />}
                 </button>
             </div>
-            <div className={`${getColor(log.type)} leading-relaxed whitespace-pre-wrap pr-6`}>
-              {`> ${log.text}`}
+            <div className={`${getColor(log.type)} leading-relaxed whitespace-pre-wrap pr-6 text-shadow-sm`}>
+              <span className="mr-2 opacity-50 select-none">&gt;</span>
+              {log.text}
             </div>
           </div>
         ))}
         <div ref={bottomRef} />
       </div>
-    </div>
+    </Panel>
   );
 };

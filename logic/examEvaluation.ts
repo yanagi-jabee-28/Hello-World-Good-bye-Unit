@@ -18,8 +18,8 @@ export interface ExamMetrics {
   caffeineJitter: number;        // カフェイン過剰ペナルティ (0.85 ~ 1.0)
   
   // 人脈補正
-  professorBonus: number;        // 教授友好度 → 重点範囲リーク (1.0 ~ 1.25)
-  seniorLeakBonus: number;       // 過去問効果 (1.0 ~ 1.15)
+  professorBonus: number;        // 教授友好度 → 重点範囲リーク (1.0 ~ 1.2)
+  seniorLeakBonus: number;       // 過去問効果 (1.0 ~ 1.1)
   
   // 狂気システム
   madnessStack: number;          // 累積精神負荷
@@ -40,10 +40,10 @@ export interface ExamThresholds {
 }
 
 const DEFAULT_THRESHOLDS: ExamThresholds = {
-  pass: 850,
+  pass: 800,   // Lowered: 850 -> 800 (More achievable for casual play)
   rankB: 1000,
-  rankA: 1200,
-  rankS: 1400
+  rankA: 1250,
+  rankS: 1500  // Increased: 1400 -> 1500 (Harder to perfect)
 };
 
 export function evaluateExam(
@@ -56,10 +56,12 @@ export function evaluateExam(
   let baseScore = 0;
   
   Object.values(SUBJECTS).forEach(subject => {
-    // 難易度で指数スケーリング（難しい科目ほど高得点）
+    // 難易度で指数スケーリング
     const learned = state.knowledge[subject.id] || 0;
-    // スコア計算式調整: 学習度100で約400点前後を目指す (4科目1600点満点)
-    const score = Math.pow(learned, 0.88) * subject.difficulty * 8;
+    // スコア計算式調整: リニアに近い形に戻し、努力が反映されやすくする
+    // 以前: Math.pow(learned, 0.88) -> 高得点ほど伸び悩みすぎる
+    // 修正: Math.pow(learned, 0.95)
+    const score = Math.pow(learned, 0.95) * subject.difficulty * 7; // Multiplier tweaked
     rawKnowledge[subject.id] = score;
     baseScore += score;
   });
@@ -69,35 +71,38 @@ export function evaluateExam(
   // 2.1 身体状態 (HP)
   const hpRatio = Math.max(0, state.hp / state.maxHp);
   let physicalCondition: number;
-  if (hpRatio > 0.7) {
-    physicalCondition = 1.0 + (hpRatio - 0.7) * 0.67; // 最大1.2倍
-  } else if (hpRatio > 0.4) {
-    physicalCondition = 0.85 + (hpRatio - 0.4) * 0.5; // 0.85 ~ 1.0
+  if (hpRatio > 0.8) {
+    physicalCondition = 1.1; // 万全
+  } else if (hpRatio > 0.3) {
+    physicalCondition = 1.0; // 通常
   } else {
-    // 致命的疲労: 集中力崩壊
-    physicalCondition = 0.5 + hpRatio * 0.875; // 0.5 ~ 0.85
+    // 疲労困憊
+    physicalCondition = 0.7 + hpRatio; // 0.7 ~ 1.0
   }
 
   // 2.2 精神安定性 (SAN)
   const sanRatio = Math.max(0, state.sanity / state.maxSanity);
   let mentalStability: number;
-  if (sanRatio < 0.25) {
-    // パニック状態: 思考停止
-    mentalStability = 0.6;
+  if (sanRatio < 0.2) {
+    // パニック状態
+    mentalStability = 0.7;
   } else if (sanRatio < 0.5) {
-    mentalStability = 0.75 + (sanRatio - 0.25) * 0.4; // 0.75 ~ 0.85
+    mentalStability = 0.9;
   } else {
-    mentalStability = 0.85 + (sanRatio - 0.5) * 0.6; // 0.85 ~ 1.15
+    mentalStability = 1.0 + (sanRatio - 0.5) * 0.2; // 最大1.1
   }
 
-  // 2.3 睡眠品質
+  // 2.3 睡眠品質 (ここを厳しくする)
   const sleepDebt = state.flags.sleepDebt || 0;
   const lastSleepQuality = state.flags.lastSleepQuality || 0.8;
   let sleepQuality: number;
   
-  if (sleepDebt > 2) {
-    // 慢性的睡眠不足: 認知機能低下
-    sleepQuality = Math.max(0.7, lastSleepQuality - sleepDebt * 0.05);
+  if (sleepDebt > 3) {
+    // 徹夜続き: 思考力半減
+    sleepQuality = 0.6; 
+  } else if (sleepDebt > 1.5) {
+    // 寝不足
+    sleepQuality = 0.85;
   } else {
     sleepQuality = lastSleepQuality;
   }
@@ -105,54 +110,53 @@ export function evaluateExam(
   // 2.4 カフェイン離脱/過剰
   const caffeine = state.caffeine;
   let caffeineJitter: number;
-  if (caffeine > 150) {
-    // 過剰摂取: 手の震え、集中力散漫
-    caffeineJitter = Math.max(0.85, 1.0 - (caffeine - 150) * 0.001);
+  if (caffeine > 120) {
+    // 過剰摂取: 落ち着きがない
+    caffeineJitter = 0.9;
   } else if (caffeine < 20 && state.flags.caffeineDependent) {
-    // 離脱症状: 頭痛、倦怠感
-    caffeineJitter = 0.92;
+    // 離脱症状: 頭痛
+    caffeineJitter = 0.8;
   } else {
     caffeineJitter = 1.0;
   }
 
   // === 3. 人脈補正 ===
-  // relationship value is 0-100
   const profRel = Object.values(state.relationships)[0] || 0; // PROFESSOR
-  const professorBonus = 1.0 + Math.min(0.25, profRel / 400); // 最大1.25倍 (100/400 = 0.25)
+  const professorBonus = 1.0 + Math.min(0.15, profRel / 600); // 最大1.15倍 (少しマイルドに)
 
   const seniorRel = Object.values(state.relationships)[1] || 0; // SENIOR
   const hasPastPapers = state.flags.hasPastPapers || false;
-  const seniorLeakBonus = hasPastPapers ? 1.15 : (1.0 + Math.min(0.08, seniorRel / 500));
+  const seniorLeakBonus = hasPastPapers ? 1.15 : (1.0 + Math.min(0.05, seniorRel / 1000));
 
   // === 4. 狂気システム ===
   const madnessStack = state.flags.madnessStack || 0;
   let focusSpike: SubjectId | undefined;
   
-  if (madnessStack >= 4) {
-    // 異常集中発動: 1科目のみ+40%、他-15%
-    // 学習度が一番低い科目をブースト（狂気の執着）
+  if (madnessStack >= 3) { // スタック3で発動しやすくする
     const weakestSubject = (Object.keys(rawKnowledge) as SubjectId[])
       .sort((a, b) => rawKnowledge[a] - rawKnowledge[b])[0];
     
     focusSpike = weakestSubject;
-    rawKnowledge[weakestSubject] *= 1.40;
+    // 弱点科目を強制的にブーストするが、全体へのデバフがかかる
+    rawKnowledge[weakestSubject] *= 1.3;
     
     (Object.keys(rawKnowledge) as SubjectId[])
       .filter(id => id !== weakestSubject)
-      .forEach(id => rawKnowledge[id] *= 0.85);
+      .forEach(id => rawKnowledge[id] *= 0.9);
     
     // 再集計
     baseScore = Object.values(rawKnowledge).reduce((a, b) => a + b, 0);
   }
 
   // === 5. 最終スコア算出 ===
+  let socialMultiplier = professorBonus * seniorLeakBonus;
+  
   const conditionMultiplier = 
     physicalCondition * 
     mentalStability * 
     sleepQuality * 
     caffeineJitter *
-    professorBonus *
-    seniorLeakBonus;
+    socialMultiplier;
 
   const finalScore = baseScore * conditionMultiplier;
 

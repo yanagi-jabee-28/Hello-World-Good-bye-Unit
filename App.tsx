@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import { Layout } from './components/Layout';
 import { StatusDisplay } from './components/StatusDisplay';
 import { LogWindow } from './components/LogWindow';
@@ -9,12 +9,10 @@ import { ShopModal } from './components/ShopModal';
 import { DebugPanel } from './components/DebugPanel';
 import { EventDialog } from './components/EventDialog';
 import { SaveLoadModal } from './components/SaveLoadModal';
-import { useGameEngine } from './hooks/useGameEngine';
-import { ActionType, GameAction, ItemId, GameState } from './types';
+import { useGameController } from './hooks/useGameController';
 import { Terminal, Activity } from 'lucide-react';
-import { Sound } from './utils/sound';
 
-// ミニステータスバーコンポーネント（スマホ用）
+// ミニステータスバー (Mobile only helper)
 const MiniBar = ({ value, max, color, label }: { value: number; max: number; color: string; label: string }) => (
   <div className="flex-1 flex flex-col gap-0.5">
     <div className="flex justify-between text-[10px] leading-none text-gray-400 font-mono">
@@ -28,202 +26,100 @@ const MiniBar = ({ value, max, color, label }: { value: number; max: number; col
 );
 
 const App: React.FC = () => {
-  const { state, dispatch } = useGameEngine();
-  const [isShopOpen, setIsShopOpen] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [mobileTab, setMobileTab] = useState<'terminal' | 'status'>('terminal');
-  
-  // Sound System: Watch logs for feedback
-  const lastLogIdRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    const latestLog = state.logs[state.logs.length - 1];
-    if (latestLog && latestLog.id !== lastLogIdRef.current) {
-       lastLogIdRef.current = latestLog.id;
-       
-       // Don't play sound on init
-       if (state.logs.length > 1) {
-          if (latestLog.type === 'success') Sound.play('success');
-          else if (latestLog.type === 'danger') Sound.play('failure');
-          else if (latestLog.type === 'warning') Sound.play('alert');
-          else if (latestLog.text.includes('回復')) Sound.play('hp_recovery');
-          else if (latestLog.text.includes('入手')) Sound.play('item_use');
-       }
-    }
-  }, [state.logs]);
-
-  // Watch day change for turn_end sound
-  const lastDayRef = useRef(state.day);
-  useEffect(() => {
-    if (state.day > lastDayRef.current) {
-      Sound.play('turn_end');
-      lastDayRef.current = state.day;
-    }
-  }, [state.day]);
-
-  const handleAction = (type: ActionType, payload?: any) => {
-    Sound.play('button_click');
-    dispatch({ type, payload } as GameAction);
-  };
-
-  const handleBuyItem = (itemId: ItemId) => {
-    Sound.play('button_click');
-    dispatch({ type: ActionType.BUY_ITEM, payload: itemId });
-  };
-
-  const handleResolveEvent = (optionId: string) => {
-     Sound.play('button_click');
-     dispatch({ type: ActionType.RESOLVE_EVENT, payload: { optionId }});
-  };
-
-  const handleLoadState = (loadedState: GameState) => {
-    Sound.play('event_trigger');
-    dispatch({ type: ActionType.LOAD_STATE, payload: loadedState });
-  };
-
-  const handleFullReset = () => {
-    Sound.play('game_over');
-    dispatch({ type: ActionType.FULL_RESET });
-  };
-
-  const handleSoftReset = () => {
-    Sound.play('event_trigger');
-    dispatch({ type: ActionType.SOFT_RESET });
-  };
-
-  const handleHardRestart = () => {
-    Sound.play('event_trigger');
-    dispatch({ type: ActionType.HARD_RESTART });
-  };
-
-  const handleMenuOpen = () => {
-    Sound.play('button_click');
-    setIsMenuOpen(true);
-  }
-
-  const handleShopOpen = () => {
-    Sound.play('button_click');
-    setIsShopOpen(true);
-  }
+  const { state, ui, actions } = useGameController();
 
   const overlays = (
     <>
-      {isShopOpen && (
+      {ui.isShopOpen && (
         <ShopModal 
           money={state.money} 
-          onClose={() => setIsShopOpen(false)} 
-          onBuy={handleBuyItem} 
+          onClose={actions.closeShop} 
+          onBuy={actions.buyItem} 
         />
       )}
-      {isMenuOpen && (
+      {ui.isMenuOpen && (
         <SaveLoadModal
           currentState={state}
-          onClose={() => setIsMenuOpen(false)}
-          onLoad={handleLoadState}
-          onReset={handleFullReset}
-          onSoftReset={handleSoftReset}
-          onHardReset={handleHardRestart}
+          onClose={actions.closeMenu}
+          onLoad={actions.loadState}
+          onReset={actions.fullReset}
+          onSoftReset={actions.softReset}
+          onHardReset={actions.hardRestart}
         />
       )}
       {state.pendingEvent && (
         <EventDialog 
           event={state.pendingEvent} 
-          onResolve={handleResolveEvent} 
+          onResolve={actions.resolveEvent} 
         />
       )}
-      <EndingScreen state={state} onRestart={() => handleAction(ActionType.RESTART)} />
+      <EndingScreen state={state} onRestart={actions.restart} />
       <DebugPanel state={state} />
     </>
   );
 
   return (
-    <Layout state={state} overlays={overlays} onMenuOpen={handleMenuOpen}>
-      {/* --- DESKTOP LAYOUT (Large Screen) --- */}
-      <div className="hidden lg:grid flex-1 grid-cols-12 gap-4 h-full min-h-0">
-        {/* Left Column: Status (3 cols) */}
-        <div className="col-span-3 h-full min-h-0 overflow-y-auto shrink-0 scrollbar-hide">
+    <Layout state={state} overlays={overlays} onMenuOpen={actions.openMenu}>
+      {/* --- DESKTOP LAYOUT --- */}
+      <div className="hidden lg:grid flex-1 grid-cols-12 gap-4 h-full min-h-0 p-4 pt-0">
+        {/* Left: Status */}
+        <div className="col-span-3 h-full min-h-0 overflow-hidden">
           <StatusDisplay state={state} />
         </div>
 
-        {/* Right Column: Logs & Actions (9 cols) */}
+        {/* Right: Logs & Actions */}
         <div className="col-span-9 flex flex-col gap-4 h-full min-h-0">
-          {/* Log Window */}
-          <div className="flex-1 min-h-0 relative">
-             <div className="absolute inset-0">
-               <LogWindow logs={state.logs} />
-             </div>
+          <div className="flex-1 min-h-0">
+             <LogWindow logs={state.logs} />
           </div>
-          {/* Action Panel */}
           <div className="shrink-0">
-            <ActionPanel 
-              state={state} 
-              onAction={handleAction} 
-              onShopOpen={handleShopOpen}
-            />
+            <ActionPanel state={state} actions={actions} />
           </div>
         </div>
       </div>
 
-      {/* --- MOBILE LAYOUT (Small Screen) --- */}
+      {/* --- MOBILE LAYOUT --- */}
       <div className="lg:hidden flex flex-col h-full">
-        
-        {/* Content Area (Tab Switchable) */}
+        {/* Content Area */}
         <div className="flex-1 overflow-hidden relative">
-          {mobileTab === 'terminal' ? (
+          {ui.mobileTab === 'terminal' ? (
              <div className="flex flex-col h-full">
-                {/* Logs: Takes available space */}
-                <div className="flex-1 min-h-0 relative">
-                   <div className="absolute inset-0">
-                     <LogWindow logs={state.logs} />
-                   </div>
+                <div className="flex-1 min-h-0">
+                   <LogWindow logs={state.logs} />
                 </div>
-                {/* Action Panel: Constrained height, internal scroll if needed */}
                 <div className="shrink-0 max-h-[50vh] overflow-y-auto border-t border-green-900 bg-black">
-                  <ActionPanel 
-                    state={state} 
-                    onAction={handleAction} 
-                    onShopOpen={handleShopOpen}
-                  />
+                  <ActionPanel state={state} actions={actions} />
                 </div>
              </div>
           ) : (
-             // Status Tab: Full scrollable status
-             <div className="h-full overflow-y-auto">
+             <div className="h-full overflow-y-auto p-2">
                 <StatusDisplay state={state} />
              </div>
           )}
         </div>
 
-        {/* Mobile Bottom Navigation & Mini Status */}
+        {/* Bottom Nav */}
         <div className="shrink-0 bg-black border-t-2 border-green-800 p-2 pb-4 md:pb-2 space-y-3 z-30 shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
-          {/* Mini Status Indicators (Always Visible) */}
           <div className="flex gap-3 px-1">
              <MiniBar 
-                label="HP" 
-                value={state.hp} 
-                max={state.maxHp} 
+                label="HP" value={state.hp} max={state.maxHp} 
                 color={state.hp < 30 ? "bg-red-500 animate-pulse" : "bg-green-500"} 
              />
              <MiniBar 
-                label="SAN" 
-                value={state.sanity} 
-                max={state.maxSanity} 
+                label="SAN" value={state.sanity} max={state.maxSanity} 
                 color={state.sanity < 30 ? "bg-purple-500 animate-pulse" : "bg-blue-500"} 
              />
              <MiniBar 
-                label="CFN" 
-                value={state.caffeine} 
-                max={200} 
+                label="CFN" value={state.caffeine} max={200} 
                 color={state.caffeine > 100 ? "bg-red-500 animate-pulse" : state.caffeine > 40 ? "bg-yellow-500" : "bg-yellow-700"} 
              />
           </div>
 
-          {/* Tab Buttons */}
           <div className="grid grid-cols-2 gap-3">
              <button
-                onClick={() => { Sound.play('button_click'); setMobileTab('terminal'); }}
+                onClick={() => actions.setMobileTab('terminal')}
                 className={`p-2.5 text-xs font-bold border flex items-center justify-center gap-2 transition-all duration-200 ${
-                   mobileTab === 'terminal' 
+                   ui.mobileTab === 'terminal' 
                    ? 'bg-green-900/40 border-green-500 text-green-400 shadow-[0_0_10px_rgba(34,197,94,0.2)]' 
                    : 'bg-gray-900/20 border-gray-800 text-gray-500 hover:bg-gray-900'
                 }`}
@@ -231,9 +127,9 @@ const App: React.FC = () => {
                 <Terminal size={16} /> TERMINAL
              </button>
              <button
-                onClick={() => { Sound.play('button_click'); setMobileTab('status'); }}
+                onClick={() => actions.setMobileTab('status')}
                 className={`p-2.5 text-xs font-bold border flex items-center justify-center gap-2 transition-all duration-200 ${
-                   mobileTab === 'status' 
+                   ui.mobileTab === 'status' 
                    ? 'bg-green-900/40 border-green-500 text-green-400 shadow-[0_0_10px_rgba(34,197,94,0.2)]' 
                    : 'bg-gray-900/20 border-gray-800 text-gray-500 hover:bg-gray-900'
                 }`}
