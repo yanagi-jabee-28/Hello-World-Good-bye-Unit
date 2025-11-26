@@ -386,7 +386,8 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     weight: WEIGHTS.UNCOMMON,
     conditions: { 
       minKnowledge: { [SubjectId.ALGO]: 40 }, // Changed from knowledge to minKnowledge
-      minHp: 30 
+      minHp: 30,
+      timeSlots: [TimeSlot.AFTER_SCHOOL, TimeSlot.NIGHT, TimeSlot.LATE_NIGHT] // Restricted to later hours
     },
     coolDownTurns: COOLDOWNS.LONG,
     options: [
@@ -452,7 +453,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     weight: WEIGHTS.COMMON,
     conditions: { 
       minHp: 25,
-      // money < 15000 condition is implicit via logic or custom check, treated as standard event for now
+      timeSlots: [TimeSlot.NOON, TimeSlot.AFTERNOON, TimeSlot.AFTER_SCHOOL] // Restricted to daytime on campus
     },
     coolDownTurns: COOLDOWNS.MEDIUM,
     options: [
@@ -644,7 +645,8 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     weight: WEIGHTS.UNCOMMON,
     conditions: { 
       // minKnowledge: { [SubjectId.CIRCUIT]: 50 },
-      minRelationship: REL_TIERS.LOW 
+      minRelationship: REL_TIERS.LOW,
+      timeSlots: [TimeSlot.NOON, TimeSlot.AFTERNOON, TimeSlot.AFTER_SCHOOL, TimeSlot.NIGHT, TimeSlot.LATE_NIGHT] // Senior availability
     },
     coolDownTurns: COOLDOWNS.MEDIUM,
     options: [
