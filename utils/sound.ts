@@ -10,7 +10,10 @@ type SoundType =
   | 'hp_recovery' 
   | 'knowledge_gain' 
   | 'game_over'
-  | 'alert';
+  | 'alert'
+  | 'heartbeat'
+  | 'flatline'
+  | 'glitch_noise';
 
 class SoundManager {
   private ctx: AudioContext | null = null;
@@ -104,6 +107,23 @@ class SoundManager {
         // Deep impact
         this.playTone(100, 'sawtooth', t, 2.0, 0.2, 20);
         this.playNoise(t, 1.0);
+        break;
+
+      case 'heartbeat':
+        // Low thud
+        this.playTone(60, 'sine', t, 0.1, 0.5, 40);
+        this.playTone(60, 'sine', t + 0.2, 0.1, 0.3, 40);
+        break;
+
+      case 'flatline':
+        // Continuous high pitch tone
+        this.playTone(1000, 'sine', t, 2.0, 0.1);
+        break;
+
+      case 'glitch_noise':
+        // Random noise burst
+        this.playNoise(t, 0.2);
+        this.playTone(400 + Math.random() * 1000, 'sawtooth', t, 0.1, 0.1);
         break;
     }
   }

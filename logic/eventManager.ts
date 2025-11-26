@@ -1,10 +1,11 @@
-
 import { GameState, GameEvent, EventTriggerType, SubjectId, RelationshipId, ItemId } from '../types';
-import { clamp, joinMessages } from '../utils/common';
+import { clamp } from '../utils/common';
+import { joinMessages } from '../utils/logFormatter';
 import { pushLog } from './stateHelpers';
 import { ALL_EVENTS } from '../data/events';
 import { SUBJECTS } from '../data/subjects';
 import { ITEMS } from '../data/items';
+import { applyEffect } from './effectProcessor';
 
 /**
  * Checks if event conditions are met.
@@ -15,27 +16,21 @@ const checkConditions = (state: GameState, event: GameEvent, trigger: EventTrigg
   const { conditions } = event;
   if (!conditions) return true;
 
-  // TimeSlot Check
   if (conditions.timeSlots && !conditions.timeSlots.includes(state.timeSlot)) return false;
 
-  // HP Check
   if (conditions.minHp !== undefined && state.hp < conditions.minHp) return false;
   if (conditions.maxHp !== undefined && state.hp > conditions.maxHp) return false;
 
-  // Sanity Check
   if (conditions.minSanity !== undefined && state.sanity < conditions.minSanity) return false;
   if (conditions.maxSanity !== undefined && state.sanity > conditions.maxSanity) return false;
 
-  // Caffeine Check
   if (conditions.caffeineMin !== undefined && state.caffeine < conditions.caffeineMin) return false;
   if (conditions.caffeineMax !== undefined && state.caffeine > conditions.caffeineMax) return false;
 
-  // Score Check
   const avgScore = Object.values(state.knowledge).reduce((a, b) => a + b, 0) / 4;
   if (conditions.minAvgScore !== undefined && avgScore < conditions.minAvgScore) return false;
   if (conditions.maxAvgScore !== undefined && avgScore > conditions.maxAvgScore) return false;
 
-  // Relationship Check
   let targetRelValue = 0;
   if (trigger === 'action_professor') targetRelValue = state.relationships[RelationshipId.PROFESSOR];
   if (trigger === 'action_senior') targetRelValue = state.relationships[RelationshipId.SENIOR];
@@ -46,22 +41,17 @@ const checkConditions = (state: GameState, event: GameEvent, trigger: EventTrigg
     if (conditions.maxRelationship !== undefined && targetRelValue > conditions.maxRelationship) return false;
   }
 
-  // Item Required
   if (conditions.itemRequired) {
     for (const itemId of conditions.itemRequired) {
       if ((state.inventory[itemId] || 0) <= 0) return false;
     }
   }
 
-  // Money Check
   if (conditions.minMoney !== undefined && state.money < conditions.minMoney) return false;
 
   return true;
 };
 
-/**
- * Calculates dynamic weight based on cooldowns and history.
- */
 const calculateDynamicWeight = (state: GameState, event: GameEvent): number => {
   const stats = state.eventStats[event.id];
   
@@ -90,9 +80,6 @@ const calculateDynamicWeight = (state: GameState, event: GameEvent): number => {
   return Math.max(0, weight);
 };
 
-/**
- * Selects an event from the pool.
- */
 export const selectEvent = (
   state: GameState, 
   events: GameEvent[], 
@@ -121,9 +108,6 @@ export const selectEvent = (
   return candidates[candidates.length - 1].evt;
 };
 
-/**
- * Records stats for analytics.
- */
 export const recordEventOccurrence = (state: GameState, eventId: string): GameState => {
   const currentStats = state.eventStats[eventId] || { count: 0, lastTurn: -1 };
   
@@ -140,92 +124,29 @@ export const recordEventOccurrence = (state: GameState, eventId: string): GameSt
   };
 };
 
-const RELATIONSHIP_NAMES: Record<RelationshipId, string> = {
-  [RelationshipId.PROFESSOR]: '教授友好度',
-  [RelationshipId.SENIOR]: '先輩友好度',
-  [RelationshipId.FRIEND]: '友人友好度',
-};
-
 /**
- * Applies event effects to the state.
+ * Applies event effects to the state and generates logs using effectProcessor.
  */
 export const applyEventEffect = (state: GameState, event: GameEvent): { newState: GameState; messages: string[] } => {
-  let newState = { ...state };
-  newState.knowledge = { ...state.knowledge };
-  newState.relationships = { ...state.relationships };
-  newState.inventory = { ...state.inventory };
+  let newState = recordEventOccurrence(state, event.id);
 
-  const messages: string[] = [];
+  if (!event.effect) return { newState, messages: [] };
+
+  // Use centralized processor
+  const result = applyEffect(newState, event.effect);
   
-  newState = recordEventOccurrence(newState, event.id);
-
-  if (!event.effect) return { newState, messages };
-
-  const { effect } = event;
-
-  if (effect.hp) {
-    newState.hp = clamp(newState.hp + effect.hp, 0, newState.maxHp);
-    messages.push(`HP${effect.hp > 0 ? '+' : ''}${effect.hp}`);
-  }
-  if (effect.sanity) {
-    newState.sanity = clamp(newState.sanity + effect.sanity, 0, newState.maxSanity);
-    messages.push(`SAN${effect.sanity > 0 ? '+' : ''}${effect.sanity}`);
-  }
-  if (effect.caffeine) {
-    newState.caffeine = clamp(newState.caffeine + effect.caffeine, 0, 200);
-    messages.push(`カフェイン${effect.caffeine > 0 ? '+' : ''}${effect.caffeine}`);
-  }
-  if (effect.knowledge) {
-    Object.entries(effect.knowledge).forEach(([key, val]) => {
-      if (val) {
-        const sId = key as SubjectId;
-        newState.knowledge[sId] = clamp(newState.knowledge[sId] + val, 0, 100);
-        const subjectName = SUBJECTS[sId].name;
-        messages.push(`${subjectName}${val > 0 ? '+' : ''}${val}`);
-      }
-    });
-  }
-  if (effect.relationships) {
-    Object.entries(effect.relationships).forEach(([key, val]) => {
-      if (val) {
-        const rId = key as RelationshipId;
-        newState.relationships[rId] = clamp(newState.relationships[rId] + val, 0, 100);
-        const relName = RELATIONSHIP_NAMES[rId];
-        messages.push(`${relName}${val > 0 ? '+' : ''}${val}`);
-      }
-    });
-  }
-  if (effect.inventory) {
-    Object.entries(effect.inventory).forEach(([key, val]) => {
-      if (val) {
-        const iId = key as ItemId;
-        const current = newState.inventory[iId] || 0;
-        newState.inventory[iId] = current + val;
-        const item = ITEMS[iId];
-        messages.push(`${item.name}${val > 0 ? '入手' : '消費'}`);
-      }
-    });
-  }
-
-  if (effect.money) {
-    const actualChange = newState.money + effect.money < 0 ? -newState.money : effect.money;
-    newState.money += actualChange;
-    messages.push(`資金${actualChange > 0 ? '+' : ''}¥${actualChange.toLocaleString()}`);
-  }
-
-  return { newState, messages };
+  return {
+    newState: result.newState,
+    messages: result.messages
+  };
 };
 
-/**
- * Orchestrates the selection and application of an event.
- */
 export const executeEvent = (state: GameState, trigger: EventTriggerType, fallbackText?: string): GameState => {
   const event = selectEvent(state, ALL_EVENTS, trigger);
   
   if (event) {
-     // 分岐イベントの場合、即時適用せず pendingEvent にセットして終了
      if (event.options && event.options.length > 0) {
-       const newState = recordEventOccurrence(state, event.id); // 発生記録だけつける
+       const newState = recordEventOccurrence(state, event.id);
        newState.pendingEvent = event;
        return newState;
      }

@@ -1,6 +1,7 @@
 
 import { GameEvent, RelationshipId, SubjectId, ItemId } from '../../types';
-import {REL_TIERS, KNOWLEDGE_GAINS, REL_GAINS, RECOVERY_VALS, WEIGHTS, COOLDOWNS } from '../../config/gameBalance';
+import { REL_TIERS, WEIGHTS, COOLDOWNS } from '../../config/gameBalance';
+import { Effect } from '../presets/effectTemplates';
 
 /**
  * PERSONA: FRIEND
@@ -15,9 +16,9 @@ export const FRIEND_EVENTS: GameEvent[] = [
     text: "【共有】「この板書撮った？」講義ノートの画像が送られてきた。持つべきものは友だ。",
     type: 'good',
     weight: WEIGHTS.COMMON,
-    effect: { 
-      relationships: { [RelationshipId.FRIEND]: REL_GAINS.MEDIUM }, 
-      knowledge: { [SubjectId.HUMANITIES]: KNOWLEDGE_GAINS.SMALL } 
+    effect: {
+      ...Effect.Social.Boost(RelationshipId.FRIEND, 'MEDIUM'),
+      ...Effect.Study.Boost(SubjectId.HUMANITIES, 'SMALL')
     }
   },
   {
@@ -26,10 +27,10 @@ export const FRIEND_EVENTS: GameEvent[] = [
     text: "【遊戯】試験期間中だが、新作ゲームの話で盛り上がる。「現実逃避最高！」",
     type: 'flavor',
     weight: WEIGHTS.COMMON,
-    effect: { 
-      relationships: { [RelationshipId.FRIEND]: REL_GAINS.LARGE }, 
-      sanity: RECOVERY_VALS.MODERATE, 
-      hp: RECOVERY_VALS.MINOR 
+    effect: {
+      ...Effect.Social.Boost(RelationshipId.FRIEND, 'LARGE'),
+      ...Effect.Status.RecoverModerate(), // HP&SAN
+      hp: 5 // Override HP to minor
     }
   },
 
@@ -41,9 +42,9 @@ export const FRIEND_EVENTS: GameEvent[] = [
     type: 'good',
     weight: WEIGHTS.UNCOMMON,
     conditions: { minRelationship: REL_TIERS.MID },
-    effect: { 
-      knowledge: { [SubjectId.MATH]: KNOWLEDGE_GAINS.MEDIUM }, 
-      relationships: { [RelationshipId.FRIEND]: REL_GAINS.MEDIUM } 
+    effect: {
+      ...Effect.Study.Boost(SubjectId.MATH, 'MEDIUM'),
+      ...Effect.Social.Boost(RelationshipId.FRIEND, 'MEDIUM')
     }
   },
   {
@@ -53,10 +54,9 @@ export const FRIEND_EVENTS: GameEvent[] = [
     type: 'flavor',
     weight: WEIGHTS.UNCOMMON,
     conditions: { maxSanity: 50, minRelationship: REL_TIERS.MID },
-    effect: { 
-      sanity: 35, // High recovery
-      hp: -RECOVERY_VALS.MODERATE, 
-      relationships: { [RelationshipId.FRIEND]: REL_GAINS.LARGE } 
+    effect: {
+      ...Effect.Preset.Hangout(),
+      sanity: 35 // Override Sanity to Huge
     },
     coolDownTurns: COOLDOWNS.MEDIUM
   },
@@ -69,10 +69,11 @@ export const FRIEND_EVENTS: GameEvent[] = [
     type: 'good',
     weight: WEIGHTS.UNCOMMON,
     conditions: { minRelationship: REL_TIERS.HIGH, minSanity: 40 },
-    effect: { 
-      sanity: RECOVERY_VALS.SMALL, 
-      knowledge: { [SubjectId.ALGO]: KNOWLEDGE_GAINS.MEDIUM, [SubjectId.HUMANITIES]: KNOWLEDGE_GAINS.MEDIUM }, 
-      relationships: { [RelationshipId.FRIEND]: REL_GAINS.MEDIUM } 
+    effect: {
+      ...Effect.Status.RecoverSanity(10),
+      ...Effect.Study.Boost(SubjectId.ALGO, 'MEDIUM'),
+      ...Effect.Study.Boost(SubjectId.HUMANITIES, 'MEDIUM'),
+      ...Effect.Social.Boost(RelationshipId.FRIEND, 'MEDIUM')
     },
     coolDownTurns: COOLDOWNS.SHORT
   },
@@ -83,10 +84,10 @@ export const FRIEND_EVENTS: GameEvent[] = [
     type: 'good',
     weight: WEIGHTS.RARE,
     conditions: { minRelationship: REL_TIERS.HIGH },
-    effect: { 
-      relationships: { [RelationshipId.FRIEND]: REL_GAINS.LARGE }, 
-      sanity: RECOVERY_VALS.MODERATE, 
-      knowledge: { [SubjectId.ALGO]: KNOWLEDGE_GAINS.LARGE } // Adjusted from generic boost
+    effect: {
+      ...Effect.Social.Boost(RelationshipId.FRIEND, 'LARGE'),
+      ...Effect.Status.RecoverSanity(20),
+      ...Effect.Study.Boost(SubjectId.ALGO, 'LARGE')
     },
     maxOccurrences: 1
   },
@@ -99,9 +100,9 @@ export const FRIEND_EVENTS: GameEvent[] = [
     type: 'flavor',
     weight: WEIGHTS.LEGENDARY,
     conditions: { minRelationship: REL_TIERS.ELITE, maxSanity: 40 },
-    effect: { 
-      inventory: { [ItemId.SMART_DRUG]: 1 }, 
-      relationships: { [RelationshipId.FRIEND]: REL_GAINS.MEDIUM } 
+    effect: {
+      ...Effect.Item.Get(ItemId.SMART_DRUG),
+      ...Effect.Social.Boost(RelationshipId.FRIEND, 'MEDIUM')
     },
     maxOccurrences: 1
   }

@@ -2,17 +2,20 @@
 import { GameState, ItemId, SubjectId, LogEntry } from '../../types';
 import { ITEMS } from '../../data/items';
 import { SUBJECTS } from '../../data/subjects';
-import { clamp, chance, formatDelta, joinMessages, getItemEffectDescription } from '../../utils/common';
+import { clamp, chance } from '../../utils/common';
+import { getItemEffectDescription } from '../../utils/logFormatter';
+import { ACTION_LOGS, LOG_TEMPLATES } from '../../data/constants/logMessages';
 import { pushLog } from '../stateHelpers';
+import { applyEffect } from '../effectProcessor';
 
 export const handleBuyItem = (state: GameState, itemId: ItemId): GameState => {
   const item = ITEMS[itemId];
   if (state.money >= item.price) {
     state.money -= item.price;
     state.inventory[itemId] = (state.inventory[itemId] || 0) + 1;
-    pushLog(state, `【購入】${item.name}を購入した。(残高: ¥${state.money.toLocaleString()})`, 'success');
+    pushLog(state, ACTION_LOGS.ITEM.BUY_SUCCESS(item.name, state.money), 'success');
   } else {
-    pushLog(state, `【エラー】資金不足。${item.name}を買う金がない。`, 'danger');
+    pushLog(state, ACTION_LOGS.ITEM.BUY_FAIL(item.name), 'danger');
   }
   return state;
 };
@@ -20,37 +23,20 @@ export const handleBuyItem = (state: GameState, itemId: ItemId): GameState => {
 export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
   if ((state.inventory[itemId] || 0) <= 0) return state;
   
+  let newState = { ...state };
   const item = ITEMS[itemId];
-  state.inventory[itemId] = (state.inventory[itemId] || 0) - 1;
+  newState.inventory[itemId] = (newState.inventory[itemId] || 0) - 1;
   
   let logType: LogEntry['type'] = 'info';
-  let baseLog = `【アイテム使用】${item.name}を使用した。`;
+  let baseLog = ACTION_LOGS.ITEM.USE_DEFAULT(item.name);
   
   // --- 汎用効果の適用 (Data Driven) ---
+  // Types are now unified in assets.ts, so we can pass item.effects directly
   if (item.effects) {
-    const { effects } = item;
-    
-    if (effects.hp) state.hp = clamp(state.hp + effects.hp, 0, state.maxHp);
-    if (effects.sanity) state.sanity = clamp(state.sanity + effects.sanity, 0, state.maxSanity);
-    if (effects.caffeine) state.caffeine = clamp(state.caffeine + effects.caffeine, 0, 200);
-    
-    // 全科目への知識効果 (Smart Drug等)
-    if (effects.knowledge) {
-      Object.keys(state.knowledge).forEach((key) => {
-        const id = key as SubjectId;
-        state.knowledge[id] = clamp(state.knowledge[id] + (effects.knowledge || 0), 0, 100);
-      });
-    }
-
-    // バフの適用
-    if (effects.buffs) {
-      effects.buffs.forEach(buffData => {
-        state.activeBuffs.push({
-          ...buffData,
-          id: `BUFF_${itemId}_${state.turnCount}_${Math.random()}` // ユニークID生成
-        });
-      });
-    }
+    const res = applyEffect(newState, item.effects);
+    newState = res.newState;
+    // メッセージは getItemEffectDescription で一括生成するため、res.messages はここでは使用しない
+    // または、res.messages を details として使うことも可能だが、現状のUIに合わせる
   }
 
   // --- 特殊効果 & フレーバーテキスト (Custom Logic) ---
@@ -106,38 +92,36 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
       break;
       
     case ItemId.REFERENCE_BOOK: {
-      const lowestSub = Object.values(SubjectId).reduce((a, b) => state.knowledge[a] < state.knowledge[b] ? a : b);
+      // Custom logic for lowest subject boost (Can't be genericized easily)
+      const lowestSub = Object.values(SubjectId).reduce((a, b) => newState.knowledge[a] < newState.knowledge[b] ? a : b);
       const kDelta = 15;
-      state.knowledge[lowestSub] = clamp(state.knowledge[lowestSub] + kDelta, 0, 100);
+      newState.knowledge[lowestSub] = clamp(newState.knowledge[lowestSub] + kDelta, 0, 100);
       baseLog = `【攻略】${item.name}を熟読。高いだけあって要点がまとまっている。苦手な${SUBJECTS[lowestSub].name}の理解が一気に深まった。`;
       logType = 'success';
-      pushLog(state, `${baseLog}\n(${SUBJECTS[lowestSub].name}+${kDelta})`, logType);
-      return state; 
+      pushLog(newState, `${baseLog}\n(${LOG_TEMPLATES.PARAM.KNOWLEDGE(SUBJECTS[lowestSub].name, kDelta)})`, logType);
+      return newState; 
     }
     case ItemId.USB_MEMORY: {
-       // Balance Adjust: 70% -> 60% success, -30 SAN -> -20 SAN
        if (chance(60)) {
           const target = Object.values(SubjectId)[Math.floor(Math.random() * 4)];
           const kDelta = 20;
-          state.knowledge[target] = clamp(state.knowledge[target] + kDelta, 0, 100);
-          // USB解析成功で過去問入手
-          state.flags.hasPastPapers = true;
+          newState.knowledge[target] = clamp(newState.knowledge[target] + kDelta, 0, 100);
+          newState.flags.hasPastPapers = true;
           baseLog = `【解析成功】${item.name}から${SUBJECTS[target].name}の「神過去問」を発掘！これが先輩たちの遺産か...！`;
           logType = 'success';
-          pushLog(state, `${baseLog}\n(${SUBJECTS[target].name}+${kDelta})`, logType);
+          pushLog(newState, `${baseLog}\n(${LOG_TEMPLATES.PARAM.KNOWLEDGE(SUBJECTS[target].name, kDelta)})`, logType);
        } else {
-          const sanDelta = -20; // Mitigated penalty
-          state.sanity = clamp(state.sanity + sanDelta, 0, state.maxSanity);
+          const sanDelta = -20; 
+          newState.sanity = clamp(newState.sanity + sanDelta, 0, newState.maxSanity);
           baseLog = `【解析失敗】${item.name}の中身は...大量のウィルス入りファイルだった。PCがフリーズし、精神的ダメージを受けた。`;
           logType = 'danger';
-          pushLog(state, `${baseLog}\n(${formatDelta('SAN', sanDelta)})`, logType);
+          pushLog(newState, `${baseLog}\n(${LOG_TEMPLATES.PARAM.SAN(sanDelta)})`, logType);
        }
-       return state;
+       return newState;
     }
   }
 
-  // 汎用ログ生成
-  const details = getItemEffectDescription(item);
-  pushLog(state, `${baseLog}\n(${details})`, logType);
-  return state;
+  const detailsStr = getItemEffectDescription(item);
+  pushLog(newState, `${baseLog}\n(${detailsStr})`, logType);
+  return newState;
 };

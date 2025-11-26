@@ -2,7 +2,7 @@
 import React from 'react';
 import { ItemId } from '../types';
 import { ITEMS } from '../data/items';
-import { getItemEffectDescription } from '../utils/common';
+import { getItemEffectDescription } from '../utils/logFormatter';
 import { ShoppingCart, X, DollarSign } from 'lucide-react';
 import { Sound } from '../utils/sound';
 

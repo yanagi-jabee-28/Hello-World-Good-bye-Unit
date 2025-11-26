@@ -26,10 +26,12 @@ export const EndingScreen: React.FC<Props> = ({ state, onRestart }) => {
   }, [state.status]);
 
   useEffect(() => {
+    // Only play result sounds here (Victory/Failure).
+    // Game Over sounds (HP/SAN) are now handled in DeathSequence.tsx
     if (state.status === GameStatus.VICTORY) {
       Sound.play('success');
-    } else if (state.status !== GameStatus.PLAYING) {
-      Sound.play('game_over');
+    } else if (state.status === GameStatus.FAILURE) {
+      Sound.play('game_over'); 
     }
   }, [state.status]);
 
@@ -60,7 +62,7 @@ export const EndingScreen: React.FC<Props> = ({ state, onRestart }) => {
     };
   }, [state.status]);
 
-  if (state.status === GameStatus.PLAYING) return null;
+  // if (state.status === GameStatus.PLAYING) return null; // Removed this check as parent controls rendering
 
   const getMessage = () => {
     switch (state.status) {
@@ -82,7 +84,7 @@ export const EndingScreen: React.FC<Props> = ({ state, onRestart }) => {
 
   if (isLogMode) {
     return (
-      <div className="fixed inset-0 z-50 pointer-events-none flex flex-col justify-start items-center pt-20 md:pt-24">
+      <div className="fixed inset-0 z-[120] pointer-events-none flex flex-col justify-start items-center pt-20 md:pt-24">
         <div className="pointer-events-auto bg-black/90 border-2 border-green-800 p-4 shadow-[0_0_20px_rgba(34,197,94,0.4)] flex gap-4 items-center rounded animate-[slideDown_0.3s_ease-out]">
           <span className="text-green-500 font-bold text-sm animate-pulse">LOG_VIEW_MODE</span>
           <button
@@ -98,7 +100,7 @@ export const EndingScreen: React.FC<Props> = ({ state, onRestart }) => {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm animate-[fadeIn_0.5s_ease-out] overflow-y-auto py-10">
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/95 backdrop-blur-sm animate-[fadeIn_1s_ease-out] overflow-y-auto py-10">
       <div className="max-w-3xl w-full border-4 border-green-800 bg-black p-6 md:p-8 text-center shadow-[0_0_50px_rgba(34,197,94,0.2)] m-4 relative">
         
         <div className="flex justify-end mb-4">

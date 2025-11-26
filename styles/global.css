@@ -1,107 +1,185 @@
 /* Import Fonts */
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap');
 
-/* Base Styles */
+/* Tailwind Directives (Implicit via CDN but defining custom bases here) */
+:root {
+  --color-bg: #050505;
+  --color-primary: #22c55e; /* Green-500 */
+  --color-primary-dim: #14532d; /* Green-900 */
+  --color-alert: #ef4444; /* Red-500 */
+  --color-warning: #eab308; /* Yellow-500 */
+  --glass-border: rgba(34, 197, 94, 0.3);
+}
+
 body {
   font-family: 'JetBrains Mono', monospace;
-  background-color: #0a0a0a;
-  color: #22c55e;
+  background-color: var(--color-bg);
+  color: var(--color-primary);
   margin: 0;
-  overflow: hidden; /* Prevent body scroll, handle in components */
+  overflow: hidden;
+  /* Subtle background grid - Kept for aesthetic but cleaner */
+  background-image: 
+    linear-gradient(rgba(20, 83, 45, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 83, 45, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
-/* --- CRT Scanline Effect --- */
-.scanline {
-  width: 100%;
-  height: 100px;
-  z-index: 9999; /* Always on top */
-  background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(34, 197, 94, 0.04) 50%, rgba(0,0,0,0) 100%);
-  opacity: 0.1;
-  background-size: 100% 4px;
-  position: fixed;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  animation: scanline 10s linear infinite;
+/* --- Animations --- */
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
-@keyframes scanline {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100vh); }
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- Animation Effects --- */
-
-/* Flicker effect for low sanity/critical states */
-.glitch-text {
-  animation: flicker 0.15s infinite;
-}
-
-@keyframes flicker {
-  0% { opacity: 1; }
-  50% { opacity: 0.8; }
-  100% { opacity: 1; }
-}
-
-/* Keyframes often used in components */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-@keyframes slideDown {
-  from { transform: translateY(-20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+/* Glitch Text Effect - Kept for critical headers but reduced impact */
+.glitch-text {
+  position: relative;
+  /* Removed continuous animation for readability */
+}
+.glitch-text:hover {
+  animation: glitch-skew 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
+}
+.glitch-text::before,
+.glitch-text::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.8;
+  display: none; /* Hidden by default */
+}
+.glitch-text:hover::before,
+.glitch-text:hover::after {
+  display: block;
+}
+.glitch-text:hover::before {
+  color: #ff00ff;
+  z-index: -1;
+  animation: glitch-anim-1 2s infinite linear alternate-reverse;
+}
+.glitch-text:hover::after {
+  color: #00ffff;
+  z-index: -2;
+  animation: glitch-anim-2 3s infinite linear alternate-reverse;
 }
 
-/* --- Scrollbar Customization --- */
+@keyframes glitch-anim-1 {
+  0% { clip-path: inset(20% 0 80% 0); transform: translate(-2px, 1px); }
+  20% { clip-path: inset(60% 0 10% 0); transform: translate(2px, -1px); }
+  40% { clip-path: inset(40% 0 50% 0); transform: translate(-2px, 2px); }
+  60% { clip-path: inset(80% 0 5% 0); transform: translate(2px, -2px); }
+  80% { clip-path: inset(10% 0 70% 0); transform: translate(-1px, 1px); }
+  100% { clip-path: inset(30% 0 50% 0); transform: translate(1px, -1px); }
+}
+@keyframes glitch-anim-2 {
+  0% { clip-path: inset(10% 0 60% 0); transform: translate(2px, -1px); }
+  20% { clip-path: inset(80% 0 5% 0); transform: translate(-2px, 2px); }
+  40% { clip-path: inset(30% 0 20% 0); transform: translate(2px, -2px); }
+  60% { clip-path: inset(10% 0 80% 0); transform: translate(-1px, 1px); }
+  80% { clip-path: inset(50% 0 30% 0); transform: translate(1px, -1px); }
+  100% { clip-path: inset(70% 0 10% 0); transform: translate(-2px, 2px); }
+}
+
+/* --- Death Sequence Animations --- */
+
+/* 画面の揺れ */
+.animate-shake {
+  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both infinite;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+  40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
+/* RGBシフト（発狂時） */
+.animate-rgb-shift {
+  animation: rgbShift 0.1s infinite;
+}
+
+@keyframes rgbShift {
+  0% { text-shadow: 2px 0 #f00, -2px 0 #0ff; }
+  25% { text-shadow: -2px 0 #f00, 2px 0 #0ff; }
+  50% { text-shadow: 2px 2px #f00, -2px -2px #0ff; }
+  75% { text-shadow: -2px -2px #f00, 2px 2px #0ff; }
+  100% { text-shadow: 1px -1px #f00, -1px 1px #0ff; }
+}
+
+/* CRT電源オフ演出 */
+.animate-crt-off {
+  animation: crtOff 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+@keyframes crtOff {
+  0% {
+    transform: scale(1, 1);
+    filter: brightness(1);
+    opacity: 1;
+  }
+  40% {
+    transform: scale(1, 0.002);
+    filter: brightness(3); /* 一瞬光る */
+    opacity: 1;
+  }
+  80% {
+    transform: scale(0, 0.002);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0, 0);
+    opacity: 0;
+  }
+}
+
+/* --- Scrollbar --- */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #111; 
-}
-
-::-webkit-scrollbar-thumb {
-  background: #22c55e; 
-  border-radius: 2px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #16a34a; 
-}
-
-/* Custom utility for specific panels if needed */
-.custom-scrollbar::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: #0a0a0a;
+::-webkit-scrollbar-track {
+  background: #050505;
+  border-left: 1px solid #111;
+}
+::-webkit-scrollbar-thumb {
+  background: #14532d;
+  border: 1px solid #22c55e;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #22c55e;
+  box-shadow: 0 0 5px #22c55e;
 }
 
-/* --- Text Utilities --- */
+/* --- Utilities --- */
+/* Reduced glow for better readability */
 .text-shadow-glow {
-  text-shadow: 0 0 10px rgba(34, 197, 94, 0.6);
+  text-shadow: 0 0 2px currentColor;
+}
+.border-glow {
+  box-shadow: 0 0 5px rgba(34, 197, 94, 0.2);
+}
+.bg-scanlines {
+  /* Simplified for readability */
+  background: rgba(0, 0, 0, 0.3);
 }
 
-.text-shadow-sm {
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-}
-
-/* Typewriter Effect */
-.typewriter .cursor {
-  display: inline-block;
-  width: 0.5em;
-  height: 1em;
-  background-color: #22c55e;
-  animation: blink 1s step-end infinite;
-  vertical-align: middle;
-  margin-left: 2px;
-}
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+/* Tech Pattern Background for Panels */
+.bg-tech-grid {
+  background-image: 
+    linear-gradient(rgba(34, 197, 94, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 197, 94, 0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
 }

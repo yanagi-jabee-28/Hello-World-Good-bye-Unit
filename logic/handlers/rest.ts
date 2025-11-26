@@ -1,60 +1,53 @@
 
-import { GameState, TimeSlot, LogEntry, RelationshipId } from '../../types';
-import { LOG_MESSAGES } from '../../data/events';
-import { clamp, formatDelta, joinMessages, applySoftCap } from '../../utils/common';
+import { GameState, TimeSlot, LogEntry } from '../../types';
+import { ACTION_LOGS, LOG_TEMPLATES } from '../../data/constants/logMessages';
+import { clamp, applySoftCap } from '../../utils/common';
+import { joinMessages } from '../../utils/logFormatter';
 import { pushLog } from '../stateHelpers';
 import { CAFFEINE_THRESHOLDS, BUFF_SOFT_CAP_ASYMPTOTE } from '../../config/gameConstants';
 
 export const handleRest = (state: GameState): GameState => {
-  // 時間帯別の基礎回復量設定
   let hpRecov = 0;
   let sanityRecov = 0;
-  let caffeineDrop = -25; // カフェイン除去量は一律
+  let caffeineDrop = -25;
   let baseLog = "";
   let logType: LogEntry['type'] = 'info';
 
-  // Sleep Flag Updates
   let debtReduction = 0;
   let quality = 0.8;
 
-  // Project Melting Brain: Anxiety Factor
-  // 日数経過による回復量減衰係数
   const anxietyFactor = Math.max(0.6, 1.0 - ((state.day - 1) * 0.06));
 
   switch (state.timeSlot) {
     case TimeSlot.LATE_NIGHT:
-      // 就寝: HP大回復 / SAN中回復
       hpRecov = 80;
       sanityRecov = 30; 
-      baseLog = LOG_MESSAGES.rest_success; 
+      baseLog = ACTION_LOGS.REST.SUCCESS; 
       logType = 'success';
-      debtReduction = 5; // Fully recover sleep debt
+      debtReduction = 5;
       quality = 1.0;
       break;
 
     case TimeSlot.MORNING:
-      // 二度寝: 中回復（HP寄り）
       hpRecov = 30;
       sanityRecov = 10;
-      baseLog = "【二度寝】誘惑に負けて布団に戻った。罪悪感で精神は休まらない。";
+      baseLog = ACTION_LOGS.REST.MORNING_SLEEP;
       debtReduction = 2;
       quality = 0.9;
       break;
 
     case TimeSlot.NOON:
-      // 昼寝: 中回復（SAN寄り）
       hpRecov = 15;
       sanityRecov = 15;
-      baseLog = "【昼寝】午後の講義に備えて机で仮眠。脳のオーバーヒートが少し収まった。";
+      baseLog = ACTION_LOGS.REST.NOON_NAP;
       debtReduction = 1;
       quality = 0.85;
       break;
 
     default:
-      // 仮眠(机): 小回復
       hpRecov = 15;
       sanityRecov = 5;
-      baseLog = LOG_MESSAGES.rest_short; 
+      baseLog = ACTION_LOGS.REST.SHORT; 
       debtReduction = 0.5;
       quality = 0.8;
       break;
@@ -62,15 +55,15 @@ export const handleRest = (state: GameState): GameState => {
 
   // Caffeine Interference
   if (state.caffeine >= CAFFEINE_THRESHOLDS.TOXICITY) {
-    hpRecov = Math.floor(hpRecov * 0.3); // 0.2 -> 0.3
-    sanityRecov = -10; // Nightmare -15 -> -10
-    baseLog = LOG_MESSAGES.rest_caffeine_fail;
+    hpRecov = Math.floor(hpRecov * 0.3);
+    sanityRecov = -10;
+    baseLog = ACTION_LOGS.REST.CAFFEINE_FAIL;
     logType = 'danger';
-    quality = 0.5; // Poor quality
+    quality = 0.5;
   } else if (state.caffeine >= CAFFEINE_THRESHOLDS.ZONE) {
-    hpRecov = Math.floor(hpRecov * 0.6); // 0.5 -> 0.6
-    sanityRecov = Math.floor(sanityRecov * 0.5); // 0.4 -> 0.5
-    baseLog = "【浅い眠り】カフェインが脳を締め付け、深く眠れなかった。";
+    hpRecov = Math.floor(hpRecov * 0.6);
+    sanityRecov = Math.floor(sanityRecov * 0.5);
+    baseLog = ACTION_LOGS.REST.SHALLOW;
     logType = 'warning';
     quality = 0.7;
   }
@@ -88,26 +81,25 @@ export const handleRest = (state: GameState): GameState => {
   hpRecov = Math.floor(hpRecov * finalMultiplier);
   sanityRecov = Math.floor(sanityRecov * finalMultiplier);
 
-  // Apply Anxiety (Scale down final recovery)
+  // Apply Anxiety
   hpRecov = Math.floor(hpRecov * anxietyFactor);
   sanityRecov = Math.floor(sanityRecov * anxietyFactor);
 
   if (anxietyFactor < 0.8) {
-    baseLog += " 試験日が迫るプレッシャーで、動悸が収まらない...";
+    baseLog += ACTION_LOGS.REST.ANXIETY;
   }
 
   state.hp = clamp(state.hp + hpRecov, 0, state.maxHp);
   state.sanity = clamp(state.sanity + sanityRecov, 0, state.maxSanity);
   state.caffeine = clamp(state.caffeine + caffeineDrop, 0, 200);
 
-  // Update flags
   state.flags.sleepDebt = Math.max(0, state.flags.sleepDebt - debtReduction);
   state.flags.lastSleepQuality = quality;
 
   const details = joinMessages([
-    formatDelta('HP', hpRecov),
-    formatDelta('SAN', sanityRecov),
-    formatDelta('カフェイン', caffeineDrop)
+    LOG_TEMPLATES.PARAM.HP(hpRecov),
+    LOG_TEMPLATES.PARAM.SAN(sanityRecov),
+    LOG_TEMPLATES.PARAM.CAFFEINE(caffeineDrop)
   ], ', ');
 
   pushLog(state, `${baseLog}\n(${details})`, logType);
@@ -121,25 +113,22 @@ export const handleEscapism = (state: GameState): GameState => {
   let baseLog = "";
   let logType: LogEntry['type'] = 'info';
 
-  // Escapism works better when stressed, but hurts grades
   if (state.timeSlot === TimeSlot.AM || state.timeSlot === TimeSlot.AFTERNOON) {
-    profRelDelta = -8; // Penalize skipping class more
-    baseLog = "【サボり】講義をサボってゲーセンへ。背徳感がスパイスだ。";
+    profRelDelta = -8; 
+    baseLog = ACTION_LOGS.ESCAPISM.SKIP_CLASS;
     logType = 'warning';
   } else {
-    baseLog = "【現実逃避】全てを忘れて没頭した。明日から本気出す。";
+    baseLog = ACTION_LOGS.ESCAPISM.NORMAL;
   }
 
-  // Escapism is NOT affected by Anxiety Factor (unlike Rest)
-  // This makes it a viable late-game strategy for SAN recovery
   state.sanity = clamp(state.sanity + sanDelta, 0, state.maxSanity);
   state.hp = clamp(state.hp + hpDelta, 0, state.maxHp);
-  if (profRelDelta) state.relationships[RelationshipId.PROFESSOR] = clamp(state.relationships[RelationshipId.PROFESSOR] + profRelDelta, 0, 100);
+  if (profRelDelta) state.relationships.PROFESSOR = clamp(state.relationships.PROFESSOR + profRelDelta, 0, 100);
 
   const details = joinMessages([
-    formatDelta('SAN', sanDelta),
-    formatDelta('HP', hpDelta),
-    formatDelta('教授友好度', profRelDelta)
+    LOG_TEMPLATES.PARAM.SAN(sanDelta),
+    LOG_TEMPLATES.PARAM.HP(hpDelta),
+    profRelDelta ? LOG_TEMPLATES.PARAM.RELATIONSHIP('教授友好度', profRelDelta) : null
   ], ', ');
 
   pushLog(state, `${baseLog}\n(${details})`, logType);

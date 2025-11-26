@@ -1,6 +1,7 @@
 
 import { GameEvent, RelationshipId, SubjectId, ItemId, TimeSlot } from '../../types';
-import {REL_TIERS, KNOWLEDGE_GAINS, REL_GAINS, RECOVERY_VALS, WEIGHTS, COOLDOWNS } from '../../config/gameBalance';
+import { REL_TIERS, WEIGHTS, COOLDOWNS } from '../../config/gameBalance';
+import { Effect } from '../presets/effectTemplates';
 
 /**
  * PERSONA: SENIOR
@@ -15,10 +16,10 @@ export const SENIOR_EVENTS: GameEvent[] = [
     text: "【雑用】「これ片付けといて～」実験機材の整理を手伝わされた。お礼にジャンクパーツ(USBメモリ)を貰った。",
     type: 'good',
     weight: WEIGHTS.UNCOMMON,
-    conditions: { minRelationship: REL_TIERS.LOW }, // Low barrier entry for Item
-    effect: { 
-      inventory: { [ItemId.USB_MEMORY]: 1 }, 
-      relationships: { [RelationshipId.SENIOR]: REL_GAINS.Qm } 
+    conditions: { minRelationship: REL_TIERS.LOW },
+    effect: {
+      ...Effect.Item.Get(ItemId.USB_MEMORY),
+      ...Effect.Social.Boost(RelationshipId.SENIOR, 'Qm')
     },
     maxOccurrences: 1
   },
@@ -28,9 +29,10 @@ export const SENIOR_EVENTS: GameEvent[] = [
     text: "【裏話】「あの教授、月曜は機嫌悪いから気をつけろ」攻略に役立つメタ情報を仕入れた。",
     type: 'flavor',
     weight: WEIGHTS.COMMON,
-    effect: { 
-      relationships: { [RelationshipId.SENIOR]: REL_GAINS.MEDIUM, [RelationshipId.PROFESSOR]: 2 }, 
-      sanity: RECOVERY_VALS.MINOR 
+    effect: {
+      ...Effect.Social.Boost(RelationshipId.SENIOR, 'MEDIUM'),
+      ...Effect.Status.RecoverSanity(5), // Custom minor
+      relationships: { [RelationshipId.PROFESSOR]: 2, [RelationshipId.SENIOR]: 8 } // Merge
     }
   },
   {
@@ -40,10 +42,10 @@ export const SENIOR_EVENTS: GameEvent[] = [
     type: 'flavor',
     weight: WEIGHTS.COMMON,
     conditions: { maxRelationship: REL_TIERS.HIGH },
-    effect: { 
-      hp: -RECOVERY_VALS.MINOR, 
-      relationships: { [RelationshipId.SENIOR]: REL_GAINS.Qm }, 
-      inventory: { [ItemId.HIGH_CACAO_CHOCO]: 1 } 
+    effect: {
+      hp: -5,
+      ...Effect.Social.Boost(RelationshipId.SENIOR, 'Qm'),
+      ...Effect.Item.Get(ItemId.HIGH_CACAO_CHOCO)
     }
   },
 
@@ -58,12 +60,12 @@ export const SENIOR_EVENTS: GameEvent[] = [
       timeSlots: [TimeSlot.NIGHT, TimeSlot.LATE_NIGHT], 
       minRelationship: REL_TIERS.MID 
     },
-    effect: { 
-      hp: RECOVERY_VALS.HUGE, // 回復量大
-      sanity: RECOVERY_VALS.SMALL, 
-      relationships: { [RelationshipId.SENIOR]: REL_GAINS.LARGE } 
+    effect: {
+      ...Effect.Status.RecoverHp(50), // Huge
+      ...Effect.Status.RecoverSanity(10),
+      ...Effect.Social.Boost(RelationshipId.SENIOR, 'LARGE')
     },
-    coolDownTurns: COOLDOWNS.MEDIUM // 連発防止
+    coolDownTurns: COOLDOWNS.MEDIUM
   },
 
   // --- TIER: HIGH (60+) ---
@@ -74,9 +76,9 @@ export const SENIOR_EVENTS: GameEvent[] = [
     type: 'good',
     weight: WEIGHTS.RARE,
     conditions: { minRelationship: REL_TIERS.HIGH },
-    effect: { 
-      inventory: { [ItemId.USB_MEMORY]: 1 }, 
-      relationships: { [RelationshipId.SENIOR]: REL_GAINS.LARGE } 
+    effect: {
+      ...Effect.Item.Get(ItemId.USB_MEMORY),
+      ...Effect.Social.Boost(RelationshipId.SENIOR, 'LARGE')
     },
     maxOccurrences: 1
   },
@@ -88,11 +90,11 @@ export const SENIOR_EVENTS: GameEvent[] = [
     text: "【秘伝】「誰にも見せるなよ...」研究室のサーバーの奥深くに眠る、伝説の『完全解答付き過去問』へのパスを教えられた。",
     type: 'good',
     weight: WEIGHTS.RARE,
-    // Rationale: バランス崩壊要因だったため、条件を厳格化(Rel 30 -> 80)し、効果を少しマイルドに調整
     conditions: { minRelationship: REL_TIERS.ELITE }, 
-    effect: { 
-      knowledge: { [SubjectId.CIRCUIT]: KNOWLEDGE_GAINS.LARGE, [SubjectId.MATH]: KNOWLEDGE_GAINS.MEDIUM }, 
-      relationships: { [RelationshipId.SENIOR]: REL_GAINS.MEDIUM } 
+    effect: {
+      ...Effect.Study.Boost(SubjectId.CIRCUIT, 'LARGE'),
+      ...Effect.Study.Boost(SubjectId.MATH, 'MEDIUM'),
+      ...Effect.Social.Boost(RelationshipId.SENIOR, 'MEDIUM')
     },
     maxOccurrences: 1
   }

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { StatusDisplay } from './components/StatusDisplay';
 import { LogWindow } from './components/LogWindow';
@@ -9,8 +9,10 @@ import { ShopModal } from './components/ShopModal';
 import { DebugPanel } from './components/DebugPanel';
 import { EventDialog } from './components/EventDialog';
 import { SaveLoadModal } from './components/SaveLoadModal';
+import { DeathSequence } from './components/DeathSequence'; // Import
 import { useGameController } from './hooks/useGameController';
 import { Terminal, Activity } from 'lucide-react';
+import { GameStatus } from './types';
 
 // ミニステータスバー (Mobile only helper)
 const MiniBar = ({ value, max, color, label }: { value: number; max: number; color: string; label: string }) => (
@@ -27,6 +29,35 @@ const MiniBar = ({ value, max, color, label }: { value: number; max: number; col
 
 const App: React.FC = () => {
   const { state, ui, actions } = useGameController();
+  const [showDeathSequence, setShowDeathSequence] = useState(false);
+  const [showEndingScreen, setShowEndingScreen] = useState(false);
+
+  // Watch for Game Over status to trigger sequence
+  useEffect(() => {
+    if (state.status === GameStatus.GAME_OVER_HP || state.status === GameStatus.GAME_OVER_SANITY) {
+      if (!showEndingScreen) {
+        setShowDeathSequence(true);
+      }
+    } else if (state.status === GameStatus.VICTORY || state.status === GameStatus.FAILURE) {
+      // Normal ending (Pass/Fail) shows immediately
+      setShowEndingScreen(true);
+    } else {
+      // Playing state reset
+      setShowDeathSequence(false);
+      setShowEndingScreen(false);
+    }
+  }, [state.status]);
+
+  const handleSequenceComplete = () => {
+    setShowDeathSequence(false);
+    setShowEndingScreen(true);
+  };
+
+  const handleRestart = () => {
+    setShowEndingScreen(false);
+    setShowDeathSequence(false);
+    actions.restart();
+  }
 
   const overlays = (
     <>
@@ -53,7 +84,21 @@ const App: React.FC = () => {
           onResolve={actions.resolveEvent} 
         />
       )}
-      <EndingScreen state={state} onRestart={actions.restart} />
+      
+      {/* Death Sequence Overlay */}
+      {showDeathSequence && (
+        <DeathSequence 
+          type={state.status === GameStatus.GAME_OVER_HP ? 'hp' : 'sanity'} 
+          cause={state.logs[state.logs.length - 1]?.text || "UNKNOWN ERROR"}
+          onComplete={handleSequenceComplete} 
+        />
+      )}
+
+      {/* Ending Screen (Only shows after sequence for game overs, or immediately for exam results) */}
+      {showEndingScreen && (
+        <EndingScreen state={state} onRestart={handleRestart} />
+      )}
+      
       <DebugPanel state={state} />
     </>
   );

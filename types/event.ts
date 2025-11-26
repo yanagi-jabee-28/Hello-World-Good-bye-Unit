@@ -1,5 +1,7 @@
+
 import { ActionType, SubjectId, ItemId, RelationshipId, TimeSlot } from './enums';
 import { GameState } from './state';
+import { GameEventEffect } from './assets';
 
 // Discriminated Union for strict typing
 export type GameAction =
@@ -19,21 +21,15 @@ export type GameAction =
   | { type: ActionType.SOFT_RESET }
   | { type: ActionType.HARD_RESTART };
 
-export interface GameEventEffect {
-  hp?: number;
-  sanity?: number;
-  knowledge?: Partial<Record<SubjectId, number>>;
-  relationships?: Partial<Record<RelationshipId, number>>;
-  caffeine?: number;
-  inventory?: Partial<Record<ItemId, number>>;
-  money?: number;
-}
+// Re-export for convenience if needed by other files
+export type { GameEventEffect } from './assets';
 
 export type EventTriggerType = 
   | 'turn_end'        // ターン終了時（ランダムイベント）
   | 'action_professor' // 教授コマンド実行時
   | 'action_senior'    // 先輩コマンド実行時
-  | 'action_friend';   // 友人コマンド実行時
+  | 'action_friend'    // 友人コマンド実行時
+  | 'action_work';     // 仕事コマンド実行時
 
 export interface GameEventCondition {
   minHp?: number;

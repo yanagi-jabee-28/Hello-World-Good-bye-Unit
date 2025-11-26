@@ -1,6 +1,7 @@
 
 import { GameEvent, RelationshipId, SubjectId, ItemId } from '../../types';
-import { REL_TIERS, KNOWLEDGE_GAINS, REL_GAINS, RECOVERY_VALS, WEIGHTS, COOLDOWNS } from '../../config/gameBalance';
+import { REL_TIERS, WEIGHTS, COOLDOWNS } from '../../config/gameBalance';
+import { Effect } from '../presets/effectTemplates';
 
 /**
  * PERSONA: PROFESSOR
@@ -15,9 +16,9 @@ export const PROFESSOR_EVENTS: GameEvent[] = [
     text: "【質問】「良い着眼点だ」教授は数式を指し示し、論理の飛躍を指摘してくれた。基礎理解が深まる。",
     type: 'good',
     weight: WEIGHTS.COMMON,
-    effect: { 
-      relationships: { [RelationshipId.PROFESSOR]: REL_GAINS.Qm }, 
-      knowledge: { [SubjectId.MATH]: KNOWLEDGE_GAINS.SMALL } 
+    effect: {
+      ...Effect.Social.Boost(RelationshipId.PROFESSOR, 'Qm'),
+      ...Effect.Study.Boost(SubjectId.MATH, 'SMALL')
     }
   },
   {
@@ -26,10 +27,11 @@ export const PROFESSOR_EVENTS: GameEvent[] = [
     text: "【門前払い】「シラバスを読んだかね？」基礎的な質問を一蹴された。出直す必要がある。",
     type: 'bad',
     weight: WEIGHTS.RARE,
-    conditions: { maxRelationship: REL_TIERS.MID }, // 仲良くなると発生しなくなる
-    effect: { 
-      relationships: { [RelationshipId.PROFESSOR]: 2 }, 
-      hp: -RECOVERY_VALS.MINOR 
+    conditions: { maxRelationship: REL_TIERS.MID }, 
+    effect: {
+      ...Effect.Social.Boost(RelationshipId.PROFESSOR, 'SMALL'), // Note: Even bad interaction gives tiny rel in original? Changed to match strict logic or define custom
+      relationships: { [RelationshipId.PROFESSOR]: 2 }, // Override slightly
+      ...Effect.Status.DamageExhaust() // Using Exhaust as minor HP dmg replacement
     }
   },
   {
@@ -38,10 +40,10 @@ export const PROFESSOR_EVENTS: GameEvent[] = [
     text: "【指導】「君のレポートは定義が曖昧だ」...1時間に及ぶ厳しい指導を受けた。精神が削れる。",
     type: 'bad',
     weight: WEIGHTS.UNCOMMON,
-    conditions: { maxAvgScore: 45 }, // 成績不振時
-    effect: { 
-      sanity: -RECOVERY_VALS.MODERATE, 
-      knowledge: { [SubjectId.HUMANITIES]: KNOWLEDGE_GAINS.SMALL } // 説教も教養のうち
+    conditions: { maxAvgScore: 45 },
+    effect: {
+      ...Effect.Status.DamageStress(),
+      ...Effect.Study.Boost(SubjectId.HUMANITIES, 'SMALL')
     },
     coolDownTurns: COOLDOWNS.SHORT
   },
@@ -54,9 +56,9 @@ export const PROFESSOR_EVENTS: GameEvent[] = [
     type: 'good',
     weight: WEIGHTS.COMMON,
     conditions: { minRelationship: REL_TIERS.MID },
-    effect: { 
-      relationships: { [RelationshipId.PROFESSOR]: REL_GAINS.MEDIUM }, 
-      inventory: { [ItemId.BLACK_COFFEE]: 1 } 
+    effect: {
+      ...Effect.Social.Boost(RelationshipId.PROFESSOR, 'MEDIUM'),
+      ...Effect.Item.Get(ItemId.BLACK_COFFEE)
     }
   },
   {
@@ -66,10 +68,9 @@ export const PROFESSOR_EVENTS: GameEvent[] = [
     type: 'good',
     weight: WEIGHTS.RARE,
     conditions: { minRelationship: REL_TIERS.MID },
-    effect: { 
-      hp: RECOVERY_VALS.MODERATE, 
-      sanity: RECOVERY_VALS.MODERATE, 
-      relationships: { [RelationshipId.PROFESSOR]: REL_GAINS.Qm } 
+    effect: {
+      ...Effect.Status.RecoverModerate(),
+      ...Effect.Social.Boost(RelationshipId.PROFESSOR, 'Qm')
     },
     coolDownTurns: COOLDOWNS.MEDIUM
   },
@@ -82,9 +83,9 @@ export const PROFESSOR_EVENTS: GameEvent[] = [
     type: 'good',
     weight: WEIGHTS.UNCOMMON,
     conditions: { minRelationship: REL_TIERS.HIGH, minAvgScore: 60 },
-    effect: { 
-      relationships: { [RelationshipId.PROFESSOR]: REL_GAINS.LARGE }, 
-      sanity: RECOVERY_VALS.SMALL 
+    effect: {
+      ...Effect.Social.Boost(RelationshipId.PROFESSOR, 'LARGE'),
+      ...Effect.Status.RecoverSanity(10) // Custom small value
     },
     coolDownTurns: COOLDOWNS.SHORT
   },
@@ -95,9 +96,8 @@ export const PROFESSOR_EVENTS: GameEvent[] = [
     type: 'good',
     weight: WEIGHTS.UNCOMMON,
     conditions: { minRelationship: REL_TIERS.HIGH, minAvgScore: 70 },
-    effect: { 
-      relationships: { [RelationshipId.PROFESSOR]: REL_GAINS.LARGE }, 
-      sanity: RECOVERY_VALS.MODERATE 
+    effect: {
+      ...Effect.Preset.ProfessorPraise()
     },
     maxOccurrences: 1
   },
@@ -109,12 +109,13 @@ export const PROFESSOR_EVENTS: GameEvent[] = [
     text: "【核心】「ここだけの話だが...」教授が声を潜める。試験問題の作成意図、そして解法の鍵となる理論。勝利の方程式を得た。",
     type: 'good',
     weight: WEIGHTS.RARE,
-    // Rationale: 強力すぎるため、発生条件を厳しく設定(Rel 30 -> 80)
     conditions: { minRelationship: REL_TIERS.ELITE },
-    effect: { 
-      relationships: { [RelationshipId.PROFESSOR]: REL_GAINS.HUGE }, 
-      // 全体アップではなく、専門科目に特化
-      knowledge: { [SubjectId.ALGO]: KNOWLEDGE_GAINS.LARGE, [SubjectId.CIRCUIT]: KNOWLEDGE_GAINS.LARGE } 
+    effect: {
+      ...Effect.Social.Boost(RelationshipId.PROFESSOR, 'HUGE'),
+      knowledge: { 
+        [SubjectId.ALGO]: 18, // Custom Large
+        [SubjectId.CIRCUIT]: 18 
+      } 
     },
     maxOccurrences: 1
   }

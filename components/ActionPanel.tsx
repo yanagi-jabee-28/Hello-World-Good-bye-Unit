@@ -5,9 +5,9 @@ import { SUBJECTS } from '../data/subjects';
 import { ITEMS } from '../data/items';
 import { getAvailability, getStudyHint } from '../logic/advisor';
 import { getWorkConfig } from '../data/work';
-import { getItemEffectDescription } from '../utils/common';
+import { getItemEffectDescription } from '../utils/logFormatter';
 import { getExamWarnings } from '../logic/warningSystem';
-import { BookOpen, Users, Gamepad2, Package, School, GraduationCap, UserPlus, AlertTriangle, ShoppingCart, Briefcase, Bed, Sun, Moon, BatteryCharging, Ban, Coffee } from 'lucide-react';
+import { BookOpen, Users, Gamepad2, Package, School, GraduationCap, UserPlus, AlertTriangle, ShoppingCart, Briefcase, Bed, Sun, Moon, BatteryCharging, Ban, Coffee, Zap } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
 
@@ -34,11 +34,13 @@ export const ActionPanel: React.FC<Props> = ({ state, actions }) => {
 
   if (isGameOver) {
     return (
-      <div className="h-full w-full p-4 border-t-2 border-red-900 bg-black flex items-center justify-center">
-        <div className="text-red-600 font-mono text-center animate-pulse space-y-2">
-          <Ban size={48} className="mx-auto mb-2" />
-          <h2 className="text-2xl font-bold tracking-widest">SYSTEM HALTED</h2>
-          <p className="text-xs text-red-800">USER INPUT DISABLED // WAITING FOR REBOOT</p>
+      <div className="h-full w-full p-4 border-2 border-red-900 bg-black/90 flex items-center justify-center backdrop-blur-sm">
+        <div className="text-red-600 font-mono text-center animate-pulse space-y-4">
+          <Ban size={64} className="mx-auto" />
+          <div>
+            <h2 className="text-3xl font-bold tracking-[0.5em] glitch-text" data-text="SYSTEM HALTED">SYSTEM HALTED</h2>
+            <p className="text-sm text-red-800 mt-2 uppercase tracking-widest">Fatal Error // User Input Disabled</p>
+          </div>
         </div>
       </div>
     );
@@ -55,28 +57,28 @@ export const ActionPanel: React.FC<Props> = ({ state, actions }) => {
 
   const getRestConfig = (slot: TimeSlot) => {
     switch (slot) {
-      case TimeSlot.LATE_NIGHT: return { label: "就寝 (布団)", desc: "HP大/SAN大", icon: <Bed size={16} />, variant: 'secondary' as const };
-      case TimeSlot.MORNING: return { label: "二度寝", desc: "HP中/SAN小", icon: <Sun size={16} />, variant: 'secondary' as const };
-      case TimeSlot.NOON: return { label: "昼寝", desc: "HP小/SAN中", icon: <Moon size={16} />, variant: 'secondary' as const };
-      default: return { label: "仮眠 (机)", desc: "HP小/SAN微", icon: <BatteryCharging size={16} />, variant: 'secondary' as const };
+      case TimeSlot.LATE_NIGHT: return { label: "就寝 (布団)", desc: "HP大/SAN大", icon: <Bed size={16} /> };
+      case TimeSlot.MORNING: return { label: "二度寝", desc: "HP中/SAN小", icon: <Sun size={16} /> };
+      case TimeSlot.NOON: return { label: "昼寝", desc: "HP小/SAN中", icon: <Moon size={16} /> };
+      default: return { label: "仮眠 (机)", desc: "HP小/SAN微", icon: <BatteryCharging size={16} /> };
     }
   };
   const restConfig = getRestConfig(timeSlot);
 
   return (
-    <div className="grid grid-cols-2 gap-2 p-2 md:grid-cols-2 lg:grid-cols-4 lg:gap-4 lg:p-4 border-t-2 border-green-900 bg-gray-950">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-black/50 h-full content-start overflow-y-auto custom-scrollbar">
       
-      {/* Warnings */}
+      {/* Warnings Overlay/Banner */}
       {warnings.length > 0 && (
-        <div className="col-span-2 lg:col-span-4 mb-2">
-          <div className={`p-2 rounded border flex items-start gap-3 ${hasCriticalWarning ? 'bg-red-900/20 border-red-800' : 'bg-yellow-900/20 border-yellow-800'}`}>
-            <AlertTriangle className={hasCriticalWarning ? 'text-red-500' : 'text-yellow-500'} size={18} />
+        <div className="col-span-2 md:col-span-4">
+          <div className={`p-2 border-l-4 flex items-start gap-3 ${hasCriticalWarning ? 'bg-red-950/30 border-red-600' : 'bg-yellow-950/30 border-yellow-600'}`}>
+            <AlertTriangle className={hasCriticalWarning ? 'text-red-500 animate-pulse' : 'text-yellow-500'} size={18} />
             <div className="flex-1">
-              <div className="text-xs font-bold text-gray-200 mb-1">WARNINGS DETECTED ({warnings.length})</div>
+              <div className="text-[10px] font-bold text-gray-400 mb-1 tracking-wider uppercase">System Warning ({warnings.length})</div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
                 {warnings.slice(0, 4).map((w, i) => (
-                  <div key={i} className="text-[10px] text-gray-400 flex items-center gap-1">
-                    <span>{w.icon}</span> {w.message}
+                  <div key={i} className="text-[10px] text-gray-200 flex items-center gap-2">
+                    <span className="text-xs">{w.icon}</span> {w.message}
                   </div>
                 ))}
               </div>
@@ -86,133 +88,148 @@ export const ActionPanel: React.FC<Props> = ({ state, actions }) => {
       )}
 
       {/* ACADEMIC */}
-      <div className="col-span-2 lg:col-span-1 space-y-2">
-        <div className="flex justify-between items-center text-xs text-gray-500 font-bold mb-1 px-1">
-           <span className="flex items-center gap-2"><BookOpen size={12} /> ACADEMIC</span>
-           <Badge variant={caffeine > 100 ? 'warning' : 'outline'}>{studyHint.split('(')[0]}</Badge>
+      <div className="col-span-2 md:col-span-1 space-y-2">
+        <div className="flex justify-between items-center px-1">
+           <span className="text-[10px] font-bold text-gray-500 flex items-center gap-1"><BookOpen size={10} /> ACADEMIC_MODULE</span>
+           <Badge variant={caffeine > 100 ? 'warning' : 'outline'} className="scale-75 origin-right">{studyHint.split('(')[0]}</Badge>
         </div>
-        <div className="grid grid-cols-2 lg:grid-cols-1 gap-2">
+        <div className="space-y-1.5">
           {Object.values(SUBJECTS).map((sub) => (
             <Button
               key={sub.id}
               onClick={() => actions.study(sub.id)}
               label={sub.name}
-              subLabel={`Diff: ${sub.difficulty}x`}
-              icon={<School size={16} />}
+              subLabel={`Difficulty: ${sub.difficulty}x`}
+              icon={<School size={14} />}
               variant="primary"
               fullWidth
+              size="sm"
             />
           ))}
         </div>
       </div>
 
       {/* LIFE & ECONOMY */}
-      <div className="space-y-2">
-        <div className="text-xs text-gray-500 font-bold mb-1 flex items-center gap-2 px-1">
-           <Briefcase size={12} /> LIFE & ECONOMY
+      <div className="col-span-1 space-y-2">
+        <div className="text-[10px] font-bold text-gray-500 flex items-center gap-1 px-1">
+           <Briefcase size={10} /> LIFE_SUPPORT
         </div>
-        <Button
-          onClick={actions.rest}
-          label={restConfig.label}
-          subLabel={restConfig.desc}
-          icon={restConfig.icon}
-          variant="secondary"
-          fullWidth
-        />
-        <Button
-          onClick={actions.work}
-          label={workConfig.label}
-          subLabel={`¥${workConfig.salary.toLocaleString()}`}
-          icon={<Briefcase size={16} />}
-          variant="outline"
-          className="border-orange-900 text-orange-400 hover:border-orange-700"
-          fullWidth
-        />
-        <Button
-          onClick={actions.openShop}
-          label="生協オンライン"
-          subLabel="アイテム購入"
-          icon={<ShoppingCart size={16} />}
-          variant="outline"
-          className="border-cyan-900 text-cyan-400 hover:border-cyan-700"
-          fullWidth
-        />
+        <div className="space-y-1.5">
+          <Button
+            onClick={actions.rest}
+            label={restConfig.label}
+            subLabel={restConfig.desc}
+            icon={restConfig.icon}
+            variant="secondary"
+            fullWidth
+            size="sm"
+          />
+          <Button
+            onClick={actions.work}
+            label={workConfig.label}
+            subLabel={`EARN: ¥${workConfig.salary.toLocaleString()}`}
+            icon={<Briefcase size={14} />}
+            variant="outline"
+            className="border-orange-800 text-orange-400 hover:border-orange-600"
+            fullWidth
+            size="sm"
+          />
+          <Button
+            onClick={actions.openShop}
+            label="生協 NET"
+            subLabel="PURCHASE"
+            icon={<ShoppingCart size={14} />}
+            variant="outline"
+            className="border-cyan-800 text-cyan-400 hover:border-cyan-600"
+            fullWidth
+            size="sm"
+          />
+        </div>
       </div>
 
       {/* SOCIAL */}
-      <div className="space-y-2">
-        <div className="text-xs text-gray-500 font-bold mb-1 flex items-center gap-2 px-1">
-           <Users size={12} /> SOCIAL
+      <div className="col-span-1 space-y-2">
+        <div className="text-[10px] font-bold text-gray-500 flex items-center gap-1 px-1">
+           <Users size={10} /> SOCIAL_LINK
         </div>
-        <Button
-          onClick={actions.askProfessor}
-          disabled={!isProfAvailable}
-          label="教授に質問"
-          subLabel={isProfAvailable ? "理解度UP" : "不在"}
-          icon={<GraduationCap size={16} />}
-          variant={isProfAvailable ? "outline" : "ghost"}
-          className={isProfAvailable ? "border-indigo-900 text-indigo-400 hover:border-indigo-700" : ""}
-          fullWidth
-        />
-        <Button
-          onClick={actions.askSenior}
-          disabled={!isSeniorAvailable}
-          label="先輩を頼る"
-          subLabel={isSeniorAvailable ? "アイテム/情報" : "不在"}
-          icon={<Users size={16} />}
-          variant={isSeniorAvailable ? "outline" : "ghost"}
-          className={isSeniorAvailable ? "border-purple-900 text-purple-400 hover:border-purple-700" : ""}
-          fullWidth
-        />
-        <Button
-          onClick={actions.relyFriend}
-          disabled={!isFriendAvailable}
-          label="友人と協力"
-          subLabel={isFriendAvailable ? "SAN回復" : "睡眠中"}
-          icon={<UserPlus size={16} />}
-          variant={isFriendAvailable ? "outline" : "ghost"}
-          className={isFriendAvailable ? "border-pink-900 text-pink-400 hover:border-pink-700" : ""}
-          fullWidth
-        />
-        <Button
-          onClick={actions.escapism}
-          label="現実逃避"
-          subLabel="時間経過/SAN回復"
-          icon={<Gamepad2 size={16} />}
-          variant="outline"
-          className="border-pink-900/50 text-pink-400/70 hover:border-pink-700 hover:text-pink-300"
-          fullWidth
-        />
+        <div className="space-y-1.5">
+          <Button
+            onClick={actions.askProfessor}
+            disabled={!isProfAvailable}
+            label="教授に質問"
+            subLabel={isProfAvailable ? "AVAILABLE" : "OFFLINE"}
+            icon={<GraduationCap size={14} />}
+            variant={isProfAvailable ? "outline" : "ghost"}
+            className={isProfAvailable ? "border-indigo-800 text-indigo-400 hover:border-indigo-600" : ""}
+            fullWidth
+            size="sm"
+          />
+          <Button
+            onClick={actions.askSenior}
+            disabled={!isSeniorAvailable}
+            label="先輩を頼る"
+            subLabel={isSeniorAvailable ? "AVAILABLE" : "OFFLINE"}
+            icon={<Users size={14} />}
+            variant={isSeniorAvailable ? "outline" : "ghost"}
+            className={isSeniorAvailable ? "border-purple-800 text-purple-400 hover:border-purple-600" : ""}
+            fullWidth
+            size="sm"
+          />
+          <Button
+            onClick={actions.relyFriend}
+            disabled={!isFriendAvailable}
+            label="友人と協力"
+            subLabel={isFriendAvailable ? "AVAILABLE" : "SLEEPING"}
+            icon={<UserPlus size={14} />}
+            variant={isFriendAvailable ? "outline" : "ghost"}
+            className={isFriendAvailable ? "border-pink-800 text-pink-400 hover:border-pink-600" : ""}
+            fullWidth
+            size="sm"
+          />
+          <Button
+            onClick={actions.escapism}
+            label="現実逃避"
+            subLabel="SAN RECOVERY"
+            icon={<Gamepad2 size={14} />}
+            variant="outline"
+            className="border-pink-900/50 text-pink-400/70 hover:border-pink-600 hover:text-pink-300"
+            fullWidth
+            size="sm"
+          />
+        </div>
       </div>
 
       {/* INVENTORY */}
-      <div className="col-span-2 lg:col-span-1 space-y-2">
-        <div className="text-xs text-gray-500 font-bold mb-1 flex items-center gap-2 px-1">
-           <Package size={12} /> INVENTORY
+      <div className="col-span-2 md:col-span-1 space-y-2">
+        <div className="text-[10px] font-bold text-gray-500 flex items-center gap-1 px-1">
+           <Package size={10} /> STORAGE
         </div>
-        {ownedItems.length === 0 ? (
-           <div className="text-xs text-gray-600 p-4 border border-gray-800 border-dashed text-center rounded">
-             NO ITEMS
-           </div>
-        ) : (
-          <div className="grid grid-cols-2 lg:flex lg:flex-col gap-2">
-            {ownedItems.map((itemId) => {
-              const item = ITEMS[itemId];
-              return (
-                <Button
-                  key={itemId}
-                  onClick={() => actions.useItem(itemId)}
-                  label={`${item.name} x${state.inventory[itemId]}`}
-                  subLabel={getItemEffectDescription(item)}
-                  icon={<Package size={14} />}
-                  variant="outline"
-                  className="border-gray-700 text-gray-300 hover:border-gray-500"
-                  fullWidth
-                />
-              );
-            })}
-          </div>
-        )}
+        <div className="space-y-1.5">
+          {ownedItems.length === 0 ? (
+             <div className="text-[10px] text-gray-600 p-4 border border-gray-800 border-dashed text-center rounded h-full flex items-center justify-center bg-black/30">
+               NO DATA
+             </div>
+          ) : (
+            <div className="grid grid-cols-2 md:flex md:flex-col gap-1.5">
+              {ownedItems.map((itemId) => {
+                const item = ITEMS[itemId];
+                return (
+                  <Button
+                    key={itemId}
+                    onClick={() => actions.useItem(itemId)}
+                    label={`${item.name}`}
+                    subLabel={`x${state.inventory[itemId]}`}
+                    icon={<Zap size={12} />}
+                    variant="outline"
+                    className="border-gray-700 text-gray-300 hover:border-gray-500 bg-gray-900/50"
+                    fullWidth
+                    size="sm"
+                  />
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
