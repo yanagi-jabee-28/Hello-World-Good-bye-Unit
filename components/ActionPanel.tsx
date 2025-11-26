@@ -5,7 +5,7 @@ import { SUBJECTS } from '../data/subjects';
 import { ITEMS } from '../data/items';
 import { getAvailability, getStudyHint } from '../logic/advisor';
 import { getWorkConfig } from '../data/work';
-import { getItemEffectDescription } from '../utils/logFormatter';
+import { getShortEffectString } from '../utils/logFormatter';
 import { getExamWarnings } from '../logic/warningSystem';
 import { BookOpen, Users, Gamepad2, Package, School, GraduationCap, UserPlus, AlertTriangle, ShoppingCart, Briefcase, Bed, Sun, Moon, BatteryCharging, Ban, Coffee, Zap } from 'lucide-react';
 import { Button } from './ui/Button';
@@ -214,9 +214,7 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect }) => {
             <div className="grid grid-cols-2 md:flex md:flex-col gap-1.5">
               {ownedItems.map((itemId) => {
                 const item = ITEMS[itemId];
-                // 簡潔な効果表示 (長すぎる場合はCSSでtruncateされるが、なるべく短く整形)
-                const rawEffect = getItemEffectDescription(item);
-                const shortEffect = rawEffect.replace(/([A-Z]+)([+-]\d+)/g, '$1$2').split(',')[0];
+                const shortEffect = getShortEffectString(item);
                 
                 return (
                   <Button

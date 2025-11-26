@@ -12,7 +12,6 @@ interface Props {
 export const LogWindow: React.FC<Props> = ({ logs }) => {
   const bottomRef = useRef<HTMLDivElement>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (bottomRef.current) {
@@ -21,17 +20,20 @@ export const LogWindow: React.FC<Props> = ({ logs }) => {
   }, [logs.length]);
 
   const handlePlay = async (log: LogEntry) => {
-    if (playingId || isLoading) return;
+    // If clicking the same log that is currently playing, do nothing (or could implement stop)
+    if (playingId === log.id) return;
     
+    // Set new playing ID immediately (switching logs)
     setPlayingId(log.id);
-    setIsLoading(true);
+    
     try {
         await playLogAudio(log.text);
     } catch (e) {
         console.error(e);
     } finally {
-        setIsLoading(false);
-        setPlayingId(null);
+        // Only clear playing state if this specific log finished naturally
+        // If playingId has changed (interrupted by another click), don't clear it
+        setPlayingId(prev => prev === log.id ? null : prev);
     }
   };
 
@@ -70,7 +72,6 @@ export const LogWindow: React.FC<Props> = ({ logs }) => {
                   </div>
                   <button 
                       onClick={() => handlePlay(log)}
-                      disabled={isLoading && playingId !== log.id}
                       className={`transition-opacity p-1 rounded hover:bg-green-500/20 
                         ${playingId === log.id ? 'opacity-100 text-green-400' : 'opacity-0 group-hover:opacity-100 text-gray-500'}`}
                       title="TTS Playback"

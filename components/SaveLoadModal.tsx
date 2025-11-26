@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { GameState, ActionType, UiScale } from '../types';
 import { SaveSlotId, getSaveList, saveToSlot, loadGame, deleteSave, exportSaveData, importSaveData, clearAllData, SaveMetadata } from '../logic/storage';
-import { X, Save, Upload, Download, Trash2, HardDrive, AlertOctagon, FileJson, RefreshCw, PlayCircle, Monitor } from 'lucide-react';
+import { X, Save, Upload, Download, Trash2, HardDrive, AlertOctagon, FileJson, RefreshCw, PlayCircle, Monitor, Volume2, VolumeX } from 'lucide-react';
+import { Sound } from '../utils/sound';
 
 interface Props {
   currentState: GameState;
@@ -30,6 +31,10 @@ export const SaveLoadModal: React.FC<Props> = ({
   const [activeTab, setActiveTab] = useState<Tab>('SAVE');
   const [saveList, setSaveList] = useState<SaveMetadata[]>([]);
   const [confirmAction, setConfirmAction] = useState<{ type: 'overwrite' | 'delete' | 'load' | 'reset' | 'soft_reset' | 'hard_restart', slotId?: SaveSlotId } | null>(null);
+  
+  // Audio State
+  const [volume, setVolume] = useState(Sound.getVolume());
+  const [isMuted, setIsMuted] = useState(Sound.getMuteStatus());
 
   useEffect(() => {
     refreshList();
@@ -96,6 +101,21 @@ export const SaveLoadModal: React.FC<Props> = ({
 
   const handleHardRestart = () => {
     setConfirmAction({ type: 'hard_restart' });
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVol = parseFloat(e.target.value);
+    setVolume(newVol);
+    Sound.setVolume(newVol);
+  };
+
+  const toggleMute = () => {
+    Sound.toggleMute();
+    setIsMuted(Sound.getMuteStatus());
+  };
+
+  const playTestSound = () => {
+    Sound.play('event_trigger');
   };
 
   // --- RENDER HELPERS ---
@@ -217,6 +237,48 @@ export const SaveLoadModal: React.FC<Props> = ({
                       <PlayCircle size={14} /> ニューゲーム (最初から)
                     </button>
                   </div>
+                </div>
+
+                {/* --- AUDIO SETTINGS --- */}
+                <div className="mt-8">
+                   <div className="fs-xs font-bold text-gray-500 mb-2 border-b border-gray-800 pb-1">AUDIO (音量設定)</div>
+                   <div className="border border-gray-800 p-4 rounded bg-gray-900/30">
+                     <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-green-400 font-bold flex items-center gap-2">
+                          {isMuted ? <VolumeX size={16} className="text-gray-500"/> : <Volume2 size={16} />}
+                          MASTER_VOLUME
+                        </h3>
+                        <div className="font-mono text-green-300 fs-xs">
+                          {Math.round(volume * 100)}%
+                        </div>
+                     </div>
+                     <div className="flex items-center gap-4">
+                       <input 
+                          type="range" 
+                          min="0" 
+                          max="1" 
+                          step="0.01" 
+                          value={volume}
+                          onChange={handleVolumeChange}
+                          disabled={isMuted}
+                          className="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-green-500 hover:accent-green-400 disabled:opacity-50"
+                       />
+                       <button 
+                          onClick={toggleMute}
+                          className={`p-2 border rounded transition-colors ${isMuted ? 'bg-red-900/30 border-red-800 text-red-400' : 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'}`}
+                          title={isMuted ? "Unmute" : "Mute"}
+                       >
+                          {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+                       </button>
+                       <button 
+                          onClick={playTestSound}
+                          className="px-3 py-1.5 border border-green-700 text-green-400 fs-xs hover:bg-green-900 transition-colors disabled:opacity-30"
+                          disabled={isMuted}
+                       >
+                          TEST
+                       </button>
+                     </div>
+                   </div>
                 </div>
 
                 {/* --- DISPLAY SETTINGS --- */}

@@ -2,7 +2,7 @@
 import React from 'react';
 import { ItemId } from '../types';
 import { ITEMS } from '../data/items';
-import { getItemEffectDescription } from '../utils/logFormatter';
+import { getShortEffectString } from '../utils/logFormatter';
 import { ShoppingCart, X, DollarSign, Info } from 'lucide-react';
 import { Sound } from '../utils/sound';
 
@@ -45,7 +45,7 @@ export const ShopModal: React.FC<Props> = ({ money, onClose, onBuy, onInspect })
         <div className="flex-1 overflow-y-auto min-h-0 p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
           {shopItems.map((item) => {
             const canAfford = money >= item.price;
-            const effectText = getItemEffectDescription(item);
+            const effectText = getShortEffectString(item);
 
             return (
               <div key={item.id} className={`border border-gray-800 p-3 flex flex-col justify-between transition-all relative group ${canAfford ? 'hover:border-cyan-700 hover:bg-cyan-900/10' : 'opacity-50 grayscale'}`}>

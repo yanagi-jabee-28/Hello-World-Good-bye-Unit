@@ -57,6 +57,15 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         successLog: "「これを持っていくといい」教授の著書を貸してもらった。",
         failureEffect: { relationships: { [RelationshipId.PROFESSOR]: -5 } },
         failureLog: "貸せる本はないと断られた。"
+      },
+      {
+        id: 'opt_prof_random',
+        label: '【ランダム】成り行きに任せる',
+        risk: 'high',
+        description: '教授の機嫌次第。何が起こるかわからない。',
+        successRate: 100,
+        chainTrigger: 'action_professor',
+        successLog: "「ん、暇なのかね？」教授との時間が始まった。"
       }
     ]
   },
@@ -110,6 +119,15 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         successLog: "「これでも飲んで頑張れ」エナドリを恵んでくれた。",
         failureEffect: { relationships: { [RelationshipId.SENIOR]: -2 } },
         failureLog: "「俺が欲しいくらいだよ」と笑われた。"
+      },
+      {
+        id: 'opt_senior_random',
+        label: '【ランダム】先輩に絡む',
+        risk: 'high',
+        description: '先輩の気まぐれに付き合う。何が起こるかわからない。',
+        successRate: 100,
+        chainTrigger: 'action_senior',
+        successLog: "「おう、なんだ？」先輩に捕まった。"
       }
     ]
   },

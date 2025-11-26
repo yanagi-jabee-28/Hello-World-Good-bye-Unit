@@ -19,6 +19,17 @@ class SoundManager {
   private ctx: AudioContext | null = null;
   private masterGain: GainNode | null = null;
   private isMuted: boolean = false;
+  private volume: number = 0.5; // Default volume increased to 50%
+
+  constructor() {
+    // Load volume setting from storage if available
+    if (typeof window !== 'undefined') {
+      const savedVol = localStorage.getItem('rsa_setting_volume');
+      if (savedVol !== null) {
+        this.volume = parseFloat(savedVol);
+      }
+    }
+  }
 
   private getContext(): AudioContext {
     if (!this.ctx) {
@@ -26,13 +37,39 @@ class SoundManager {
       this.ctx = new AudioContextClass();
       this.masterGain = this.ctx.createGain();
       this.masterGain.connect(this.ctx.destination);
-      this.masterGain.gain.value = 0.15; // Master volume
+      this.masterGain.gain.value = this.isMuted ? 0 : this.volume;
     }
     return this.ctx;
   }
 
+  public setVolume(val: number) {
+    this.volume = Math.max(0, Math.min(1, val));
+    
+    if (this.masterGain && this.ctx) {
+      this.masterGain.gain.setValueAtTime(this.isMuted ? 0 : this.volume, this.ctx.currentTime);
+    }
+    
+    try {
+      localStorage.setItem('rsa_setting_volume', this.volume.toString());
+    } catch (e) {
+      console.error("Failed to save volume setting", e);
+    }
+  }
+
+  public getVolume(): number {
+    return this.volume;
+  }
+
   public toggleMute() {
     this.isMuted = !this.isMuted;
+    if (this.masterGain && this.ctx) {
+      const target = this.isMuted ? 0 : this.volume;
+      this.masterGain.gain.setValueAtTime(target, this.ctx.currentTime);
+    }
+  }
+
+  public getMuteStatus(): boolean {
+    return this.isMuted;
   }
 
   private async init() {
@@ -43,87 +80,88 @@ class SoundManager {
   }
 
   public play(type: SoundType) {
+    this.init(); // Always ensure context is running
     if (this.isMuted) return;
-    this.init();
+    
     const ctx = this.getContext();
     const t = ctx.currentTime;
 
     switch (type) {
       case 'button_click':
-        this.playTone(800, 'sine', t, 0.05, 0.05);
-        this.playTone(1200, 'square', t, 0.01, 0.02); // Click transient
+        this.playTone(800, 'sine', t, 0.05, 0.15);
+        this.playTone(1200, 'square', t, 0.01, 0.1); // Click transient
         break;
 
       case 'item_use':
         // Pop sound
-        this.playTone(400, 'sine', t, 0.1, 0.1, 800); // Slide up
+        this.playTone(400, 'sine', t, 0.1, 0.25, 800); // Slide up
         break;
 
       case 'success':
         // Arpeggio
-        this.playTone(523.25, 'triangle', t, 0.1, 0.1); // C5
-        this.playTone(659.25, 'triangle', t + 0.05, 0.1, 0.1); // E5
-        this.playTone(783.99, 'triangle', t + 0.1, 0.2, 0.1); // G5
+        this.playTone(523.25, 'triangle', t, 0.1, 0.2); // C5
+        this.playTone(659.25, 'triangle', t + 0.05, 0.1, 0.2); // E5
+        this.playTone(783.99, 'triangle', t + 0.1, 0.2, 0.2); // G5
         break;
 
       case 'failure':
         // Descending buzz
-        this.playTone(150, 'sawtooth', t, 0.3, 0.1, 50);
-        this.playTone(148, 'sawtooth', t, 0.3, 0.1, 48); // Detune
+        this.playTone(150, 'sawtooth', t, 0.3, 0.2, 50);
+        this.playTone(148, 'sawtooth', t, 0.3, 0.2, 48); // Detune
         break;
 
       case 'alert':
       case 'sanity_low':
         // Alarm
-        this.playTone(800, 'square', t, 0.1, 0.1);
-        this.playTone(800, 'square', t + 0.15, 0.1, 0.1);
+        this.playTone(800, 'square', t, 0.1, 0.2);
+        this.playTone(800, 'square', t + 0.15, 0.1, 0.2);
         break;
 
       case 'event_trigger':
         // Notification bell
-        this.playTone(660, 'sine', t, 0.2, 0.1);
-        this.playTone(880, 'sine', t + 0.1, 0.4, 0.1);
+        this.playTone(660, 'sine', t, 0.2, 0.25);
+        this.playTone(880, 'sine', t + 0.1, 0.4, 0.25);
         break;
 
       case 'turn_end':
         // Swoosh (Noise)
-        this.playNoise(t, 0.3);
+        this.playNoise(t, 0.3, 0.3);
         break;
 
       case 'hp_recovery':
         // Healing swell
-        this.playTone(300, 'sine', t, 0.5, 0.1, 400);
-        this.playTone(400, 'sine', t + 0.1, 0.5, 0.1, 600);
+        this.playTone(300, 'sine', t, 0.5, 0.2, 400);
+        this.playTone(400, 'sine', t + 0.1, 0.5, 0.2, 600);
         break;
 
       case 'knowledge_gain':
         // Quick scale
         [440, 554, 659, 880].forEach((freq, i) => {
-          this.playTone(freq, 'square', t + i * 0.04, 0.05, 0.05);
+          this.playTone(freq, 'square', t + i * 0.04, 0.05, 0.15);
         });
         break;
 
       case 'game_over':
         // Deep impact
-        this.playTone(100, 'sawtooth', t, 2.0, 0.2, 20);
-        this.playNoise(t, 1.0);
+        this.playTone(100, 'sawtooth', t, 2.0, 0.4, 20);
+        this.playNoise(t, 1.0, 0.5);
         break;
 
       case 'heartbeat':
         // Low thud
-        this.playTone(60, 'sine', t, 0.1, 0.5, 40);
-        this.playTone(60, 'sine', t + 0.2, 0.1, 0.3, 40);
+        this.playTone(60, 'sine', t, 0.1, 0.8, 40);
+        this.playTone(60, 'sine', t + 0.2, 0.1, 0.5, 40);
         break;
 
       case 'flatline':
         // Continuous high pitch tone
-        this.playTone(1000, 'sine', t, 2.0, 0.1);
+        this.playTone(1000, 'sine', t, 2.0, 0.2);
         break;
 
       case 'glitch_noise':
         // Random noise burst
-        this.playNoise(t, 0.2);
-        this.playTone(400 + Math.random() * 1000, 'sawtooth', t, 0.1, 0.1);
+        this.playNoise(t, 0.2, 0.3);
+        this.playTone(400 + Math.random() * 1000, 'sawtooth', t, 0.1, 0.2);
         break;
     }
   }
@@ -140,6 +178,7 @@ class SoundManager {
       osc.frequency.exponentialRampToValueAtTime(freqEnd, startTime + duration);
     }
 
+    // Local gain multiplied by intent volume, master gain handles global volume
     gain.gain.setValueAtTime(vol, startTime);
     gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
 
@@ -150,7 +189,7 @@ class SoundManager {
     osc.stop(startTime + duration);
   }
 
-  private playNoise(startTime: number, duration: number) {
+  private playNoise(startTime: number, duration: number, vol: number = 0.1) {
     if (!this.ctx || !this.masterGain) return;
 
     const bufferSize = this.ctx.sampleRate * duration;
@@ -165,7 +204,7 @@ class SoundManager {
     noise.buffer = buffer;
 
     const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.1, startTime);
+    gain.gain.setValueAtTime(vol, startTime);
     gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
     
     // Simple Lowpass filter for "swoosh" effect

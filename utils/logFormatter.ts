@@ -95,6 +95,35 @@ export const getItemEffectDescription = (item: Item): string => {
 };
 
 /**
+ * アイテムの短縮ステータス文字列を生成する (ボタン/リスト表示用)
+ * 例: "HP+10 SAN-5 CFN+50"
+ */
+export const getShortEffectString = (item: Item): string => {
+  if (!item.effects) {
+    return item.specialEffectDescription ? "SPECIAL" : "";
+  }
+  
+  const { effects } = item;
+  const parts: string[] = [];
+  
+  if (effects.hp) parts.push(`HP${effects.hp > 0 ? '+' : ''}${effects.hp}`);
+  if (effects.sanity) parts.push(`SAN${effects.sanity > 0 ? '+' : ''}${effects.sanity}`);
+  if (effects.caffeine) parts.push(`CFN${effects.caffeine > 0 ? '+' : ''}${effects.caffeine}`);
+  
+  // バフがある場合は簡易表示
+  if (effects.buffs && effects.buffs.length > 0) {
+    parts.push("BUFF");
+  }
+
+  // ステータス変動がなく、特殊効果のみの場合
+  if (parts.length === 0 && item.specialEffectDescription) {
+     return "SPECIAL";
+  }
+  
+  return parts.join(' ');
+};
+
+/**
  * 複数のメッセージを結合する
  */
 export const joinMessages = (messages: (string | null)[], delimiter: string = ', '): string => {
