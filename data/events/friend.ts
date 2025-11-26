@@ -13,6 +13,7 @@ export const FRIEND_EVENTS: GameEvent[] = [
   {
     id: 'friend_sns_share',
     trigger: 'action_friend',
+    persona: 'FRIEND',
     text: "【共有】「この板書撮った？」講義ノートの画像が送られてきた。持つべきものは友だ。",
     type: 'good',
     weight: WEIGHTS.COMMON,
@@ -24,6 +25,7 @@ export const FRIEND_EVENTS: GameEvent[] = [
   {
     id: 'friend_game_talk',
     trigger: 'action_friend',
+    persona: 'FRIEND',
     text: "【遊戯】試験期間中だが、新作ゲームの話で盛り上がる。「現実逃避最高！」",
     type: 'flavor',
     weight: WEIGHTS.COMMON,
@@ -38,6 +40,7 @@ export const FRIEND_EVENTS: GameEvent[] = [
   {
     id: 'friend_info_share',
     trigger: 'action_friend',
+    persona: 'FRIEND',
     text: "【噂話】「線形代数の先生、今年は難化させるらしいよ」不穏だが有益な情報を共有した。",
     type: 'good',
     weight: WEIGHTS.UNCOMMON,
@@ -50,6 +53,7 @@ export const FRIEND_EVENTS: GameEvent[] = [
   {
     id: 'friend_escapism',
     trigger: 'action_friend',
+    persona: 'FRIEND',
     text: "【誘惑】「カラオケ行こうぜ。勉強？ 知らん！」強引に連れ出され、喉が枯れるまで歌った。",
     type: 'flavor',
     weight: WEIGHTS.UNCOMMON,
@@ -65,6 +69,7 @@ export const FRIEND_EVENTS: GameEvent[] = [
   {
     id: 'friend_study_group',
     trigger: 'action_friend',
+    persona: 'FRIEND',
     text: "【協力】「ここ、お前が得意なとこだろ？教えてくれ」互いの得意分野を教え合い、効率的に学習が進む。",
     type: 'good',
     weight: WEIGHTS.UNCOMMON,
@@ -80,6 +85,7 @@ export const FRIEND_EVENTS: GameEvent[] = [
   {
     id: 'friend_cloud_leak',
     trigger: 'action_friend',
+    persona: 'FRIEND',
     text: "【共有】「例のドライブ、権限付与しといたわ」有志がまとめた過去問データベースへのアクセス権を得た。",
     type: 'good',
     weight: WEIGHTS.RARE,
@@ -96,6 +102,7 @@ export const FRIEND_EVENTS: GameEvent[] = [
   {
     id: 'friend_smart_drug',
     trigger: 'action_friend',
+    persona: 'FRIEND',
     text: "【密売】「これ、個人輸入したヤツなんだけど...」友人が震える手で怪しいサプリを渡してきた。「飛ぶぞ」",
     type: 'flavor',
     weight: WEIGHTS.LEGENDARY,

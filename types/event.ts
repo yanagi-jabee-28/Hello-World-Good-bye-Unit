@@ -32,6 +32,8 @@ export type EventTriggerType =
   | 'action_friend'    // 友人コマンド実行時
   | 'action_work';     // 仕事コマンド実行時
 
+export type Persona = 'PROFESSOR' | 'SENIOR' | 'FRIEND' | 'SYSTEM' | 'PLAYER';
+
 export interface GameEventCondition {
   minHp?: number;
   maxHp?: number;
@@ -66,6 +68,7 @@ export interface GameEvent {
   id: string;
   trigger: EventTriggerType;
   text: string;
+  persona?: Persona; // 話者/雰囲気の設定
   type: 'good' | 'bad' | 'flavor' | 'mixed';
   category?: string; // グルーピング用（flavor, tech_troubleなど）
   conditions?: GameEventCondition;

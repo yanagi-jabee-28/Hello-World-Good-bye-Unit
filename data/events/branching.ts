@@ -9,6 +9,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
   {
     id: 'prof_interaction_menu',
     trigger: 'action_professor',
+    persona: 'PROFESSOR',
     text: "【教授室】教授は在室のようだ。どうする？",
     type: 'mixed',
     weight: 0, // Handled manually
@@ -74,6 +75,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
   {
     id: 'senior_interaction_menu',
     trigger: 'action_senior',
+    persona: 'SENIOR',
     text: "【先輩】「おっ、どうした？なんか用か？」",
     type: 'mixed',
     weight: 0, // Handled manually
@@ -136,6 +138,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
   {
     id: 'friend_interaction_menu',
     trigger: 'action_friend',
+    persona: 'FRIEND',
     text: "【友人】「よっ。これからどうする？」",
     type: 'mixed',
     weight: 0, // Handled manually
@@ -194,6 +197,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
   {
     id: 'prof_special_task',
     trigger: 'action_professor',
+    persona: 'PROFESSOR',
     text: "【打診】教授から研究室のデータ整理を手伝わされた。「君なら信用できると思ってね」",
     type: 'mixed',
     weight: WEIGHTS.UNCOMMON,
@@ -250,6 +254,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
   {
     id: 'senior_gamble_offer',
     trigger: 'action_senior',
+    persona: 'SENIOR',
     text: "【賭け】「おい、ちょっと面白いバイトがあるんだが」先輩が怪しい話を持ちかけてきた。ハイリスク・ハイリターンな匂いがする。",
     type: 'mixed',
     weight: WEIGHTS.RARE,
@@ -291,6 +296,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
   {
     id: 'friend_long_call',
     trigger: 'action_friend',
+    persona: 'FRIEND',
     text: "【着信】友人から執拗な通知が届く。「今ヒマ？ 話聞いて！」間違いなく愚痴か、現実逃避への誘いだ。",
     type: 'mixed',
     weight: WEIGHTS.UNCOMMON,
@@ -329,6 +335,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
   {
     id: 'branching_friend_depressed',
     trigger: 'action_friend',
+    persona: 'FRIEND',
     text: "【共鳴】「もう無理、単位落とす...」友人が深い闇に落ちている。このままだと自分も引きずり込まれそうだ。",
     type: 'mixed',
     weight: WEIGHTS.UNCOMMON,
@@ -369,6 +376,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
   {
     id: 'branching_git_conflict',
     trigger: 'turn_end',
+    persona: 'SYSTEM',
     text: "【衝突】Gitで巨大なコンフリクト発生！マージに失敗し、数時間の作業が消える危機。",
     type: 'mixed',
     category: 'tech_trouble',
@@ -426,6 +434,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
   {
     id: 'branching_sudden_drowsiness',
     trigger: 'turn_end',
+    persona: 'SYSTEM',
     text: "【睡魔】抗いがたい眠気が襲う。意識が飛びそうだ。どうする？",
     type: 'mixed',
     category: 'drowsiness',
@@ -471,6 +480,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
   { 
     id: 'branching_rainy_day', 
     trigger: 'turn_end',
+    persona: 'SYSTEM',
     text: "【天候】ゲリラ豪雨。傘を持っていない。", 
     type: 'mixed',
     weight: WEIGHTS.UNCOMMON,
@@ -529,6 +539,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
   {
     id: 'branching_blue_screen',
     trigger: 'turn_end',
+    persona: 'SYSTEM',
     text: "【絶望】レポート保存直前にブルースクリーン！画面が青一色に染まる。",
     type: 'mixed',
     weight: 2, // Very Rare
@@ -582,6 +593,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
   {
     id: 'turn_end_mystery_junk',
     trigger: 'turn_end',
+    persona: 'SYSTEM',
     text: "【発掘】実験室のジャンク箱から、型番不明の謎のICチップを発見した。オーラを感じる。",
     type: 'mixed',
     weight: WEIGHTS.UNCOMMON, // Replaces Lost Wallet with same/similar weight

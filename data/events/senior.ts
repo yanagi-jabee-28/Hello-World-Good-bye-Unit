@@ -13,6 +13,7 @@ export const SENIOR_EVENTS: GameEvent[] = [
   {
     id: 'senior_lab_cleanup',
     trigger: 'action_senior',
+    persona: 'SENIOR',
     text: "【雑用】「これ片付けといて～」実験機材の整理を手伝わされた。お礼にジャンクパーツ(USBメモリ)を貰った。",
     type: 'good',
     weight: WEIGHTS.UNCOMMON,
@@ -26,6 +27,7 @@ export const SENIOR_EVENTS: GameEvent[] = [
   {
     id: 'senior_lab_gossip',
     trigger: 'action_senior',
+    persona: 'SENIOR',
     text: "【裏話】「あの教授、月曜は機嫌悪いから気をつけろ」攻略に役立つメタ情報を仕入れた。",
     type: 'flavor',
     weight: WEIGHTS.COMMON,
@@ -38,6 +40,7 @@ export const SENIOR_EVENTS: GameEvent[] = [
   {
     id: 'senior_errand',
     trigger: 'action_senior',
+    persona: 'SENIOR',
     text: "【パシリ】「焼きそばパン買ってきて」...小銭を渡され購買へ走る。お釣りのチョコは貰った。",
     type: 'flavor',
     weight: WEIGHTS.COMMON,
@@ -53,6 +56,7 @@ export const SENIOR_EVENTS: GameEvent[] = [
   {
     id: 'senior_midnight_ramen',
     trigger: 'action_senior',
+    persona: 'SENIOR',
     text: "【夜食】「カロリーは熱に変わるんだよ」深夜の研究室で二郎系ラーメンを奢られる。背徳的な味がする。",
     type: 'good',
     weight: WEIGHTS.COMMON,
@@ -72,6 +76,7 @@ export const SENIOR_EVENTS: GameEvent[] = [
   {
     id: 'senior_usb_gift',
     trigger: 'action_senior',
+    persona: 'SENIOR',
     text: "【継承】「お前なら使いこなせるだろ」卒業した先輩の私物BOXから、怪しいUSBメモリを託された。",
     type: 'good',
     weight: WEIGHTS.RARE,
@@ -87,6 +92,7 @@ export const SENIOR_EVENTS: GameEvent[] = [
   {
     id: 'senior_past_exam',
     trigger: 'action_senior',
+    persona: 'SENIOR',
     text: "【秘伝】「誰にも見せるなよ...」研究室のサーバーの奥深くに眠る、伝説の『完全解答付き過去問』へのパスを教えられた。",
     type: 'good',
     weight: WEIGHTS.RARE,
