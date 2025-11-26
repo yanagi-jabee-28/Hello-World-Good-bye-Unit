@@ -372,6 +372,333 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     ]
   },
 
+  // ==========================================
+  // NEW MONEY-EARNING BRANCHING EVENTS
+  // ==========================================
+
+  // 1. Freelance Opportunity (Turn End, High Algo)
+  {
+    id: 'freelance_opportunity',
+    trigger: 'turn_end',
+    persona: 'SYSTEM',
+    text: "【依頼】匿名掲示板でフリーランス案件を発見。「簡単なWebスクレイピングツール作成：報酬¥8,000」",
+    type: 'mixed',
+    weight: WEIGHTS.UNCOMMON,
+    conditions: { 
+      minKnowledge: { [SubjectId.ALGO]: 40 }, // Changed from knowledge to minKnowledge
+      minHp: 30 
+    },
+    coolDownTurns: COOLDOWNS.LONG,
+    options: [
+      {
+        id: 'opt_freelance_accept',
+        label: '引き受ける（堅実）',
+        risk: 'low',
+        description: '基本的な実装で確実に納品。体力消費は中程度。',
+        successRate: 80,
+        successEffect: {
+          money: 8000,
+          hp: -15,
+          sanity: -5,
+          knowledge: { [SubjectId.ALGO]: KNOWLEDGE_GAINS.SMALL }
+        },
+        successLog: "仕様通りに実装し、問題なく納品できた。「助かりました！」",
+        failureEffect: {
+          hp: -20,
+          sanity: -15,
+          money: -1000
+        },
+        failureLog: "スクレイピング先のサイト構造が変わっていて動作せず。返金対応になった..."
+      },
+      {
+        id: 'opt_freelance_overdeliver',
+        label: 'リッチに作り込む（挑戦）',
+        risk: 'high',
+        description: 'GUI付き＋エラーハンドリング完備。成功すれば追加報酬＋評価。',
+        successRate: 50,
+        successEffect: {
+          money: 15000,
+          hp: -25,
+          sanity: 10,
+          knowledge: { [SubjectId.ALGO]: KNOWLEDGE_GAINS.LARGE }
+        },
+        successLog: "「これは期待以上です！」追加報酬＋高評価レビューを獲得。やりがいを感じた。",
+        failureEffect: {
+          hp: -30,
+          sanity: -25,
+          money: 3000
+        },
+        failureLog: "作り込みすぎて納期に間に合わず。基本報酬の半額＋評価ダウン..."
+      },
+      {
+        id: 'opt_freelance_decline',
+        label: '見送る',
+        risk: 'safe',
+        description: '今は本業に集中する。',
+        successRate: 100,
+        successEffect: { sanity: 5 },
+        successLog: "リスクを取らないのも戦略だ。余計なトラブルは避けた。"
+      }
+    ]
+  },
+
+  // 2. Data Entry Gig (Turn End, Low Money)
+  {
+    id: 'data_entry_gig',
+    trigger: 'turn_end',
+    persona: 'SYSTEM',
+    text: "【短期】大学掲示板に「データ入力バイト募集：1日¥5,000」の貼り紙を発見。誰でもできる単純作業だ。",
+    type: 'mixed',
+    weight: WEIGHTS.COMMON,
+    conditions: { 
+      minHp: 25,
+      // money < 15000 condition is implicit via logic or custom check, treated as standard event for now
+    },
+    coolDownTurns: COOLDOWNS.MEDIUM,
+    options: [
+      {
+        id: 'opt_data_entry_work',
+        label: '引き受ける',
+        risk: 'safe',
+        description: '確実に稼げるが、時間と体力を消費。',
+        successRate: 100,
+        successEffect: {
+          money: 5000,
+          hp: -20,
+          sanity: -10
+        },
+        successLog: "延々とExcelに数字を打ち込んだ。脳死作業だったが、確実に報酬を得た。"
+      },
+      {
+        id: 'opt_data_entry_automate',
+        label: 'スクリプトで自動化',
+        risk: 'high',
+        description: 'Pythonで自動化して楽をする。バレなければ最高効率。',
+        // conditions: { minKnowledge: { [SubjectId.ALGO]: 50 } }, // Option level condition
+        successRate: 60,
+        successEffect: {
+          money: 5000,
+          hp: -5,
+          sanity: 15,
+          knowledge: { [SubjectId.ALGO]: KNOWLEDGE_GAINS.MEDIUM }
+        },
+        successLog: "完璧に動作。1時間で終わらせて残り時間はネットサーフィン。天才か？",
+        failureEffect: {
+          sanity: -20,
+          hp: -10
+        },
+        failureLog: "スクリプトがバグって納品できず。タダ働きになった。悔しい..."
+      },
+      {
+        id: 'opt_data_entry_skip',
+        label: 'やめておく',
+        risk: 'safe',
+        description: '体力温存を優先する。',
+        successRate: 100,
+        successEffect: { hp: 5 },
+        successLog: "単純作業で消耗するよりマシだ。体力を温存した。"
+      }
+    ]
+  },
+
+  // 3. Tutoring Offer (Action Friend)
+  {
+    id: 'tutoring_offer',
+    trigger: 'action_friend',
+    persona: 'FRIEND',
+    text: "【頼み事】「後輩が試験前で困ってるんだけど、数学教えてあげてくれない？謝礼出すって」",
+    type: 'mixed',
+    weight: WEIGHTS.UNCOMMON,
+    conditions: { 
+      // minKnowledge: { [SubjectId.MATH]: 60 },
+      minRelationship: REL_TIERS.MID 
+    },
+    coolDownTurns: COOLDOWNS.LONG,
+    options: [
+      {
+        id: 'opt_tutor_accept',
+        label: '引き受ける（標準）',
+        risk: 'low',
+        description: '基礎を丁寧に教える。確実に報酬を得られる。',
+        successRate: 85,
+        successEffect: {
+          money: 4000,
+          hp: -10,
+          sanity: -5,
+          relationships: { [RelationshipId.FRIEND]: REL_GAINS.MEDIUM }
+        },
+        successLog: "「わかりやすかったです！」後輩から感謝された。謝礼と共に評判も上がった。",
+        failureEffect: {
+          sanity: -15,
+          hp: -15,
+          relationships: { [RelationshipId.FRIEND]: -5 }
+        },
+        failureLog: "「え、そこわかんないです...」説明が空回りし、気まずい空気に。"
+      },
+      {
+        id: 'opt_tutor_intensive',
+        label: '過去問パターン徹底指導',
+        risk: 'high',
+        description: '応用問題まで完璧に仕上げる。成功すれば高額報酬＋人脈拡大。',
+        successRate: 50,
+        successEffect: {
+          money: 10000,
+          hp: -20,
+          sanity: 5,
+          relationships: { [RelationshipId.FRIEND]: REL_GAINS.LARGE }
+        },
+        successLog: "「試験、満点取れました！」噂が広まり、複数の後輩から依頼が殺到。収入源になった。",
+        failureEffect: {
+          hp: -25,
+          sanity: -20,
+          relationships: { [RelationshipId.FRIEND]: -8 }
+        },
+        failureLog: "応用問題で自分が詰まってしまい、後輩を困惑させた。最悪の結果に..."
+      },
+      {
+        id: 'opt_tutor_decline',
+        label: '断る',
+        risk: 'safe',
+        description: '自分の勉強を優先する。',
+        successRate: 100,
+        successEffect: { 
+          sanity: -5,
+          relationships: { [RelationshipId.FRIEND]: -3 }
+        },
+        successLog: "「ごめん、今は余裕ないんだ」断った。少し気まずい。"
+      }
+    ]
+  },
+
+  // 4. Bug Bounty (Turn End, Very Rare)
+  {
+    id: 'bug_bounty_discovery',
+    trigger: 'turn_end',
+    persona: 'SYSTEM',
+    text: "【発見】大学の学内システムに脆弱性を発見。セキュリティチームに報告すれば報奨金が出るかもしれない。",
+    type: 'mixed',
+    weight: WEIGHTS.RARE,
+    conditions: { 
+      // minKnowledge: { [SubjectId.ALGO]: 70 },
+      minHp: 40 
+    },
+    maxOccurrences: 2,
+    coolDownTurns: 14, // Very Long
+    options: [
+      {
+        id: 'opt_bug_report',
+        label: '正式に報告する',
+        risk: 'low',
+        description: '報告書を作成して提出。堅実な対応。',
+        successRate: 90,
+        successEffect: {
+          money: 20000,
+          relationships: { [RelationshipId.PROFESSOR]: REL_GAINS.LARGE },
+          knowledge: { [SubjectId.ALGO]: KNOWLEDGE_GAINS.MEDIUM }
+        },
+        successLog: "「素晴らしい！」情報セキュリティチームから感謝状＋報奨金を受け取った。",
+        failureEffect: {
+          sanity: -10,
+          hp: -5
+        },
+        failureLog: "「既知の問題です」既に報告済みだった。徒労に終わった..."
+      },
+      {
+        id: 'opt_bug_exploit',
+        label: '悪用する（危険）',
+        risk: 'high',
+        description: '闇市場で売却。大金を得られるが、バレたら退学確定。',
+        successRate: 30,
+        successEffect: {
+          money: 50000,
+          sanity: -30,
+          hp: -10
+        },
+        successLog: "匿名で情報を売却し、巨額を手にした。罪悪感が重くのしかかる...",
+        failureEffect: {
+          hp: -50,
+          sanity: -50,
+          money: -10000
+        },
+        failureLog: "【緊急】セキュリティチームに検知され、事情聴取を受けた。処分は免れたが、記録に残った..."
+      },
+      {
+        id: 'opt_bug_ignore',
+        label: '何もしない',
+        risk: 'safe',
+        description: '見なかったことにする。',
+        successRate: 100,
+        successEffect: { sanity: -5 },
+        successLog: "関わらないのが一番だ。静観を決め込んだ。"
+      }
+    ]
+  },
+
+  // 5. Electronics Repair (Turn End, Senior Persona)
+  {
+    id: 'electronics_repair',
+    trigger: 'turn_end',
+    persona: 'SENIOR',
+    text: "【打診】「おい、ラップトップが起動しないんだが、見てくれないか？」先輩が困り顔で頼んできた。",
+    type: 'mixed',
+    weight: WEIGHTS.UNCOMMON,
+    conditions: { 
+      // minKnowledge: { [SubjectId.CIRCUIT]: 50 },
+      minRelationship: REL_TIERS.LOW 
+    },
+    coolDownTurns: COOLDOWNS.MEDIUM,
+    options: [
+      {
+        id: 'opt_repair_diagnose',
+        label: '診断する（慎重）',
+        risk: 'low',
+        description: '原因特定だけして、修理は業者に任せる提案。',
+        successRate: 80,
+        successEffect: {
+          money: 2000,
+          relationships: { [RelationshipId.SENIOR]: REL_GAINS.MEDIUM }
+        },
+        successLog: "「メモリ不良だな」原因を特定し、業者を紹介。謝礼を受け取った。",
+        failureEffect: {
+          sanity: -10,
+          relationships: { [RelationshipId.SENIOR]: -3 }
+        },
+        failureLog: "「結局わかんねーのかよ」原因不明で終わり、気まずい空気に。"
+      },
+      {
+        id: 'opt_repair_fix',
+        label: '自力で修理（挑戦）',
+        risk: 'high',
+        description: '完全修理を試みる。成功すれば高額謝礼＋評判UP。',
+        successRate: 55,
+        successEffect: {
+          money: 8000,
+          relationships: { [RelationshipId.SENIOR]: REL_GAINS.LARGE },
+          knowledge: { [SubjectId.CIRCUIT]: KNOWLEDGE_GAINS.LARGE }
+        },
+        successLog: "「マジか！ 神かよ！」完全復旧に成功。先輩から高額謝礼＋噂が広まった。",
+        failureEffect: {
+          money: -5000,
+          sanity: -25,
+          hp: -15,
+          relationships: { [RelationshipId.SENIOR]: -10 }
+        },
+        failureLog: "修理中に基盤をショートさせ、完全に壊してしまった。弁償する羽目に..."
+      },
+      {
+        id: 'opt_repair_decline',
+        label: '断る',
+        risk: 'safe',
+        description: '責任を取りたくない。',
+        successRate: 100,
+        successEffect: { 
+          relationships: { [RelationshipId.SENIOR]: -2 }
+        },
+        successLog: "「悪い、専門外なんだ」丁重に断った。少し距離ができた。"
+      }
+    ]
+  },
+
   // --- TURN END EVENTS (Existing) ---
   {
     id: 'branching_git_conflict',

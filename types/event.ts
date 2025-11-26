@@ -48,6 +48,7 @@ export interface GameEventCondition {
   timeSlots?: TimeSlot[];
   itemRequired?: ItemId[];
   minMoney?: number;
+  minKnowledge?: Partial<Record<SubjectId, number>>;
 }
 
 export interface GameEventOption {

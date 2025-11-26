@@ -1,3 +1,4 @@
+
 import { GameState, GameEvent, EventTriggerType, SubjectId, RelationshipId, ItemId } from '../types';
 import { clamp } from '../utils/common';
 import { joinMessages } from '../utils/logFormatter';
@@ -30,6 +31,14 @@ const checkConditions = (state: GameState, event: GameEvent, trigger: EventTrigg
   const avgScore = Object.values(state.knowledge).reduce((a, b) => a + b, 0) / 4;
   if (conditions.minAvgScore !== undefined && avgScore < conditions.minAvgScore) return false;
   if (conditions.maxAvgScore !== undefined && avgScore > conditions.maxAvgScore) return false;
+
+  if (conditions.minKnowledge) {
+    for (const [subjectId, minScore] of Object.entries(conditions.minKnowledge)) {
+      if ((state.knowledge[subjectId as SubjectId] || 0) < (minScore as number)) {
+        return false;
+      }
+    }
+  }
 
   let targetRelValue = 0;
   if (trigger === 'action_professor') targetRelValue = state.relationships[RelationshipId.PROFESSOR];
