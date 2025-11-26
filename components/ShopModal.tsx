@@ -3,16 +3,17 @@ import React from 'react';
 import { ItemId } from '../types';
 import { ITEMS } from '../data/items';
 import { getItemEffectDescription } from '../utils/logFormatter';
-import { ShoppingCart, X, DollarSign } from 'lucide-react';
+import { ShoppingCart, X, DollarSign, Info } from 'lucide-react';
 import { Sound } from '../utils/sound';
 
 interface Props {
   money: number;
   onClose: () => void;
   onBuy: (itemId: ItemId) => void;
+  onInspect?: (itemId: ItemId, mode: 'inventory' | 'shop') => void;
 }
 
-export const ShopModal: React.FC<Props> = ({ money, onClose, onBuy }) => {
+export const ShopModal: React.FC<Props> = ({ money, onClose, onBuy, onInspect }) => {
   // Sellable items (exclude USB which is special)
   const shopItems = Object.values(ITEMS).filter(item => item.price > 0 && item.price < 90000);
 
@@ -44,22 +45,43 @@ export const ShopModal: React.FC<Props> = ({ money, onClose, onBuy }) => {
         <div className="flex-1 overflow-y-auto min-h-0 p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
           {shopItems.map((item) => {
             const canAfford = money >= item.price;
+            const effectText = getItemEffectDescription(item);
+
             return (
-              <div key={item.id} className={`border border-gray-800 p-3 flex flex-col justify-between transition-all ${canAfford ? 'hover:border-cyan-700 hover:bg-cyan-900/10' : 'opacity-50 grayscale'}`}>
+              <div key={item.id} className={`border border-gray-800 p-3 flex flex-col justify-between transition-all relative group ${canAfford ? 'hover:border-cyan-700 hover:bg-cyan-900/10' : 'opacity-50 grayscale'}`}>
+                
+                {/* Inspect Button (Top Right) */}
+                {onInspect && (
+                  <button 
+                    onClick={() => onInspect(item.id, 'shop')}
+                    className="absolute top-2 right-2 text-gray-500 hover:text-cyan-300 p-1 rounded hover:bg-gray-800 transition-colors z-10"
+                    title="詳細を確認"
+                  >
+                    <Info size={16} />
+                  </button>
+                )}
+
                 <div>
-                  <div className="flex justify-between items-start mb-1">
+                  <div className="flex justify-between items-start mb-1 pr-6">
                     <h3 className="font-bold text-cyan-300 text-sm">{item.name}</h3>
-                    <span className="font-mono text-yellow-500 text-sm">¥{item.price}</span>
                   </div>
-                  <p className="text-[10px] text-gray-400 mb-2 min-h-[2.5em]">{item.description}</p>
-                  <div className="text-[10px] text-cyan-700 border-l-2 border-cyan-800 pl-2 mb-3">
-                    {getItemEffectDescription(item)}
-                  </div>
+                  <div className="font-mono text-yellow-500 text-xs mb-2">¥{item.price}</div>
+                  
+                  {/* 簡易説明と効果 */}
+                  <p className="text-[10px] text-gray-400 mb-2 line-clamp-2">{item.description}</p>
+                  
+                  {/* Effect Preview */}
+                  {effectText && (
+                    <div className="text-[10px] text-cyan-600 border-l-2 border-cyan-900 pl-2 mb-3 font-mono truncate">
+                      {effectText}
+                    </div>
+                  )}
                 </div>
+
                 <button
                   onClick={() => onBuy(item.id)}
                   disabled={!canAfford}
-                  className={`w-full py-1.5 text-xs font-bold flex items-center justify-center gap-2 ${
+                  className={`w-full py-1.5 text-xs font-bold flex items-center justify-center gap-2 mt-auto ${
                     canAfford 
                       ? 'bg-cyan-900 text-cyan-100 hover:bg-cyan-700' 
                       : 'bg-gray-800 text-gray-500 cursor-not-allowed'

@@ -24,9 +24,10 @@ interface Props {
     useItem: (id: ItemId) => void;
     openShop: () => void;
   };
+  onInspect?: (itemId: ItemId, mode: 'inventory' | 'shop') => void;
 }
 
-export const ActionPanel: React.FC<Props> = ({ state, actions }) => {
+export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect }) => {
   const { timeSlot, caffeine, status } = state;
   const isGameOver = status !== 'PLAYING';
   const warnings = getExamWarnings(state);
@@ -213,17 +214,22 @@ export const ActionPanel: React.FC<Props> = ({ state, actions }) => {
             <div className="grid grid-cols-2 md:flex md:flex-col gap-1.5">
               {ownedItems.map((itemId) => {
                 const item = ITEMS[itemId];
+                // 簡潔な効果表示 (長すぎる場合はCSSでtruncateされるが、なるべく短く整形)
+                const rawEffect = getItemEffectDescription(item);
+                const shortEffect = rawEffect.replace(/([A-Z]+)([+-]\d+)/g, '$1$2').split(',')[0];
+                
                 return (
                   <Button
                     key={itemId}
                     onClick={() => actions.useItem(itemId)}
                     label={`${item.name}`}
-                    subLabel={`x${state.inventory[itemId]}`}
+                    subLabel={`x${state.inventory[itemId]} | ${shortEffect}`}
                     icon={<Zap size={12} />}
                     variant="outline"
                     className="border-gray-700 text-gray-300 hover:border-gray-500 bg-gray-900/50"
                     fullWidth
                     size="sm"
+                    onInspect={onInspect ? () => onInspect(itemId, 'inventory') : undefined}
                   />
                 );
               })}

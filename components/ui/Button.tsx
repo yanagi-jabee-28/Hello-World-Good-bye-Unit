@@ -1,5 +1,6 @@
 
 import React, { ReactNode } from 'react';
+import { Info } from 'lucide-react';
 
 interface Props extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline';
@@ -8,6 +9,7 @@ interface Props extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   label: ReactNode;
   subLabel?: string;
   fullWidth?: boolean;
+  onInspect?: (e: React.MouseEvent) => void;
 }
 
 export const Button: React.FC<Props> = ({ 
@@ -19,6 +21,7 @@ export const Button: React.FC<Props> = ({
   fullWidth = false,
   className = '',
   disabled,
+  onInspect,
   ...props 
 }) => {
   // Using clip-path for the sci-fi "cut corner" look
@@ -42,10 +45,13 @@ export const Button: React.FC<Props> = ({
 
   const widthClass = fullWidth ? 'w-full' : '';
   const alignClass = subLabel ? 'items-start text-left' : 'items-center';
+  
+  // Add padding to right if inspect button is present to prevent overlap
+  const inspectPadding = onInspect ? 'pr-8' : '';
 
   return (
     <button 
-      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${widthClass} ${alignClass} ${className}`}
+      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${widthClass} ${alignClass} ${inspectPadding} ${className}`}
       disabled={disabled}
       style={variant !== 'ghost' ? { clipPath } : {}}
       {...props}
@@ -55,13 +61,27 @@ export const Button: React.FC<Props> = ({
 
       {icon && <span className={`shrink-0 z-10 ${subLabel ? 'mt-0.5' : ''}`}>{icon}</span>}
       
-      <div className="flex flex-col overflow-hidden z-10">
-        <span className="truncate leading-tight">{label}</span>
-        {subLabel && <span className="text-[9px] font-normal opacity-60 truncate font-mono mt-0.5">{subLabel}</span>}
+      <div className="flex flex-col overflow-hidden z-10 w-full">
+        <span className="truncate leading-tight w-full">{label}</span>
+        {subLabel && <span className="text-[9px] font-normal opacity-60 truncate font-mono mt-0.5 w-full">{subLabel}</span>}
       </div>
 
       {/* Background Scanline for texture */}
       <div className="absolute inset-0 bg-scanlines opacity-10 pointer-events-none" />
+
+      {/* Inspect Button (Optional) */}
+      {onInspect && (
+        <div 
+          onClick={(e) => {
+            e.stopPropagation();
+            onInspect(e);
+          }}
+          className="absolute right-0 top-0 bottom-0 w-8 flex items-center justify-center bg-black/20 hover:bg-white/20 border-l border-white/10 z-20 transition-colors cursor-pointer"
+          title="詳細を確認"
+        >
+          <Info size={14} className="opacity-70 group-hover:opacity-100" />
+        </div>
+      )}
     </button>
   );
 };

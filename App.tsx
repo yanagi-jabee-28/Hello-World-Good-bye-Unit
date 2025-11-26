@@ -9,10 +9,13 @@ import { ShopModal } from './components/ShopModal';
 import { DebugPanel } from './components/DebugPanel';
 import { EventDialog } from './components/EventDialog';
 import { SaveLoadModal } from './components/SaveLoadModal';
-import { DeathSequence } from './components/DeathSequence'; // Import
+import { DeathSequence } from './components/DeathSequence';
+import { ItemDetailModal } from './components/ItemDetailModal'; // Import
 import { useGameController } from './hooks/useGameController';
 import { Terminal, Activity } from 'lucide-react';
-import { GameStatus } from './types';
+import { GameStatus, ItemId } from './types';
+import { ITEMS } from './data/items';
+import { Sound } from './utils/sound';
 
 // ミニステータスバー (Mobile only helper)
 const MiniBar = ({ value, max, color, label }: { value: number; max: number; color: string; label: string }) => (
@@ -31,6 +34,9 @@ const App: React.FC = () => {
   const { state, ui, actions } = useGameController();
   const [showDeathSequence, setShowDeathSequence] = useState(false);
   const [showEndingScreen, setShowEndingScreen] = useState(false);
+  
+  // Inspect State
+  const [inspectedItem, setInspectedItem] = useState<{ id: ItemId; mode: 'inventory' | 'shop' } | null>(null);
 
   // Watch for Game Over status to trigger sequence
   useEffect(() => {
@@ -59,6 +65,16 @@ const App: React.FC = () => {
     actions.restart();
   }
 
+  // Inspect Handlers
+  const handleInspect = (itemId: ItemId, mode: 'inventory' | 'shop') => {
+    Sound.play('button_click');
+    setInspectedItem({ id: itemId, mode });
+  };
+
+  const handleCloseInspect = () => {
+    setInspectedItem(null);
+  };
+
   const overlays = (
     <>
       {ui.isShopOpen && (
@@ -66,6 +82,7 @@ const App: React.FC = () => {
           money={state.money} 
           onClose={actions.closeShop} 
           onBuy={actions.buyItem} 
+          onInspect={handleInspect}
         />
       )}
       {ui.isMenuOpen && (
@@ -85,6 +102,19 @@ const App: React.FC = () => {
         />
       )}
       
+      {/* Item Detail Modal */}
+      {inspectedItem && (
+        <ItemDetailModal
+          item={ITEMS[inspectedItem.id]}
+          mode={inspectedItem.mode}
+          onClose={handleCloseInspect}
+          onBuy={(id) => { actions.buyItem(id); handleCloseInspect(); }}
+          onUse={(id) => { actions.useItem(id); handleCloseInspect(); }}
+          canBuy={state.money >= ITEMS[inspectedItem.id].price}
+          canUse={(state.inventory[inspectedItem.id] || 0) > 0}
+        />
+      )}
+
       {/* Death Sequence Overlay */}
       {showDeathSequence && (
         <DeathSequence 
@@ -94,7 +124,7 @@ const App: React.FC = () => {
         />
       )}
 
-      {/* Ending Screen (Only shows after sequence for game overs, or immediately for exam results) */}
+      {/* Ending Screen */}
       {showEndingScreen && (
         <EndingScreen state={state} onRestart={handleRestart} />
       )}
@@ -118,7 +148,11 @@ const App: React.FC = () => {
              <LogWindow logs={state.logs} />
           </div>
           <div className="shrink-0">
-            <ActionPanel state={state} actions={actions} />
+            <ActionPanel 
+              state={state} 
+              actions={actions} 
+              onInspect={handleInspect}
+            />
           </div>
         </div>
       </div>
@@ -133,7 +167,11 @@ const App: React.FC = () => {
                    <LogWindow logs={state.logs} />
                 </div>
                 <div className="shrink-0 max-h-[50vh] overflow-y-auto border-t border-green-900 bg-black">
-                  <ActionPanel state={state} actions={actions} />
+                  <ActionPanel 
+                    state={state} 
+                    actions={actions} 
+                    onInspect={handleInspect}
+                  />
                 </div>
              </div>
           ) : (
