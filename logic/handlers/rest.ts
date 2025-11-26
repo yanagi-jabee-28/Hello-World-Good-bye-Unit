@@ -1,10 +1,11 @@
 
-import { GameState, TimeSlot, LogEntry } from '../../types';
-import { ACTION_LOGS, LOG_TEMPLATES } from '../../data/constants/logMessages';
-import { clamp, applySoftCap } from '../../utils/common';
+import { GameState, TimeSlot, LogEntry, GameEventEffect } from '../../types';
+import { ACTION_LOGS } from '../../data/constants/logMessages';
+import { applySoftCap, clamp } from '../../utils/common';
 import { joinMessages } from '../../utils/logFormatter';
 import { pushLog } from '../stateHelpers';
 import { CAFFEINE_THRESHOLDS, BUFF_SOFT_CAP_ASYMPTOTE } from '../../config/gameConstants';
+import { applyEffect } from '../effectProcessor';
 
 export const handleRest = (state: GameState): GameState => {
   let hpRecov = 0;
@@ -73,7 +74,7 @@ export const handleRest = (state: GameState): GameState => {
   const restBuffs = state.activeBuffs.filter(b => b.type === 'REST_EFFICIENCY');
   if (restBuffs.length > 0) {
     rawMultiplier = restBuffs.reduce((acc, b) => acc * b.value, 1.0);
-    baseLog += ` [安眠効果 x${rawMultiplier.toFixed(1)}]`;
+    baseLog += ` [アイテム効果 x${rawMultiplier.toFixed(1)}]`;
   }
 
   const finalMultiplier = applySoftCap(rawMultiplier, BUFF_SOFT_CAP_ASYMPTOTE);
@@ -89,48 +90,46 @@ export const handleRest = (state: GameState): GameState => {
     baseLog += ACTION_LOGS.REST.ANXIETY;
   }
 
-  state.hp = clamp(state.hp + hpRecov, 0, state.maxHp);
-  state.sanity = clamp(state.sanity + sanityRecov, 0, state.maxSanity);
-  state.caffeine = clamp(state.caffeine + caffeineDrop, 0, 200);
+  // Build Effect
+  const effect: GameEventEffect = {
+    hp: hpRecov,
+    sanity: sanityRecov,
+    caffeine: caffeineDrop
+  };
 
-  state.flags.sleepDebt = Math.max(0, state.flags.sleepDebt - debtReduction);
-  state.flags.lastSleepQuality = quality;
+  // Apply
+  const { newState, messages } = applyEffect(state, effect);
 
-  const details = joinMessages([
-    LOG_TEMPLATES.PARAM.HP(hpRecov),
-    LOG_TEMPLATES.PARAM.SAN(sanityRecov),
-    LOG_TEMPLATES.PARAM.CAFFEINE(caffeineDrop)
-  ], ', ');
+  // Update flags (manual update as they are not in GameEventEffect yet)
+  newState.flags.sleepDebt = Math.max(0, newState.flags.sleepDebt - debtReduction);
+  newState.flags.lastSleepQuality = quality;
 
-  pushLog(state, `${baseLog}\n(${details})`, logType);
-  return state;
+  const details = joinMessages(messages, ', ');
+  pushLog(newState, `${baseLog}\n(${details})`, logType);
+  return newState;
 };
 
 export const handleEscapism = (state: GameState): GameState => {
-  const sanDelta = 35;
-  const hpDelta = 10;
-  let profRelDelta = 0;
+  const effect: GameEventEffect = {
+    sanity: 35,
+    hp: 10,
+    relationships: {}
+  };
+  
   let baseLog = "";
   let logType: LogEntry['type'] = 'info';
 
   if (state.timeSlot === TimeSlot.AM || state.timeSlot === TimeSlot.AFTERNOON) {
-    profRelDelta = -8; 
+    effect.relationships!.PROFESSOR = -8;
     baseLog = ACTION_LOGS.ESCAPISM.SKIP_CLASS;
     logType = 'warning';
   } else {
     baseLog = ACTION_LOGS.ESCAPISM.NORMAL;
   }
 
-  state.sanity = clamp(state.sanity + sanDelta, 0, state.maxSanity);
-  state.hp = clamp(state.hp + hpDelta, 0, state.maxHp);
-  if (profRelDelta) state.relationships.PROFESSOR = clamp(state.relationships.PROFESSOR + profRelDelta, 0, 100);
-
-  const details = joinMessages([
-    LOG_TEMPLATES.PARAM.SAN(sanDelta),
-    LOG_TEMPLATES.PARAM.HP(hpDelta),
-    profRelDelta ? LOG_TEMPLATES.PARAM.RELATIONSHIP('教授友好度', profRelDelta) : null
-  ], ', ');
-
-  pushLog(state, `${baseLog}\n(${details})`, logType);
-  return state;
+  const { newState, messages } = applyEffect(state, effect);
+  
+  const details = joinMessages(messages, ', ');
+  pushLog(newState, `${baseLog}\n(${details})`, logType);
+  return newState;
 };

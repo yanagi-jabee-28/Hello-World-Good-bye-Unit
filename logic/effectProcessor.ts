@@ -1,7 +1,55 @@
+
 import { GameState, GameEventEffect, SubjectId, RelationshipId, ItemId } from '../types';
 import { clamp } from '../utils/common';
 import { formatEffect } from '../utils/logFormatter';
 import { LOG_TEMPLATES } from '../data/constants/logMessages';
+
+/**
+ * 複数の効果オブジェクトを合成する
+ */
+export const mergeEffects = (base: GameEventEffect, ...others: (GameEventEffect | undefined)[]): GameEventEffect => {
+  // Deep clone base to avoid mutation issues, simplistic approach
+  const result: GameEventEffect = JSON.parse(JSON.stringify(base));
+
+  others.forEach(other => {
+    if (!other) return;
+
+    if (other.hp) result.hp = (result.hp || 0) + other.hp;
+    if (other.sanity) result.sanity = (result.sanity || 0) + other.sanity;
+    if (other.money) result.money = (result.money || 0) + other.money;
+    if (other.caffeine) result.caffeine = (result.caffeine || 0) + other.caffeine;
+
+    if (other.knowledge) {
+      result.knowledge = result.knowledge || {};
+      Object.entries(other.knowledge).forEach(([k, v]) => {
+        const sid = k as SubjectId;
+        result.knowledge![sid] = (result.knowledge![sid] || 0) + (v || 0);
+      });
+    }
+
+    if (other.relationships) {
+      result.relationships = result.relationships || {};
+      Object.entries(other.relationships).forEach(([k, v]) => {
+        const rid = k as RelationshipId;
+        result.relationships![rid] = (result.relationships![rid] || 0) + (v || 0);
+      });
+    }
+
+    if (other.inventory) {
+      result.inventory = result.inventory || {};
+      Object.entries(other.inventory).forEach(([k, v]) => {
+        const iid = k as ItemId;
+        result.inventory![iid] = (result.inventory![iid] || 0) + (v || 0);
+      });
+    }
+
+    if (other.buffs) {
+      result.buffs = [...(result.buffs || []), ...other.buffs];
+    }
+  });
+
+  return result;
+};
 
 /**
  * GameEventEffectをGameStateに適用する。
@@ -19,6 +67,7 @@ export const applyEffect = (
     relationships: { ...state.relationships },
     inventory: { ...state.inventory },
     activeBuffs: [...state.activeBuffs],
+    flags: { ...state.flags } // flagsもコピー
   };
 
   const messages: string[] = formatEffect(effect);

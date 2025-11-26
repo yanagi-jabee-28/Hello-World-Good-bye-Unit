@@ -1,44 +1,46 @@
 
-import { GameState, ItemId, SubjectId, LogEntry } from '../../types';
+import { GameState, ItemId, SubjectId, LogEntry, GameEventEffect } from '../../types';
 import { ITEMS } from '../../data/items';
 import { SUBJECTS } from '../../data/subjects';
-import { clamp, chance } from '../../utils/common';
-import { getItemEffectDescription } from '../../utils/logFormatter';
+import { getItemEffectDescription, joinMessages } from '../../utils/logFormatter';
 import { ACTION_LOGS, LOG_TEMPLATES } from '../../data/constants/logMessages';
 import { pushLog } from '../stateHelpers';
-import { applyEffect } from '../effectProcessor';
+import { applyEffect, mergeEffects } from '../effectProcessor';
+import { rng } from '../../utils/rng';
 
 export const handleBuyItem = (state: GameState, itemId: ItemId): GameState => {
   const item = ITEMS[itemId];
   if (state.money >= item.price) {
-    state.money -= item.price;
-    state.inventory[itemId] = (state.inventory[itemId] || 0) + 1;
-    pushLog(state, ACTION_LOGS.ITEM.BUY_SUCCESS(item.name, state.money), 'success');
+    const effect: GameEventEffect = {
+      money: -item.price,
+      inventory: { [itemId]: 1 }
+    };
+    const { newState } = applyEffect(state, effect);
+    pushLog(newState, ACTION_LOGS.ITEM.BUY_SUCCESS(item.name, newState.money), 'success');
+    return newState;
   } else {
     pushLog(state, ACTION_LOGS.ITEM.BUY_FAIL(item.name), 'danger');
+    return state;
   }
-  return state;
 };
 
 export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
   if ((state.inventory[itemId] || 0) <= 0) return state;
   
-  let newState = { ...state };
   const item = ITEMS[itemId];
-  newState.inventory[itemId] = (newState.inventory[itemId] || 0) - 1;
   
+  // 基本効果（在庫消費を含む）
+  let effect: GameEventEffect = {
+    inventory: { [itemId]: -1 }
+  };
+  
+  if (item.effects) {
+    effect = mergeEffects(effect, item.effects);
+  }
+
   let logType: LogEntry['type'] = 'info';
   let baseLog = ACTION_LOGS.ITEM.USE_DEFAULT(item.name);
   
-  // --- 汎用効果の適用 (Data Driven) ---
-  // Types are now unified in assets.ts, so we can pass item.effects directly
-  if (item.effects) {
-    const res = applyEffect(newState, item.effects);
-    newState = res.newState;
-    // メッセージは getItemEffectDescription で一括生成するため、res.messages はここでは使用しない
-    // または、res.messages を details として使うことも可能だが、現状のUIに合わせる
-  }
-
   // --- 特殊効果 & フレーバーテキスト (Custom Logic) ---
   switch (itemId) {
     case ItemId.MINERAL_WATER:
@@ -92,36 +94,43 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
       break;
       
     case ItemId.REFERENCE_BOOK: {
-      // Custom logic for lowest subject boost (Can't be genericized easily)
-      const lowestSub = Object.values(SubjectId).reduce((a, b) => newState.knowledge[a] < newState.knowledge[b] ? a : b);
+      const lowestSub = Object.values(SubjectId).reduce((a, b) => state.knowledge[a] < state.knowledge[b] ? a : b);
       const kDelta = 15;
-      newState.knowledge[lowestSub] = clamp(newState.knowledge[lowestSub] + kDelta, 0, 100);
+      
+      effect = mergeEffects(effect, { knowledge: { [lowestSub]: kDelta } });
       baseLog = `【攻略】${item.name}を熟読。高いだけあって要点がまとまっている。苦手な${SUBJECTS[lowestSub].name}の理解が一気に深まった。`;
       logType = 'success';
-      pushLog(newState, `${baseLog}\n(${LOG_TEMPLATES.PARAM.KNOWLEDGE(SUBJECTS[lowestSub].name, kDelta)})`, logType);
-      return newState; 
+      break;
     }
     case ItemId.USB_MEMORY: {
-       if (chance(60)) {
-          const target = Object.values(SubjectId)[Math.floor(Math.random() * 4)];
+       if (rng.chance(60)) {
+          const target = rng.pick(Object.values(SubjectId))!;
           const kDelta = 20;
-          newState.knowledge[target] = clamp(newState.knowledge[target] + kDelta, 0, 100);
-          newState.flags.hasPastPapers = true;
+          
+          effect = mergeEffects(effect, { knowledge: { [target]: kDelta } });
+          
           baseLog = `【解析成功】${item.name}から${SUBJECTS[target].name}の「神過去問」を発掘！これが先輩たちの遺産か...！`;
           logType = 'success';
-          pushLog(newState, `${baseLog}\n(${LOG_TEMPLATES.PARAM.KNOWLEDGE(SUBJECTS[target].name, kDelta)})`, logType);
+          // Note: hasPastPapers flag needs manual update or effect extension.
+          // For simplicity, we'll update state manually after applyEffect or just assume log covers it.
+          // Better to add flags to GameEventEffect in future.
        } else {
-          const sanDelta = -20; 
-          newState.sanity = clamp(newState.sanity + sanDelta, 0, newState.maxSanity);
+          effect = mergeEffects(effect, { sanity: -20 });
           baseLog = `【解析失敗】${item.name}の中身は...大量のウィルス入りファイルだった。PCがフリーズし、精神的ダメージを受けた。`;
           logType = 'danger';
-          pushLog(newState, `${baseLog}\n(${LOG_TEMPLATES.PARAM.SAN(sanDelta)})`, logType);
        }
-       return newState;
+       break;
     }
   }
 
-  const detailsStr = getItemEffectDescription(item);
-  pushLog(newState, `${baseLog}\n(${detailsStr})`, logType);
+  const { newState, messages } = applyEffect(state, effect);
+
+  // Special State Updates
+  if (itemId === ItemId.USB_MEMORY && logType === 'success') {
+    newState.flags.hasPastPapers = true;
+  }
+
+  const details = joinMessages(messages, ', ');
+  pushLog(newState, `${baseLog}\n(${details})`, logType);
   return newState;
 };

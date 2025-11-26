@@ -1,5 +1,5 @@
 
-import { GameState, RelationshipId, SubjectId, ItemId } from '../../types';
+import { GameState, RelationshipId, SubjectId, ItemId, GameEventEffect } from '../../types';
 import { clamp } from '../../utils/common';
 import { joinMessages } from '../../utils/logFormatter';
 import { LOG_TEMPLATES, ACTION_LOGS } from '../../data/constants/logMessages';
@@ -9,40 +9,36 @@ import { ITEMS } from '../../data/items';
 import { SUBJECTS } from '../../data/subjects';
 import { ALL_EVENTS } from '../../data/events';
 import { KNOWLEDGE_GAINS, REL_GAINS } from '../../config/gameBalance';
+import { rng } from '../../utils/rng';
+import { applyEffect } from '../effectProcessor';
 
 export const handleAskProfessor = (state: GameState): GameState => {
+  // Gift handling
   if ((state.inventory[ItemId.GIFT_SWEETS] || 0) > 0) {
-    state.inventory[ItemId.GIFT_SWEETS] = (state.inventory[ItemId.GIFT_SWEETS] || 0) - 1;
-    
-    const relBonus = 25;
-    const sanityBonus = 15;
-    
-    state.relationships[RelationshipId.PROFESSOR] = clamp(state.relationships[RelationshipId.PROFESSOR] + relBonus, 0, 100);
-    state.sanity = clamp(state.sanity + sanityBonus, 0, state.maxSanity);
+    let effect: GameEventEffect = {
+      inventory: { [ItemId.GIFT_SWEETS]: -1 },
+      relationships: { [RelationshipId.PROFESSOR]: 25 },
+      sanity: 15
+    };
 
     let rewardLog = "";
-    const messages = [
-        LOG_TEMPLATES.PARAM.RELATIONSHIP('教授友好度', relBonus),
-        LOG_TEMPLATES.PARAM.SAN(sanityBonus)
-    ];
 
-    if (Math.random() < 0.4) {
-        state.inventory[ItemId.REFERENCE_BOOK] = (state.inventory[ItemId.REFERENCE_BOOK] || 0) + 1;
+    if (rng.chance(40)) {
+        effect.inventory![ItemId.REFERENCE_BOOK] = 1;
         rewardLog = "「ほう、気が利くね。これ、昔書いた本だが役に立つはずだ」";
-        messages.push(LOG_TEMPLATES.ITEM.GET(ITEMS[ItemId.REFERENCE_BOOK].name));
     } else {
         const subIds = Object.values(SubjectId);
-        const target = subIds[Math.floor(Math.random() * subIds.length)];
-        const kDelta = 15;
-        state.knowledge[target] = clamp(state.knowledge[target] + kDelta, 0, 100);
+        const target = rng.pick(subIds)!;
+        effect.knowledge = { [target]: 15 };
         rewardLog = "「いい茶菓子だ。特別に試験のヒントを教えよう」";
-        messages.push(LOG_TEMPLATES.PARAM.KNOWLEDGE(SUBJECTS[target].name, kDelta));
     }
 
-    pushLog(state, `【贈答】${ITEMS[ItemId.GIFT_SWEETS].name}を教授室に持参した。\n${rewardLog}\n(${joinMessages(messages, ', ')})`, 'success');
-    return state;
+    const { newState, messages } = applyEffect(state, effect);
+    pushLog(newState, `【贈答】${ITEMS[ItemId.GIFT_SWEETS].name}を教授室に持参した。\n${rewardLog}\n(${joinMessages(messages, ', ')})`, 'success');
+    return newState;
   }
 
+  // Menu Event Trigger
   if (state.relationships[RelationshipId.PROFESSOR] >= 60) {
     const menuEvent = ALL_EVENTS.find(e => e.id === 'prof_interaction_menu');
     if (menuEvent) {
@@ -52,58 +48,59 @@ export const handleAskProfessor = (state: GameState): GameState => {
     }
   }
 
+  // Default Event
   const newState = executeEvent(state, 'action_professor', ACTION_LOGS.SOCIAL.PROF_ABSENT);
   
+  // Passive bonus check
   if (newState.relationships[RelationshipId.PROFESSOR] > state.relationships[RelationshipId.PROFESSOR]) {
-      if (Math.random() < 0.3) {
+      if (rng.chance(30)) {
           const subIds = Object.values(SubjectId);
-          const target = subIds[Math.floor(Math.random() * subIds.length)];
-          newState.knowledge[target] = clamp(newState.knowledge[target] + 3, 0, 100);
+          const target = rng.pick(subIds)!;
+          // Apply small bonus directly
+          const { newState: finalState } = applyEffect(newState, { knowledge: { [target]: 3 } });
+          return finalState;
       }
   }
   return newState;
 };
 
 export const handleAskSenior = (state: GameState): GameState => {
+  // Gift handling
   if ((state.inventory[ItemId.GIFT_SWEETS] || 0) > 0) {
-    state.inventory[ItemId.GIFT_SWEETS] = (state.inventory[ItemId.GIFT_SWEETS] || 0) - 1;
-    
-    const relBonus = 25;
-    const sanityBonus = 10;
     let receivedItem = ItemId.BLACK_COFFEE;
-    if (Math.random() < 0.3) receivedItem = ItemId.USB_MEMORY;
-    else if (Math.random() < 0.6) receivedItem = ItemId.REFERENCE_BOOK;
+    const rand = rng.random();
+    if (rand < 0.3) receivedItem = ItemId.USB_MEMORY;
+    else if (rand < 0.6) receivedItem = ItemId.REFERENCE_BOOK;
     else receivedItem = ItemId.ENERGY_DRINK;
 
     if (receivedItem === ItemId.USB_MEMORY && state.flags.hasPastPapers) {
         receivedItem = ItemId.ENERGY_DRINK; 
     }
 
-    state.relationships[RelationshipId.SENIOR] = clamp(state.relationships[RelationshipId.SENIOR] + relBonus, 0, 100);
-    state.sanity = clamp(state.sanity + sanityBonus, 0, state.maxSanity);
-    state.inventory[receivedItem] = (state.inventory[receivedItem] || 0) + 1;
+    const effect: GameEventEffect = {
+      inventory: { 
+        [ItemId.GIFT_SWEETS]: -1,
+        [receivedItem]: 1
+      },
+      relationships: { [RelationshipId.SENIOR]: 25 },
+      sanity: 10
+    };
 
-    const details = joinMessages([
-        LOG_TEMPLATES.PARAM.RELATIONSHIP('先輩友好度', relBonus),
-        LOG_TEMPLATES.PARAM.SAN(sanityBonus),
-        LOG_TEMPLATES.ITEM.GET(ITEMS[receivedItem].name)
-    ], ', ');
-
-    pushLog(state, `【贈答】${ITEMS[ItemId.GIFT_SWEETS].name}を差し入れた。先輩は上機嫌だ！\n「おっ、気が利くな！これやるよ」とお返しを貰った。\n(${details})`, 'success');
-    return state;
+    const { newState, messages } = applyEffect(state, effect);
+    pushLog(newState, `【贈答】${ITEMS[ItemId.GIFT_SWEETS].name}を差し入れた。先輩は上機嫌だ！\n「おっ、気が利くな！これやるよ」とお返しを貰った。\n(${joinMessages(messages, ', ')})`, 'success');
+    return newState;
   }
 
+  // Menu Event
   if (state.relationships[RelationshipId.SENIOR] >= 50) {
     const menuEventOriginal = ALL_EVENTS.find(e => e.id === 'senior_interaction_menu');
     if (menuEventOriginal) {
       const menuEvent = JSON.parse(JSON.stringify(menuEventOriginal));
-      
       const pastPaperOpt = menuEvent.options?.find((o: any) => o.id === 'opt_senior_past_paper');
       
       if (pastPaperOpt) {
         if (state.flags.hasPastPapers) {
-           const rand = Math.random();
-           if (rand < 0.5) {
+           if (rng.chance(50)) {
               pastPaperOpt.successEffect = {
                 inventory: { [ItemId.REFERENCE_BOOK]: 1 },
                 knowledge: { [SubjectId.CIRCUIT]: KNOWLEDGE_GAINS.MEDIUM },
@@ -118,7 +115,7 @@ export const handleAskSenior = (state: GameState): GameState => {
               pastPaperOpt.successLog = "「データは渡したろ？あとは気合だ」エナドリを2本押し付けられた。";
            }
         } else {
-           const rand = Math.random();
+           const rand = rng.random();
            if (rand < 0.4) {
               pastPaperOpt.successLog = "「しょうがねぇなぁ」秘蔵のフォルダを共有してくれた。神データだ！";
            } 

@@ -1,7 +1,6 @@
 
-import { Item } from '../types';
-// Re-export from logFormatter for backward compatibility if needed, 
-// but ideally we should update consumers.
+import { rng } from './rng';
+// Re-export from logFormatter for backward compatibility if needed
 export { getItemEffectDescription, joinMessages } from './logFormatter';
 
 /**
@@ -13,8 +12,7 @@ export const clamp = (num: number, min: number, max: number): number =>
 /**
  * Returns true based on a percentage probability.
  */
-export const chance = (percentage: number): boolean => 
-  Math.random() * 100 < percentage;
+export const chance = (percentage: number): boolean => rng.chance(percentage);
 
 /**
  * Applies a soft cap function to a multiplier.

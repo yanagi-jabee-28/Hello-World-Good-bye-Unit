@@ -1,11 +1,12 @@
 
-import { GameState, SubjectId, TimeSlot, LogEntry, RelationshipId } from '../../types';
+import { GameState, SubjectId, TimeSlot, LogEntry, RelationshipId, GameEventEffect } from '../../types';
 import { SUBJECTS } from '../../data/subjects';
-import { ACTION_LOGS, LOG_TEMPLATES } from '../../data/constants/logMessages';
-import { clamp, applySoftCap } from '../../utils/common';
+import { ACTION_LOGS } from '../../data/constants/logMessages';
+import { applySoftCap } from '../../utils/common';
 import { joinMessages } from '../../utils/logFormatter';
 import { pushLog } from '../stateHelpers';
 import { CAFFEINE_THRESHOLDS, BUFF_SOFT_CAP_ASYMPTOTE } from '../../config/gameConstants';
+import { applyEffect } from '../effectProcessor';
 
 /**
  * 日数進行による難易度係数を計算
@@ -27,8 +28,12 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
   
   let baseLog = "";
   let logType: LogEntry['type'] = 'info';
-  let profRelDelta = 0;
+  const effect: GameEventEffect = {
+    relationships: {},
+    knowledge: {}
+  };
 
+  // --- Time Slot Effects ---
   switch (state.timeSlot) {
     case TimeSlot.MORNING:
       rawEfficiency *= 1.2;
@@ -37,9 +42,9 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
 
     case TimeSlot.AM:
       rawEfficiency *= 1.0;
-      profRelDelta = 5; 
+      effect.relationships![RelationshipId.PROFESSOR] = 5;
       if (state.caffeine >= CAFFEINE_THRESHOLDS.AWAKE && state.caffeine < CAFFEINE_THRESHOLDS.TOXICITY) {
-          profRelDelta += 3;
+          effect.relationships![RelationshipId.PROFESSOR] += 3;
           baseLog = ACTION_LOGS.STUDY.AM_FOCUSED(subject.name);
       } else {
           baseLog = ACTION_LOGS.STUDY.AM_NORMAL(subject.name);
@@ -127,22 +132,16 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
   let knowledgeGain = Math.floor(12 * finalEfficiency * subject.difficulty * progressionMultiplier);
   if (knowledgeGain < 1) knowledgeGain = 1;
 
-  // Update State
-  state.hp = clamp(state.hp - hpCost, 0, state.maxHp);
-  state.sanity = clamp(state.sanity - sanityCost, 0, state.maxSanity);
-  state.knowledge[subjectId] = clamp(state.knowledge[subjectId] + knowledgeGain, 0, 100);
+  // Build Final Effect
+  effect.hp = -hpCost;
+  effect.sanity = -sanityCost;
+  effect.knowledge![subjectId] = knowledgeGain;
+
+  // Apply Effect
+  const { newState, messages } = applyEffect(state, effect);
   
-  if (profRelDelta) {
-    state.relationships[RelationshipId.PROFESSOR] = clamp(state.relationships[RelationshipId.PROFESSOR] + profRelDelta, 0, 100);
-  }
-
-  const details = joinMessages([
-    LOG_TEMPLATES.PARAM.KNOWLEDGE(SUBJECTS[subjectId].name, knowledgeGain),
-    LOG_TEMPLATES.PARAM.HP(-hpCost),
-    LOG_TEMPLATES.PARAM.SAN(-sanityCost),
-    profRelDelta !== 0 ? LOG_TEMPLATES.PARAM.RELATIONSHIP('教授友好度', profRelDelta) : null,
-  ], ', ');
-
-  pushLog(state, `${baseLog}\n(${details})`, logType);
-  return state;
+  const details = joinMessages(messages, ', ');
+  pushLog(newState, `${baseLog}\n(${details})`, logType);
+  
+  return newState;
 };
