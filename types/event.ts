@@ -1,6 +1,6 @@
 
 import { ActionType, SubjectId, ItemId, RelationshipId, TimeSlot } from './enums';
-import { GameState } from './state';
+import { GameState, UiScale } from './state';
 import { GameEventEffect } from './assets';
 
 // Discriminated Union for strict typing
@@ -19,7 +19,8 @@ export type GameAction =
   | { type: ActionType.LOAD_STATE; payload: GameState }
   | { type: ActionType.FULL_RESET }
   | { type: ActionType.SOFT_RESET }
-  | { type: ActionType.HARD_RESTART };
+  | { type: ActionType.HARD_RESTART }
+  | { type: ActionType.SET_UI_SCALE; payload: UiScale };
 
 // Re-export for convenience if needed by other files
 export type { GameEventEffect } from './assets';

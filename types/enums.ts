@@ -1,3 +1,4 @@
+
 export enum SubjectId {
   MATH = 'MATH',
   ALGO = 'ALGO',
@@ -64,4 +65,5 @@ export enum ActionType {
   FULL_RESET = 'FULL_RESET', // New: 全データ消去・完全リセット用
   SOFT_RESET = 'SOFT_RESET', // New: セーブデータ残して強くてニューゲーム相当のリセット
   HARD_RESTART = 'HARD_RESTART', // New: 継承なしの強くてニューゲーム（周回諦め）
+  SET_UI_SCALE = 'SET_UI_SCALE', // UIサイズ変更
 }

@@ -51,12 +51,12 @@ export const LogWindow: React.FC<Props> = ({ logs }) => {
       className="h-full" 
       noPadding
       rightAction={
-        <span className="text-[10px] opacity-50 flex items-center gap-1 font-mono animate-pulse">
+        <span className="fs-xxs opacity-50 flex items-center gap-1 font-mono animate-pulse">
           <span className="w-2 h-2 bg-green-500 rounded-full"/> LIVE_FEED
         </span>
       }
     >
-      <div className="p-4 pt-2 font-mono text-sm space-y-1">
+      <div className="p-4 pt-2 font-mono fs-sm space-y-1">
         {logs.map((log, index) => {
           const isLast = index === logs.length - 1;
           return (
@@ -65,7 +65,7 @@ export const LogWindow: React.FC<Props> = ({ logs }) => {
               className={`pl-3 py-2 animate-[slideInLeft_0.2s_ease-out] group relative transition-colors hover:bg-white/5 ${getColor(log.type)} ${isLast ? 'bg-green-900/10' : ''}`}
             >
               <div className="flex justify-between items-start mb-1 opacity-50 group-hover:opacity-100 transition-opacity">
-                  <div className="text-[10px] font-mono tracking-wider text-gray-500">
+                  <div className="fs-xxs font-mono tracking-wider text-gray-500">
                      [{log.timestamp}]
                   </div>
                   <button 

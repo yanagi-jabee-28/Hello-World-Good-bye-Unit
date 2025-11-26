@@ -75,11 +75,11 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect }) => {
           <div className={`p-2 border-l-4 flex items-start gap-3 ${hasCriticalWarning ? 'bg-red-950/30 border-red-600' : 'bg-yellow-950/30 border-yellow-600'}`}>
             <AlertTriangle className={hasCriticalWarning ? 'text-red-500 animate-pulse' : 'text-yellow-500'} size={18} />
             <div className="flex-1">
-              <div className="text-[10px] font-bold text-gray-400 mb-1 tracking-wider uppercase">System Warning ({warnings.length})</div>
+              <div className="fs-xxs font-bold text-gray-400 mb-1 tracking-wider uppercase">System Warning ({warnings.length})</div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
                 {warnings.slice(0, 4).map((w, i) => (
-                  <div key={i} className="text-[10px] text-gray-200 flex items-center gap-2">
-                    <span className="text-xs">{w.icon}</span> {w.message}
+                  <div key={i} className="fs-xxs text-gray-200 flex items-center gap-2">
+                    <span className="fs-xs">{w.icon}</span> {w.message}
                   </div>
                 ))}
               </div>
@@ -91,7 +91,7 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect }) => {
       {/* ACADEMIC */}
       <div className="col-span-2 md:col-span-1 space-y-2">
         <div className="flex justify-between items-center px-1">
-           <span className="text-[10px] font-bold text-gray-500 flex items-center gap-1"><BookOpen size={10} /> ACADEMIC_MODULE</span>
+           <span className="fs-xxs font-bold text-gray-500 flex items-center gap-1"><BookOpen size={10} /> ACADEMIC_MODULE</span>
            <Badge variant={caffeine > 100 ? 'warning' : 'outline'} className="scale-75 origin-right">{studyHint.split('(')[0]}</Badge>
         </div>
         <div className="space-y-1.5">
@@ -112,7 +112,7 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect }) => {
 
       {/* LIFE & ECONOMY */}
       <div className="col-span-1 space-y-2">
-        <div className="text-[10px] font-bold text-gray-500 flex items-center gap-1 px-1">
+        <div className="fs-xxs font-bold text-gray-500 flex items-center gap-1 px-1">
            <Briefcase size={10} /> LIFE_SUPPORT
         </div>
         <div className="space-y-1.5">
@@ -150,7 +150,7 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect }) => {
 
       {/* SOCIAL */}
       <div className="col-span-1 space-y-2">
-        <div className="text-[10px] font-bold text-gray-500 flex items-center gap-1 px-1">
+        <div className="fs-xxs font-bold text-gray-500 flex items-center gap-1 px-1">
            <Users size={10} /> SOCIAL_LINK
         </div>
         <div className="space-y-1.5">
@@ -202,12 +202,12 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect }) => {
 
       {/* INVENTORY */}
       <div className="col-span-2 md:col-span-1 space-y-2">
-        <div className="text-[10px] font-bold text-gray-500 flex items-center gap-1 px-1">
+        <div className="fs-xxs font-bold text-gray-500 flex items-center gap-1 px-1">
            <Package size={10} /> STORAGE
         </div>
         <div className="space-y-1.5">
           {ownedItems.length === 0 ? (
-             <div className="text-[10px] text-gray-600 p-4 border border-gray-800 border-dashed text-center rounded h-full flex items-center justify-center bg-black/30">
+             <div className="fs-xxs text-gray-600 p-4 border border-gray-800 border-dashed text-center rounded h-full flex items-center justify-center bg-black/30">
                NO DATA
              </div>
           ) : (

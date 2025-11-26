@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useGameEngine } from './useGameEngine';
 import { useGameSound } from './useGameSound';
-import { ActionType, ItemId, GameState, SubjectId } from '../types';
+import { ActionType, ItemId, GameState, SubjectId, UiScale } from '../types';
 import { Sound } from '../utils/sound';
 
 export const useGameController = () => {
@@ -97,12 +97,16 @@ export const useGameController = () => {
     setMobileTab: (tab: 'terminal' | 'status') => {
       playClick();
       setMobileTab(tab);
+    },
+    setUiScale: (scale: UiScale) => {
+      playClick();
+      dispatch({ type: ActionType.SET_UI_SCALE, payload: scale });
     }
   };
 
   return {
     state,
-    ui: { isShopOpen, isMenuOpen, mobileTab },
+    ui: { isShopOpen, isMenuOpen, mobileTab, uiScale: state.uiScale },
     actions
   };
 };

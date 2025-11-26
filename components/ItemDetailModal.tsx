@@ -44,44 +44,44 @@ export const ItemDetailModal: React.FC<Props> = ({
             <div className="flex justify-between items-start border-b border-gray-700 pb-4">
               <div>
                 <h3 className="text-xl font-bold text-white mb-1">{item.name}</h3>
-                <p className="text-xs text-gray-400 font-mono uppercase tracking-widest">ID: {item.id}</p>
+                <p className="fs-xs text-gray-400 font-mono uppercase tracking-widest">ID: {item.id}</p>
               </div>
               <div className="text-right">
                 <div className="text-xl font-mono font-bold text-yellow-400">¥{item.price.toLocaleString()}</div>
-                <div className="text-[10px] text-gray-500">UNIT PRICE</div>
+                <div className="fs-xxs text-gray-500">UNIT PRICE</div>
               </div>
             </div>
 
             {/* Description */}
             <div className="bg-gray-900/50 p-3 rounded border border-gray-800">
-              <p className="text-sm text-gray-300 leading-relaxed">
+              <p className="fs-sm text-gray-300 leading-relaxed">
                 {item.description}
               </p>
             </div>
 
             {/* Effects Analysis */}
             <div className="space-y-2">
-              <div className="text-xs font-bold text-green-500 flex items-center gap-2">
+              <div className="fs-xs font-bold text-green-500 flex items-center gap-2">
                 <Zap size={14} /> EFFECT_ANALYSIS
               </div>
               <div className="bg-green-900/10 border border-green-900 p-3 rounded space-y-2">
                 {effectDesc ? (
-                  <div className="text-sm font-mono text-green-300">
+                  <div className="fs-sm font-mono text-green-300">
                     {effectDesc}
                   </div>
                 ) : (
-                  <div className="text-xs text-gray-500 italic">効果なし / フレーバーアイテム</div>
+                  <div className="fs-xs text-gray-500 italic">効果なし / フレーバーアイテム</div>
                 )}
                 
                 {item.effects?.buffs && item.effects.buffs.length > 0 && (
                   <div className="mt-3 pt-2 border-t border-green-900/50">
-                    <div className="text-[10px] text-green-600 mb-1">ACTIVE_BUFFS:</div>
+                    <div className="fs-xxs text-green-600 mb-1">ACTIVE_BUFFS:</div>
                     <ul className="space-y-1">
                       {item.effects.buffs.map((buff, i) => (
-                        <li key={i} className="text-xs text-yellow-400 flex items-center gap-2">
+                        <li key={i} className="fs-xs text-yellow-400 flex items-center gap-2">
                           <span className="w-1 h-1 bg-yellow-500 rounded-full"/>
                           <span>{buff.name}</span>
-                          <span className="text-gray-500 text-[10px]">({buff.duration} turns)</span>
+                          <span className="text-gray-500 fs-xxs">({buff.duration} turns)</span>
                         </li>
                       ))}
                     </ul>

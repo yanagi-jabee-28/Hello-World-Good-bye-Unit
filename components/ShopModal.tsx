@@ -37,7 +37,7 @@ export const ShopModal: React.FC<Props> = ({ money, onClose, onBuy, onInspect })
 
         {/* Balance */}
         <div className="flex-none p-4 bg-gray-900 border-b border-cyan-900 flex justify-end items-center">
-           <span className="text-gray-400 text-xs mr-2">CURRENT BALANCE:</span>
+           <span className="text-gray-400 fs-xs mr-2">CURRENT BALANCE:</span>
            <span className="text-xl font-mono font-bold text-yellow-400">¥{money.toLocaleString()}</span>
         </div>
 
@@ -63,16 +63,16 @@ export const ShopModal: React.FC<Props> = ({ money, onClose, onBuy, onInspect })
 
                 <div>
                   <div className="flex justify-between items-start mb-1 pr-6">
-                    <h3 className="font-bold text-cyan-300 text-sm">{item.name}</h3>
+                    <h3 className="font-bold text-cyan-300 fs-sm">{item.name}</h3>
                   </div>
-                  <div className="font-mono text-yellow-500 text-xs mb-2">¥{item.price}</div>
+                  <div className="font-mono text-yellow-500 fs-xs mb-2">¥{item.price}</div>
                   
                   {/* 簡易説明と効果 */}
-                  <p className="text-[10px] text-gray-400 mb-2 line-clamp-2">{item.description}</p>
+                  <p className="fs-xxs text-gray-400 mb-2 line-clamp-2">{item.description}</p>
                   
                   {/* Effect Preview */}
                   {effectText && (
-                    <div className="text-[10px] text-cyan-600 border-l-2 border-cyan-900 pl-2 mb-3 font-mono truncate">
+                    <div className="fs-xxs text-cyan-600 border-l-2 border-cyan-900 pl-2 mb-3 font-mono truncate">
                       {effectText}
                     </div>
                   )}
@@ -81,7 +81,7 @@ export const ShopModal: React.FC<Props> = ({ money, onClose, onBuy, onInspect })
                 <button
                   onClick={() => onBuy(item.id)}
                   disabled={!canAfford}
-                  className={`w-full py-1.5 text-xs font-bold flex items-center justify-center gap-2 mt-auto ${
+                  className={`w-full py-1.5 fs-xs font-bold flex items-center justify-center gap-2 mt-auto ${
                     canAfford 
                       ? 'bg-cyan-900 text-cyan-100 hover:bg-cyan-700' 
                       : 'bg-gray-800 text-gray-500 cursor-not-allowed'
@@ -98,7 +98,7 @@ export const ShopModal: React.FC<Props> = ({ money, onClose, onBuy, onInspect })
           })}
         </div>
         
-        <div className="flex-none p-2 text-center text-[10px] text-gray-600 border-t border-cyan-900">
+        <div className="flex-none p-2 text-center fs-xxs text-gray-600 border-t border-cyan-900">
           SECURE CONNECTION ESTABLISHED | NO REFUNDS
         </div>
       </div>

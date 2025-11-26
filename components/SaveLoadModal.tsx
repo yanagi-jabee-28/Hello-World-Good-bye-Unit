@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { GameState, ActionType } from '../types';
+import { GameState, ActionType, UiScale } from '../types';
 import { SaveSlotId, getSaveList, saveToSlot, loadGame, deleteSave, exportSaveData, importSaveData, clearAllData, SaveMetadata } from '../logic/storage';
-import { X, Save, Upload, Download, Trash2, HardDrive, AlertOctagon, FileJson, RefreshCw, PlayCircle } from 'lucide-react';
+import { X, Save, Upload, Download, Trash2, HardDrive, AlertOctagon, FileJson, RefreshCw, PlayCircle, Monitor } from 'lucide-react';
 
 interface Props {
   currentState: GameState;
@@ -11,11 +11,22 @@ interface Props {
   onReset: () => void;
   onSoftReset: () => void;
   onHardReset: () => void;
+  uiScale?: UiScale;
+  onSetUiScale?: (scale: UiScale) => void;
 }
 
 type Tab = 'SAVE' | 'LOAD' | 'SYSTEM';
 
-export const SaveLoadModal: React.FC<Props> = ({ currentState, onClose, onLoad, onReset, onSoftReset, onHardReset }) => {
+export const SaveLoadModal: React.FC<Props> = ({ 
+  currentState, 
+  onClose, 
+  onLoad, 
+  onReset, 
+  onSoftReset, 
+  onHardReset,
+  uiScale,
+  onSetUiScale
+}) => {
   const [activeTab, setActiveTab] = useState<Tab>('SAVE');
   const [saveList, setSaveList] = useState<SaveMetadata[]>([]);
   const [confirmAction, setConfirmAction] = useState<{ type: 'overwrite' | 'delete' | 'load' | 'reset' | 'soft_reset' | 'hard_restart', slotId?: SaveSlotId } | null>(null);
@@ -101,9 +112,9 @@ export const SaveLoadModal: React.FC<Props> = ({ currentState, onClose, onLoad, 
              <span className={`font-bold font-mono ${isAuto ? 'text-yellow-500' : 'text-green-400'}`}>
                {isAuto ? 'AUTO_SAVE' : `SLOT_${slot.id}`}
              </span>
-             <span className="text-[10px] text-gray-500">{dateStr}</span>
+             <span className="fs-xxs text-gray-500">{dateStr}</span>
            </div>
-           <div className="text-xs text-gray-300 font-mono truncate">
+           <div className="fs-xs text-gray-300 font-mono truncate">
              {slot.summary}
            </div>
         </div>
@@ -112,7 +123,7 @@ export const SaveLoadModal: React.FC<Props> = ({ currentState, onClose, onLoad, 
           {activeTab === 'SAVE' && (
              <button
                onClick={() => setConfirmAction({ type: 'overwrite', slotId: slot.id })}
-               className="px-3 py-1 bg-green-900/30 border border-green-700 text-green-400 text-xs hover:bg-green-700 hover:text-black transition-colors"
+               className="px-3 py-1 bg-green-900/30 border border-green-700 text-green-400 fs-xs hover:bg-green-700 hover:text-black transition-colors"
              >
                SAVE
              </button>
@@ -120,7 +131,7 @@ export const SaveLoadModal: React.FC<Props> = ({ currentState, onClose, onLoad, 
           {activeTab === 'LOAD' && hasData && (
              <button
                onClick={() => handleLoad(slot.id)}
-               className="px-3 py-1 bg-blue-900/30 border border-blue-700 text-blue-400 text-xs hover:bg-blue-700 hover:text-black transition-colors"
+               className="px-3 py-1 bg-blue-900/30 border border-blue-700 text-blue-400 fs-xs hover:bg-blue-700 hover:text-black transition-colors"
              >
                LOAD
              </button>
@@ -159,7 +170,7 @@ export const SaveLoadModal: React.FC<Props> = ({ currentState, onClose, onLoad, 
              <button
                key={t}
                onClick={() => setActiveTab(t as Tab)}
-               className={`flex-1 py-3 text-sm font-bold tracking-widest transition-colors ${
+               className={`flex-1 py-3 fs-sm font-bold tracking-widest transition-colors ${
                  activeTab === t 
                  ? 'bg-green-900/30 text-green-400 border-b-2 border-green-500' 
                  : 'text-gray-600 hover:text-gray-300 hover:bg-gray-900'
@@ -177,18 +188,18 @@ export const SaveLoadModal: React.FC<Props> = ({ currentState, onClose, onLoad, 
                 
                 {/* --- CURRENT SESSION CONTROLS --- */}
                 <div>
-                  <div className="text-xs font-bold text-gray-500 mb-2 border-b border-gray-800 pb-1">RUN_CONTROLS (現在の周回操作)</div>
+                  <div className="fs-xs font-bold text-gray-500 mb-2 border-b border-gray-800 pb-1">RUN_CONTROLS (現在の周回操作)</div>
                   
                   {/* Soft Reset */}
                   <div className="border border-indigo-900/50 p-4 rounded bg-indigo-900/10 mb-4">
                     <h3 className="text-indigo-400 font-bold mb-2 flex items-center gap-2">
                       <RefreshCw size={16} /> RESTART (Inherit)
                     </h3>
-                    <p className="text-xs text-gray-500 mb-3">
+                    <p className="fs-xs text-gray-500 mb-3">
                       現在の周回を中断し、<span className="text-indigo-300 font-bold">強くてニューゲーム（学習データ50%継承）</span>を行います。
                       <br/>※スロット1〜5のセーブデータは保持されます。
                     </p>
-                    <button onClick={handleSoftReset} className="flex items-center gap-2 px-4 py-2 bg-indigo-900/30 border border-indigo-700 text-indigo-400 text-xs hover:bg-indigo-800 transition-colors">
+                    <button onClick={handleSoftReset} className="flex items-center gap-2 px-4 py-2 bg-indigo-900/30 border border-indigo-700 text-indigo-400 fs-xs hover:bg-indigo-800 transition-colors">
                       <RefreshCw size={14} /> 強くてニューゲーム
                     </button>
                   </div>
@@ -198,29 +209,57 @@ export const SaveLoadModal: React.FC<Props> = ({ currentState, onClose, onLoad, 
                     <h3 className="text-orange-400 font-bold mb-2 flex items-center gap-2">
                       <PlayCircle size={16} /> FRESH_START (No Inherit)
                     </h3>
-                    <p className="text-xs text-gray-500 mb-3">
+                    <p className="fs-xs text-gray-500 mb-3">
                       現在の周回を諦め、<span className="text-orange-300 font-bold">DAY 1 からやり直します（継承なし）</span>。
                       <br/>※現在のオートセーブは上書きされますが、スロット1〜5のセーブデータは保持されます。
                     </p>
-                    <button onClick={handleHardRestart} className="flex items-center gap-2 px-4 py-2 bg-orange-900/30 border border-orange-700 text-orange-400 text-xs hover:bg-orange-800 transition-colors">
+                    <button onClick={handleHardRestart} className="flex items-center gap-2 px-4 py-2 bg-orange-900/30 border border-orange-700 text-orange-400 fs-xs hover:bg-orange-800 transition-colors">
                       <PlayCircle size={14} /> ニューゲーム (最初から)
                     </button>
                   </div>
                 </div>
 
+                {/* --- DISPLAY SETTINGS --- */}
+                <div className="mt-8">
+                   <div className="fs-xs font-bold text-gray-500 mb-2 border-b border-gray-800 pb-1">DISPLAY (表示設定)</div>
+                   <div className="border border-gray-800 p-4 rounded bg-gray-900/30">
+                     <h3 className="text-cyan-400 font-bold mb-3 flex items-center gap-2">
+                       <Monitor size={16} /> UI_SCALE
+                     </h3>
+                     <div className="grid grid-cols-3 gap-2">
+                       {(['compact', 'normal', 'large'] as UiScale[]).map((s) => (
+                         <button
+                           key={s}
+                           onClick={() => onSetUiScale?.(s)}
+                           className={`px-3 py-2 text-sm font-bold border rounded text-left transition-colors ${
+                             uiScale === s 
+                               ? 'bg-cyan-900/40 border-cyan-500 text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.2)]' 
+                               : 'bg-gray-900/10 border-gray-800 text-gray-500 hover:bg-gray-800 hover:text-gray-300'
+                           }`}
+                         >
+                           <div className="uppercase tracking-wider">{s}</div>
+                           <div className="text-[10px] opacity-60 font-mono mt-1">
+                             {s === 'compact' ? 'Small UI (14px)' : s === 'large' ? 'Large UI (18px)' : 'Default (16px)'}
+                           </div>
+                         </button>
+                       ))}
+                     </div>
+                   </div>
+                </div>
+
                 {/* --- DATA MANAGEMENT --- */}
                 <div className="mt-8">
-                   <div className="text-xs font-bold text-gray-500 mb-2 border-b border-gray-800 pb-1">DATA_MANAGEMENT (データ管理)</div>
+                   <div className="fs-xs font-bold text-gray-500 mb-2 border-b border-gray-800 pb-1">DATA_MANAGEMENT (データ管理)</div>
                    
                    {/* Export */}
                    <div className="border border-gray-800 p-4 rounded bg-gray-900/30 mb-4">
                      <h3 className="text-green-400 font-bold mb-2 flex items-center gap-2">
                        <Download size={16} /> DATA_EXPORT
                      </h3>
-                     <p className="text-xs text-gray-500 mb-3">
+                     <p className="fs-xs text-gray-500 mb-3">
                        現在の進行状況をJSONファイルとしてダウンロードします。バックアップや別端末への移動に使用できます。
                      </p>
-                     <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-green-900/50 border border-green-700 text-green-400 text-xs hover:bg-green-800 transition-colors">
+                     <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-green-900/50 border border-green-700 text-green-400 fs-xs hover:bg-green-800 transition-colors">
                        JSON保存 (.json)
                      </button>
                    </div>
@@ -230,10 +269,10 @@ export const SaveLoadModal: React.FC<Props> = ({ currentState, onClose, onLoad, 
                      <h3 className="text-blue-400 font-bold mb-2 flex items-center gap-2">
                        <Upload size={16} /> DATA_IMPORT
                      </h3>
-                     <p className="text-xs text-gray-500 mb-3">
+                     <p className="fs-xs text-gray-500 mb-3">
                        エクスポートしたJSONファイルを読み込み、状態を復元します。現在の進行状況は上書きされます。
                      </p>
-                     <label className="flex items-center gap-2 px-4 py-2 bg-blue-900/50 border border-blue-700 text-blue-400 text-xs hover:bg-blue-800 transition-colors w-fit cursor-pointer">
+                     <label className="flex items-center gap-2 px-4 py-2 bg-blue-900/50 border border-blue-700 text-blue-400 fs-xs hover:bg-blue-800 transition-colors w-fit cursor-pointer">
                        <FileJson size={14} />
                        ファイルを選択してロード
                        <input type="file" accept=".json" onChange={handleImport} className="hidden" />
@@ -245,10 +284,10 @@ export const SaveLoadModal: React.FC<Props> = ({ currentState, onClose, onLoad, 
                      <h3 className="text-red-500 font-bold mb-2 flex items-center gap-2">
                        <AlertOctagon size={16} /> FACTORY_RESET
                      </h3>
-                     <p className="text-xs text-gray-500 mb-3">
+                     <p className="fs-xs text-gray-500 mb-3">
                        【危険】全てのセーブデータとシステム設定（強くてニューゲーム状態含む）を完全に削除し、初期化します。この操作は取り消せません。
                      </p>
-                     <button onClick={handleFactoryReset} className="flex items-center gap-2 px-4 py-2 bg-red-900/20 border border-red-700 text-red-500 text-xs hover:bg-red-900/50 transition-colors">
+                     <button onClick={handleFactoryReset} className="flex items-center gap-2 px-4 py-2 bg-red-900/20 border border-red-700 text-red-500 fs-xs hover:bg-red-900/50 transition-colors">
                        <Trash2 size={14} /> 全データ完全消去
                      </button>
                    </div>
@@ -268,7 +307,7 @@ export const SaveLoadModal: React.FC<Props> = ({ currentState, onClose, onLoad, 
                <h3 className={`text-lg font-bold ${confirmAction.type === 'reset' ? 'text-red-500 animate-pulse' : 'text-white'} mb-2`}>
                  {confirmAction.type === 'reset' ? '⚠ DANGER ZONE ⚠' : 'CONFIRMATION'}
                </h3>
-               <p className="text-sm text-gray-300 mb-6 leading-relaxed whitespace-pre-wrap">
+               <p className="fs-sm text-gray-300 mb-6 leading-relaxed whitespace-pre-wrap">
                  {confirmAction.type === 'overwrite' && 'このスロットに上書きしますか？\n古いデータは完全に失われます。'}
                  {confirmAction.type === 'delete' && 'このデータを削除しますか？\n復元することはできません。'}
                  {confirmAction.type === 'load' && 'このデータをロードしますか？\n現在の進行状況は失われます。'}
@@ -279,7 +318,7 @@ export const SaveLoadModal: React.FC<Props> = ({ currentState, onClose, onLoad, 
                <div className="flex gap-3 justify-end">
                  <button 
                    onClick={() => setConfirmAction(null)}
-                   className="px-4 py-2 text-xs font-bold text-gray-500 hover:text-white transition-colors border border-transparent hover:border-gray-600"
+                   className="px-4 py-2 fs-xs font-bold text-gray-500 hover:text-white transition-colors border border-transparent hover:border-gray-600"
                  >
                    CANCEL
                  </button>
@@ -302,7 +341,7 @@ export const SaveLoadModal: React.FC<Props> = ({ currentState, onClose, onLoad, 
                         onClose();
                      }
                    }}
-                   className={`px-6 py-2 text-xs font-bold transition-all transform hover:scale-105 ${
+                   className={`px-6 py-2 fs-xs font-bold transition-all transform hover:scale-105 ${
                      confirmAction.type === 'reset' 
                        ? 'bg-red-700 text-white hover:bg-red-600 shadow-lg shadow-red-900/50' 
                        : 'bg-green-700 text-black hover:bg-green-500 shadow-lg shadow-green-900/50'

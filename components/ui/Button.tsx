@@ -38,9 +38,9 @@ export const Button: React.FC<Props> = ({
   };
 
   const sizes = {
-    sm: "text-[10px] py-1 px-2 min-h-[32px]",
-    md: "text-xs py-2 px-3 min-h-[42px]",
-    lg: "text-sm py-3 px-4 min-h-[52px]"
+    sm: "fs-xxs py-1 px-2 min-h-[32px]",
+    md: "fs-xs py-2 px-3 min-h-[42px]",
+    lg: "fs-sm py-3 px-4 min-h-[52px]"
   };
 
   const widthClass = fullWidth ? 'w-full' : '';
@@ -63,7 +63,7 @@ export const Button: React.FC<Props> = ({
       
       <div className="flex flex-col overflow-hidden z-10 w-full">
         <span className="truncate leading-tight w-full">{label}</span>
-        {subLabel && <span className="text-[9px] font-normal opacity-60 truncate font-mono mt-0.5 w-full">{subLabel}</span>}
+        {subLabel && <span className="fs-xxs font-normal opacity-60 truncate font-mono mt-0.5 w-full">{subLabel}</span>}
       </div>
 
       {/* Background Scanline for texture */}

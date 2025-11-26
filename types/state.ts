@@ -1,3 +1,4 @@
+
 import { TimeSlot, GameStatus, SubjectId, RelationshipId, ItemId } from './enums';
 import { Buff } from './assets';
 import { GameEvent } from './event';
@@ -31,6 +32,8 @@ export interface GameFlags {
   examRisk: boolean;       // 最終日無理をしたか
 }
 
+export type UiScale = 'compact' | 'normal' | 'large';
+
 export interface GameState {
   day: number;
   timeSlot: TimeSlot;
@@ -53,4 +56,5 @@ export interface GameState {
   statsHistory: StatsSnapshot[]; // 履歴データ
   flags: GameFlags; // Hidden mechanics flags
   pendingEvent: GameEvent | null; // 選択待ちのイベント
+  uiScale: UiScale; // UIサイズ設定
 }

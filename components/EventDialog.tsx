@@ -63,14 +63,14 @@ export const EventDialog: React.FC<Props> = ({ event, onResolve }) => {
                 >
                   <div className="flex justify-between items-center mb-1">
                     <span className="font-bold text-white group-hover:text-green-300">{opt.label}</span>
-                    <div className={`text-xs flex items-center gap-1 uppercase font-mono ${riskColor}`}>
+                    <div className={`fs-xs flex items-center gap-1 uppercase font-mono ${riskColor}`}>
                        {riskIcon} RISK: {opt.risk}
                     </div>
                   </div>
-                  <div className="text-xs text-gray-400 group-hover:text-gray-300">
+                  <div className="fs-xs text-gray-400 group-hover:text-gray-300">
                     {opt.description}
                   </div>
-                  <div className="mt-2 text-[10px] text-gray-500 font-mono">
+                  <div className="mt-2 fs-xxs text-gray-500 font-mono">
                      成功率: {opt.successRate}%
                   </div>
                 </button>
@@ -80,7 +80,7 @@ export const EventDialog: React.FC<Props> = ({ event, onResolve }) => {
         </div>
 
         {/* Footer */}
-        <div className="p-2 border-t border-green-900 text-center text-[10px] text-gray-600">
+        <div className="p-2 border-t border-green-900 text-center fs-xxs text-gray-600">
           WAITING FOR USER INPUT...
         </div>
       </div>

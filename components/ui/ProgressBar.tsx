@@ -22,7 +22,7 @@ export const ProgressBar: React.FC<Props> = ({ value, max, colorClass, label, su
 
   return (
     <div className={`mb-3 group ${effectClass || ''}`}>
-      <div className="flex justify-between text-[10px] mb-1 font-bold uppercase tracking-wider text-gray-400 group-hover:text-white transition-colors">
+      <div className="flex justify-between fs-xxs mb-1 font-bold uppercase tracking-wider text-gray-400 group-hover:text-white transition-colors">
         <span className="flex items-center gap-1">
           <span className="w-1 h-2 bg-current inline-block opacity-50" />
           {label}

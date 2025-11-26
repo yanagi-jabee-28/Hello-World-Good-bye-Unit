@@ -1,5 +1,6 @@
-import React, { ReactNode } from 'react';
-import { GameState } from '../types';
+
+import React, { ReactNode, useEffect } from 'react';
+import { GameState, UiScale } from '../types';
 import { Clock, Calendar, Save, Menu, Zap } from 'lucide-react';
 
 interface Props {
@@ -7,9 +8,26 @@ interface Props {
   children: ReactNode;
   overlays?: ReactNode;
   onMenuOpen?: () => void;
+  uiScale?: UiScale;
 }
 
-export const Layout: React.FC<Props> = ({ state, children, overlays, onMenuOpen }) => {
+export const Layout: React.FC<Props> = ({ state, children, overlays, onMenuOpen, uiScale = 'normal' }) => {
+  // Apply UI Scale by modifying the root font size
+  useEffect(() => {
+    const root = document.documentElement;
+    switch (uiScale) {
+      case 'compact':
+        root.style.fontSize = '14px';
+        break;
+      case 'large':
+        root.style.fontSize = '18px';
+        break;
+      default: // normal
+        root.style.fontSize = '16px';
+        break;
+    }
+  }, [uiScale]);
+
   return (
     <div className="relative flex flex-col h-screen w-screen bg-black text-green-500 font-mono overflow-hidden selection:bg-green-500 selection:text-black">
       
@@ -27,7 +45,7 @@ export const Layout: React.FC<Props> = ({ state, children, overlays, onMenuOpen 
             <h1 className="font-bold text-lg tracking-widest text-shadow-glow text-white leading-none">
               RSA_ADVENTURE
             </h1>
-            <div className="text-[9px] text-green-600 tracking-[0.2em] uppercase">
+            <div className="fs-xxs text-green-600 tracking-[0.2em] uppercase">
               Resource Survival Architecture
             </div>
           </div>
@@ -37,14 +55,14 @@ export const Layout: React.FC<Props> = ({ state, children, overlays, onMenuOpen 
           {/* Date/Time Info */}
           <div className="hidden md:flex items-center gap-6 text-sm font-bold font-mono">
             <div className="flex flex-col items-end leading-none">
-              <span className="text-[9px] text-gray-500 uppercase">Timeline</span>
+              <span className="fs-xxs text-gray-500 uppercase">Timeline</span>
               <div className="flex items-center gap-2 text-green-400">
                 DAY {state.day.toString().padStart(2, '0')}
               </div>
             </div>
             <div className="w-px h-8 bg-green-900/50" />
             <div className="flex flex-col items-end leading-none">
-              <span className="text-[9px] text-gray-500 uppercase">Clock</span>
+              <span className="fs-xxs text-gray-500 uppercase">Clock</span>
               <div className="flex items-center gap-2 text-yellow-400">
                 {state.timeSlot}
               </div>
@@ -54,44 +72,35 @@ export const Layout: React.FC<Props> = ({ state, children, overlays, onMenuOpen 
           {/* Menu Button */}
           <button 
             onClick={onMenuOpen}
-            className="group relative px-4 py-2 bg-green-950 border border-green-800 hover:bg-green-900 transition-all overflow-hidden"
+            className="group relative px-4 py-2 bg-green-950 border border-green-800 text-green-400 hover:bg-green-900 hover:text-green-300 hover:border-green-500 transition-all duration-200 flex items-center gap-2"
           >
-            <div className="absolute top-0 left-0 w-1 h-full bg-green-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="flex items-center gap-2 text-xs font-bold text-green-300 group-hover:text-green-100 tracking-widest">
-              <Menu size={14} />
-              MENU
-            </div>
+            <Menu size={18} />
+            <span className="hidden sm:inline font-bold text-xs tracking-widest">SYSTEM</span>
+            
+            {/* Corner decorations */}
+            <div className="absolute top-0 left-0 w-1 h-1 border-t border-l border-green-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute bottom-0 right-0 w-1 h-1 border-b border-r border-green-500 opacity-0 group-hover:opacity-100 transition-opacity" />
           </button>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 min-h-0 relative flex flex-col overflow-hidden p-1 z-10">
+      {/* Main Content Layer */}
+      <main className="flex-1 relative overflow-hidden z-10">
+        {/* Background Grid Animation */}
+        <div className="absolute inset-0 pointer-events-none opacity-20 z-0">
+          <div className="w-full h-full bg-[linear-gradient(rgba(0,255,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,0,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [transform-origin:center] animate-[pulse_4s_ease-in-out_infinite]" />
+        </div>
+        
         {children}
       </main>
 
-      {/* Footer */}
-      <footer className="flex-none h-6 border-t border-green-900/60 bg-black flex items-center justify-between px-4 text-[10px] text-gray-600 z-20 relative font-mono uppercase tracking-wider">
-        <div className="flex items-center gap-4">
-           <div className="flex items-center gap-1.5 text-green-800">
-             <div className="w-1.5 h-1.5 bg-green-800 rounded-full animate-ping" />
-             <span>SYSTEM_ONLINE</span>
-           </div>
-           <div className="hidden md:flex items-center gap-1.5" title="Auto Save Active">
-             <Save size={10} />
-             <span>AUTO_SAVE: ACTIVE</span>
-           </div>
-        </div>
-        
-        {/* Mobile Date/Time (Shown in footer on small screens) */}
-        <div className="md:hidden flex items-center gap-3 text-green-500">
-           <span className="font-bold">DAY {state.day}</span>
-           <span className="text-yellow-500">[{state.timeSlot}]</span>
-        </div>
-      </footer>
-
-      {/* Overlays (Modals, etc) */}
+      {/* Overlay Layer (Modals, Dialogs) */}
+      {/* FIXED: Removed the full-screen blocking wrapper div. 
+          Overlays (mostly fixed positioned components) are rendered directly. */}
       {overlays}
+      
+      {/* Scanline Effect */}
+      <div className="absolute inset-0 pointer-events-none bg-scanlines opacity-10 z-40 mix-blend-overlay" />
     </div>
   );
 };

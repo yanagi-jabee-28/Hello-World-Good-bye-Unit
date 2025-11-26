@@ -43,7 +43,7 @@ export const StatusDisplay: React.FC<Props> = ({ state }) => {
         
         <InventoryList state={state} />
         
-        <div className="mt-6 grid grid-cols-2 gap-2 text-[9px] text-gray-500 font-mono border-t border-gray-800 pt-2">
+        <div className="mt-6 grid grid-cols-2 gap-2 fs-xxs text-gray-500 font-mono border-t border-gray-800 pt-2">
           <div className="flex justify-between">
              <span>HEART_RATE:</span>
              <span className={state.caffeine > 100 ? "text-red-500 animate-pulse" : "text-green-500"}>
@@ -67,7 +67,7 @@ export const StatusDisplay: React.FC<Props> = ({ state }) => {
         </div>
 
         {showDevMetrics && (
-          <div className="mt-4 p-2 bg-black border border-green-900 text-[9px] font-mono text-green-600">
+          <div className="mt-4 p-2 bg-black border border-green-900 fs-xxs font-mono text-green-600">
              <div className="font-bold border-b border-green-900 mb-1 text-green-400">DEBUG_LAYER</div>
              <div>Soft Cap Asymp: +{BUFF_SOFT_CAP_ASYMPTOTE}</div>
              <div>Thresholds: {Object.values(CAFFEINE_THRESHOLDS).join('/')}</div>

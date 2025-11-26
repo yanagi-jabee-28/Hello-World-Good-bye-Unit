@@ -25,6 +25,8 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     return { 
       ...INITIAL_STATE, 
       ...loadedState,
+      // Ensure uiScale exists even for old saves
+      uiScale: loadedState.uiScale || INITIAL_STATE.uiScale,
       logs: [
         ...loadedState.logs,
         {
@@ -34,6 +36,14 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
           timestamp: `DAY ${loadedState.day} ${loadedState.timeSlot}`
         }
       ]
+    };
+  }
+
+  // UI設定の変更 (このアクションはターンを経過させない)
+  if (action.type === ActionType.SET_UI_SCALE) {
+    return {
+      ...state,
+      uiScale: action.payload
     };
   }
 
@@ -63,6 +73,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       knowledge: inheritedKnowledge,
       relationships: { ...INIT_RELATIONSHIPS },
       inventory: { ...INITIAL_STATE.inventory },
+      uiScale: state.uiScale, // Keep UI setting
       logs: [{
         id: Math.random().toString(36).substr(2, 9),
         text: resetLogText,
@@ -76,6 +87,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
   if (action.type === ActionType.HARD_RESTART) {
     return {
       ...INITIAL_STATE,
+      uiScale: state.uiScale, // Keep UI setting
       logs: [{
         id: Math.random().toString(36).substr(2, 9),
         text: `${ACTION_LOGS.START}\n${ACTION_LOGS.SYSTEM.RESET_HARD}`,
@@ -105,6 +117,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       knowledge: inheritedKnowledge,
       relationships: { ...INIT_RELATIONSHIPS },
       inventory: { ...INITIAL_STATE.inventory },
+      uiScale: state.uiScale, // Keep UI setting
       logs: [{
         id: Math.random().toString(36).substr(2, 9),
         text: restartLogText,

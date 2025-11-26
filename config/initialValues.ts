@@ -1,3 +1,4 @@
+
 import { GameState, TimeSlot, GameStatus, SubjectId, RelationshipId, ItemId } from '../types';
 import { ACTION_LOGS } from '../data/constants/logMessages';
 
@@ -53,4 +54,5 @@ export const INITIAL_STATE: GameState = {
     examRisk: false,
   },
   pendingEvent: null,
+  uiScale: 'normal', // Default UI scale
 };

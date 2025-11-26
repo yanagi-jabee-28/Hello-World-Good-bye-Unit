@@ -59,7 +59,7 @@ export const DebugPanel: React.FC<Props> = ({ state }) => {
             {warnings.map((w, i) => (
               <div
                 key={i}
-                className={`p-2 border text-[10px] leading-tight rounded ${
+                className={`p-2 border fs-xxs leading-tight rounded ${
                   w.severity === 'critical' ? 'border-red-700 bg-red-900/20' :
                   w.severity === 'danger' ? 'border-orange-700 bg-orange-900/20' :
                   w.severity === 'caution' ? 'border-yellow-700 bg-yellow-900/20' :
@@ -77,7 +77,7 @@ export const DebugPanel: React.FC<Props> = ({ state }) => {
       {/* 隠しステータス */}
       <div className="mb-4 bg-gray-900 p-2 rounded border border-gray-800">
         <h3 className="text-cyan-500 font-bold mb-2">HIDDEN STATUS</h3>
-        <div className="space-y-1 text-[10px]">
+        <div className="space-y-1 fs-xxs">
           <div className="flex justify-between">
             <span className="text-gray-400">睡眠負債:</span>
             <span className="text-cyan-300">{state.flags.sleepDebt?.toFixed(1) || 0}</span>
@@ -118,7 +118,7 @@ export const DebugPanel: React.FC<Props> = ({ state }) => {
                 <span className="text-gray-400">基礎スコア:</span>
                 <span className="text-white font-bold">{projection.baseScore.toFixed(0)}</span>
               </div>
-              <div className="text-[9px] text-gray-500 space-y-0.5">
+              <div className="fs-xxs text-gray-500 space-y-0.5">
                 <div className="flex justify-between">
                   <span>Physical:</span>
                   <span className={projection.physicalCondition < 0.8 ? 'text-red-400' : 'text-green-400'}>
@@ -168,7 +168,7 @@ export const DebugPanel: React.FC<Props> = ({ state }) => {
                 </span>
               </div>
             </div>
-            <div className="text-[9px] text-gray-500 leading-tight">
+            <div className="fs-xxs text-gray-500 leading-tight">
               ⚠ これは現時点での予測値です。最終日までのコンディション管理が合否を分けます。
             </div>
           </div>

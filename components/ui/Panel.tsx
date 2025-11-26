@@ -61,7 +61,7 @@ export const Panel: React.FC<Props> = ({
       <div className={`absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 ${style.border} opacity-80 pointer-events-none`} />
 
       {title && (
-        <div className={`flex-none px-3 py-2 text-xs font-bold flex justify-between items-center border-b ${style.border} bg-scanlines relative`}>
+        <div className={`flex-none px-3 py-2 fs-xs font-bold flex justify-between items-center border-b ${style.border} bg-scanlines relative`}>
           {/* Header Decoration */}
           <div className="absolute left-0 top-0 bottom-0 w-1 opacity-50 bg-current" />
           

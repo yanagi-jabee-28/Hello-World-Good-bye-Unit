@@ -20,7 +20,7 @@ import { Sound } from './utils/sound';
 // ミニステータスバー (Mobile only helper)
 const MiniBar = ({ value, max, color, label }: { value: number; max: number; color: string; label: string }) => (
   <div className="flex-1 flex flex-col gap-0.5">
-    <div className="flex justify-between text-[10px] leading-none text-gray-400 font-mono">
+    <div className="flex justify-between fs-xxs leading-none text-gray-400 font-mono">
        <span>{label}</span>
        <span>{value}</span>
     </div>
@@ -93,6 +93,8 @@ const App: React.FC = () => {
           onReset={actions.fullReset}
           onSoftReset={actions.softReset}
           onHardReset={actions.hardRestart}
+          uiScale={ui.uiScale}
+          onSetUiScale={actions.setUiScale}
         />
       )}
       {state.pendingEvent && (
@@ -134,7 +136,7 @@ const App: React.FC = () => {
   );
 
   return (
-    <Layout state={state} overlays={overlays} onMenuOpen={actions.openMenu}>
+    <Layout state={state} overlays={overlays} onMenuOpen={actions.openMenu} uiScale={ui.uiScale}>
       {/* --- DESKTOP LAYOUT --- */}
       <div className="hidden lg:grid flex-1 grid-cols-12 gap-4 h-full min-h-0 p-4 pt-0">
         {/* Left: Status */}
@@ -201,7 +203,7 @@ const App: React.FC = () => {
           <div className="grid grid-cols-2 gap-3">
              <button
                 onClick={() => actions.setMobileTab('terminal')}
-                className={`p-2.5 text-xs font-bold border flex items-center justify-center gap-2 transition-all duration-200 ${
+                className={`p-2.5 fs-xs font-bold border flex items-center justify-center gap-2 transition-all duration-200 ${
                    ui.mobileTab === 'terminal' 
                    ? 'bg-green-900/40 border-green-500 text-green-400 shadow-[0_0_10px_rgba(34,197,94,0.2)]' 
                    : 'bg-gray-900/20 border-gray-800 text-gray-500 hover:bg-gray-900'
@@ -211,7 +213,7 @@ const App: React.FC = () => {
              </button>
              <button
                 onClick={() => actions.setMobileTab('status')}
-                className={`p-2.5 text-xs font-bold border flex items-center justify-center gap-2 transition-all duration-200 ${
+                className={`p-2.5 fs-xs font-bold border flex items-center justify-center gap-2 transition-all duration-200 ${
                    ui.mobileTab === 'status' 
                    ? 'bg-green-900/40 border-green-500 text-green-400 shadow-[0_0_10px_rgba(34,197,94,0.2)]' 
                    : 'bg-gray-900/20 border-gray-800 text-gray-500 hover:bg-gray-900'
