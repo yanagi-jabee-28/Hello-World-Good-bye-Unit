@@ -29,7 +29,10 @@ export const Layout: React.FC<Props> = ({ state, children, overlays, onMenuOpen,
   }, [uiScale]);
 
   return (
-    <div className="relative flex flex-col h-screen w-screen bg-black text-green-500 font-mono overflow-hidden selection:bg-green-500 selection:text-black">
+    <div 
+      className="relative flex flex-col w-full bg-black text-green-500 font-mono overflow-hidden selection:bg-green-500 selection:text-black"
+      style={{ height: '100dvh' }}
+    >
       
       {/* Header */}
       <header className="flex-none h-14 border-b border-green-900/60 bg-black/90 z-20 relative flex items-center justify-between px-4 shadow-[0_0_10px_rgba(34,197,94,0.1)]">
@@ -95,8 +98,6 @@ export const Layout: React.FC<Props> = ({ state, children, overlays, onMenuOpen,
       </main>
 
       {/* Overlay Layer (Modals, Dialogs) */}
-      {/* FIXED: Removed the full-screen blocking wrapper div. 
-          Overlays (mostly fixed positioned components) are rendered directly. */}
       {overlays}
       
       {/* Scanline Effect */}

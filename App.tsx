@@ -193,7 +193,7 @@ const App: React.FC = () => {
         </div>
 
         {/* Bottom Nav (Always visible) */}
-        <div className="shrink-0 bg-black border-t border-green-800 p-2 pb-safe z-30 shadow-[0_-2px_10px_rgba(0,0,0,0.5)]">
+        <div className="shrink-0 bg-black border-t border-green-800 p-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] z-30 shadow-[0_-2px_10px_rgba(0,0,0,0.5)]">
           {/* Mini Status Grid */}
           <div className="grid grid-cols-3 gap-2 mb-2 px-1">
              <MiniBar label="HP" value={state.hp} max={state.maxHp} color={state.hp < 30 ? "bg-red-500 animate-pulse" : "bg-green-500"} />

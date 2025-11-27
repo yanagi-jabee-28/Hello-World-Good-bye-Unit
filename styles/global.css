@@ -7,6 +7,12 @@
   --color-primary: #22c55e;
 }
 
+html, body {
+  height: 100%;
+  width: 100%;
+  overscroll-behavior: none; /* Prevent pull-to-refresh / elastic scrolling */
+}
+
 body {
   font-family: 'JetBrains Mono', monospace;
   background-color: var(--color-bg);
@@ -144,7 +150,7 @@ body {
   100% { transform: scale(0, 0); opacity: 0; }
 }
 
-/* Safe Area for Mobile Notch/Home Indicator */
+/* Safe Area for Mobile Notch/Home Indicator - Enhanced */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom);
 }
