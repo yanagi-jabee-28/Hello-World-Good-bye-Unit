@@ -5,7 +5,7 @@ import { ACTION_LOGS } from '../../data/constants/logMessages';
 import { applySoftCap } from '../../utils/common';
 import { joinMessages } from '../../utils/logFormatter';
 import { pushLog } from '../stateHelpers';
-import { CAFFEINE_THRESHOLDS, BUFF_SOFT_CAP_ASYMPTOTE } from '../../config/gameConstants';
+import { CAFFEINE_THRESHOLDS, BUFF_SOFT_CAP_ASYMPTOTE, SATIETY_CONSTANTS } from '../../config/gameConstants';
 import { applyEffect } from '../effectProcessor';
 
 /**
@@ -85,6 +85,12 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
       baseLog = ACTION_LOGS.STUDY.LATE_NIGHT_ZONE(subject.name);
       logType = 'warning'; 
       break;
+  }
+
+  // --- Satiety Penalty (Food Coma) ---
+  if (state.satiety >= SATIETY_CONSTANTS.STUFFED) {
+    rawEfficiency *= 0.8;
+    baseLog += ACTION_LOGS.STUDY.STUFFED;
   }
 
   // --- Caffeine Effects ---

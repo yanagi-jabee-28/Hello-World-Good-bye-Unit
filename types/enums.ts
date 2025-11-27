@@ -32,14 +32,14 @@ export enum GameStatus {
 
 export enum ItemId {
   USB_MEMORY = 'USB_MEMORY',
-  MINERAL_WATER = 'MINERAL_WATER', // New: Decaf / HP small
+  MINERAL_WATER = 'MINERAL_WATER', // Decaf / HP small
   BLACK_COFFEE = 'BLACK_COFFEE',
-  GUMMY_CANDY = 'GUMMY_CANDY', // New: Sanity small
-  PROTEIN_BAR = 'PROTEIN_BAR', // New: HP medium
+  GUMMY_CANDY = 'GUMMY_CANDY', // Sanity small
+  PROTEIN_BAR = 'PROTEIN_BAR', // HP medium
   HIGH_CACAO_CHOCO = 'HIGH_CACAO_CHOCO',
   CAFE_LATTE = 'CAFE_LATTE',
   ENERGY_DRINK = 'ENERGY_DRINK',
-  HERBAL_TEA = 'HERBAL_TEA', // New: Decaf large / Sanity medium
+  HERBAL_TEA = 'HERBAL_TEA', // Decaf large / Sanity medium
   CUP_RAMEN = 'CUP_RAMEN',
   HOT_EYE_MASK = 'HOT_EYE_MASK',
   EARPLUGS = 'EARPLUGS',
@@ -47,6 +47,10 @@ export enum ItemId {
   GAMING_SUPPLEMENT = 'GAMING_SUPPLEMENT',
   SMART_DRUG = 'SMART_DRUG',
   GIFT_SWEETS = 'GIFT_SWEETS',
+  // --- New Hunger Items ---
+  RICE_BALL = 'RICE_BALL', // Cheap, High Satiety
+  ENERGY_JELLY = 'ENERGY_JELLY', // Efficient, Low Satiety
+  DIGESTIVE_ENZYME = 'DIGESTIVE_ENZYME', // Reduces Satiety
 }
 
 export enum ActionType {

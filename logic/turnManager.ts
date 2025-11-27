@@ -2,7 +2,7 @@
 import { GameState, TimeSlot } from '../types';
 import { clamp, chance } from '../utils/common';
 import { pushLog } from './stateHelpers';
-import { CAFFEINE_DECAY, CAFFEINE_THRESHOLDS, EVENT_CONSTANTS } from '../config/gameConstants';
+import { CAFFEINE_DECAY, CAFFEINE_THRESHOLDS, EVENT_CONSTANTS, SATIETY_CONSTANTS } from '../config/gameConstants';
 import { getNextTimeSlot } from './time';
 import { executeEvent } from './eventManager';
 import { ACTION_LOGS } from '../data/constants/logMessages';
@@ -49,7 +49,16 @@ export const processTurnEnd = (state: GameState, isResting: boolean = false): Ga
   // 4. カフェインの自然減衰
   newState.caffeine = clamp(newState.caffeine - CAFFEINE_DECAY, 0, 200);
 
-  // 5. カフェイン過剰摂取ダメージ
+  // 5. 満腹度の自然減少と飢餓ペナルティ
+  newState.satiety = clamp(newState.satiety - SATIETY_CONSTANTS.DECAY, 0, newState.maxSatiety);
+  
+  if (newState.satiety <= SATIETY_CONSTANTS.STARVING) {
+    newState.hp = clamp(newState.hp - SATIETY_CONSTANTS.STARVING_DMG_HP, 0, newState.maxHp);
+    newState.sanity = clamp(newState.sanity - SATIETY_CONSTANTS.STARVING_DMG_SAN, 0, newState.maxSanity);
+    pushLog(newState, ACTION_LOGS.SYSTEM.STARVATION, 'danger');
+  }
+
+  // 6. カフェイン過剰摂取ダメージ
   if (newState.caffeine >= CAFFEINE_THRESHOLDS.ZONE) {
     const isOverdose = newState.caffeine >= CAFFEINE_THRESHOLDS.TOXICITY;
     const toxicHp = isOverdose ? 12 : 3;
@@ -59,7 +68,7 @@ export const processTurnEnd = (state: GameState, isResting: boolean = false): Ga
     newState.sanity = clamp(newState.sanity - toxicSan, 0, newState.maxSanity);
   }
 
-  // 6. 孤独ペナルティ
+  // 7. 孤独ペナルティ
   const turnsSinceSocial = newState.turnCount - newState.lastSocialTurn;
   if (turnsSinceSocial > EVENT_CONSTANTS.ISOLATION_THRESHOLD) {
     const lonelinessDmg = EVENT_CONSTANTS.ISOLATION_DAMAGE;
@@ -74,7 +83,7 @@ export const processTurnEnd = (state: GameState, isResting: boolean = false): Ga
     return newState;
   }
 
-  // 7. 時間の進行
+  // 8. 時間の進行
   const { slot, isNextDay } = getNextTimeSlot(state.timeSlot);
   newState.timeSlot = slot;
   if (isNextDay) {
@@ -83,19 +92,20 @@ export const processTurnEnd = (state: GameState, isResting: boolean = false): Ga
   }
   newState.turnCount += 1;
 
-  // 8. 履歴の記録
+  // 9. 履歴の記録
   newState.statsHistory = [
     ...newState.statsHistory,
     {
       hp: newState.hp,
       sanity: newState.sanity,
       caffeine: newState.caffeine,
+      satiety: newState.satiety,
       turn: newState.turnCount,
       money: newState.money
     }
   ];
 
-  // 9. ターン終了時ランダムイベント
+  // 10. ターン終了時ランダムイベント
   if (chance(EVENT_CONSTANTS.RANDOM_PROBABILITY)) {
     newState = executeEvent(newState, 'turn_end');
   }

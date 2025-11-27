@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { GameState } from '../../types';
-import { CAFFEINE_THRESHOLDS } from '../../config/gameConstants';
+import { CAFFEINE_THRESHOLDS, SATIETY_CONSTANTS } from '../../config/gameConstants';
 import { Wallet, Zap, Bed, AlertOctagon } from 'lucide-react';
 import { ProgressBar } from '../ui/ProgressBar';
 
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export const BioMonitor: React.FC<Props> = ({ state }) => {
+  // Caffeine Logic
   let caffeineStatus = "NORMAL";
   let caffeineColor = "bg-yellow-700";
   let caffeineEffect = "";
@@ -26,6 +28,22 @@ export const BioMonitor: React.FC<Props> = ({ state }) => {
       caffeineStatus = "TOXICITY"; 
       caffeineColor = "bg-red-600"; 
       caffeineEffect = "animate-[pulse_0.2s_infinite] shadow-[0_0_15px_rgba(220,38,38,0.8)]";
+  }
+
+  // Satiety Logic
+  let satietyStatus = "NORMAL";
+  let satietyColor = "bg-green-600";
+  let satietyEffect = "";
+
+  if (state.satiety >= SATIETY_CONSTANTS.STUFFED) {
+    satietyStatus = "STUFFED (満腹)";
+    satietyColor = "bg-yellow-500"; // Warning (Sleepy)
+  } else if (state.satiety <= SATIETY_CONSTANTS.STARVING) {
+    satietyStatus = "STARVING (飢餓)";
+    satietyColor = "bg-red-600 animate-pulse"; // Danger
+  } else if (state.satiety <= 40) {
+    satietyStatus = "HUNGRY (空腹)";
+    satietyColor = "bg-orange-500";
   }
 
   return (
@@ -58,6 +76,14 @@ export const BioMonitor: React.FC<Props> = ({ state }) => {
           subLabel={`${caffeineStatus} (${state.caffeine}mg)`}
           colorClass={caffeineColor}
           effectClass={caffeineEffect}
+        />
+        <ProgressBar 
+          label="SAT (満腹度)" 
+          value={state.satiety} 
+          max={state.maxSatiety} 
+          subLabel={`${satietyStatus}`}
+          colorClass={satietyColor}
+          effectClass={satietyEffect}
         />
 
       {/* Active Buffs */}

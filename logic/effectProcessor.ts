@@ -18,6 +18,7 @@ export const mergeEffects = (base: GameEventEffect, ...others: (GameEventEffect 
     if (other.sanity) result.sanity = (result.sanity || 0) + other.sanity;
     if (other.money) result.money = (result.money || 0) + other.money;
     if (other.caffeine) result.caffeine = (result.caffeine || 0) + other.caffeine;
+    if (other.satiety) result.satiety = (result.satiety || 0) + other.satiety;
 
     if (other.knowledge) {
       result.knowledge = result.knowledge || {};
@@ -76,6 +77,7 @@ export const applyEffect = (
   if (effect.hp) newState.hp = clamp(newState.hp + effect.hp, 0, newState.maxHp);
   if (effect.sanity) newState.sanity = clamp(newState.sanity + effect.sanity, 0, newState.maxSanity);
   if (effect.caffeine) newState.caffeine = clamp(newState.caffeine + effect.caffeine, 0, 200);
+  if (effect.satiety) newState.satiety = clamp(newState.satiety + effect.satiety, 0, newState.maxSatiety);
 
   // --- 知識パラメータの更新 ---
   if (effect.knowledge) {

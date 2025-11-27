@@ -24,6 +24,8 @@ export const INITIAL_STATE: GameState = {
   sanity: 100,
   maxSanity: 100,
   caffeine: 0,
+  satiety: 50, // Normal start
+  maxSatiety: 100,
   knowledge: { ...INIT_KNOWLEDGE },
   relationships: { ...INIT_RELATIONSHIPS },
   inventory: {
@@ -31,6 +33,7 @@ export const INITIAL_STATE: GameState = {
     [ItemId.CAFE_LATTE]: 0,
     [ItemId.HIGH_CACAO_CHOCO]: 1,
     [ItemId.HOT_EYE_MASK]: 0,
+    [ItemId.RICE_BALL]: 1, // Free starter food
   },
   activeBuffs: [],
   logs: [{

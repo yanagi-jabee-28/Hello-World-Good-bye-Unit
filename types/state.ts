@@ -14,6 +14,7 @@ export interface StatsSnapshot {
   hp: number;
   sanity: number;
   caffeine: number;
+  satiety?: number;
   turn: number;
   money: number;
 }
@@ -43,6 +44,8 @@ export interface GameState {
   sanity: number; // Max 100
   maxSanity: number;
   caffeine: number; // Max 200 (Overdose > 100)
+  satiety: number; // 0-100 (Hunger metric)
+  maxSatiety: number;
   knowledge: Record<SubjectId, number>; // 0 - 100
   relationships: Record<RelationshipId, number>; // 0 - 100
   inventory: Partial<Record<ItemId, number>>;

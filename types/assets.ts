@@ -27,6 +27,7 @@ export interface GameEventEffect {
   knowledge?: Partial<Record<SubjectId, number>>;
   relationships?: Partial<Record<RelationshipId, number>>;
   caffeine?: number;
+  satiety?: number; // New: Hunger/Fullness
   inventory?: Partial<Record<ItemId, number>>;
   money?: number;
   buffs?: Omit<Buff, 'id'>[]; // バフ効果

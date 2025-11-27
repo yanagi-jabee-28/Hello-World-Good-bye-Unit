@@ -18,7 +18,8 @@ export const ITEMS: Record<ItemId, Item> = {
     effects: {
       caffeine: -50,
       hp: 5,
-      sanity: 2
+      sanity: 2,
+      satiety: 2 // 水分
     }
   },
   [ItemId.BLACK_COFFEE]: {
@@ -29,7 +30,8 @@ export const ITEMS: Record<ItemId, Item> = {
     effects: {
       caffeine: 50,
       hp: 2,
-      sanity: 2
+      sanity: 2,
+      satiety: 5
     }
   },
   [ItemId.GUMMY_CANDY]: {
@@ -39,7 +41,18 @@ export const ITEMS: Record<ItemId, Item> = {
     price: 180, // Increased: 160 -> 180
     effects: {
       sanity: 15, // Buffed: 12 -> 15
-      hp: 2
+      hp: 2,
+      satiety: 10 // おやつ
+    }
+  },
+  [ItemId.RICE_BALL]: {
+    id: ItemId.RICE_BALL,
+    name: 'コンビニおにぎり',
+    description: 'コスパ最強の炭水化物。腹を満たすならこれ。',
+    price: 150,
+    effects: {
+      hp: 15,
+      satiety: 35 // 腹持ちが良い
     }
   },
   // --- Level 2: Moderate & Specific ---
@@ -50,6 +63,18 @@ export const ITEMS: Record<ItemId, Item> = {
     price: 250, // Increased: 220 -> 250
     effects: {
       hp: 35, // Buffed: 30 -> 35
+      satiety: 25
+    }
+  },
+  [ItemId.ENERGY_JELLY]: {
+    id: ItemId.ENERGY_JELLY,
+    name: 'エナジーゼリー',
+    description: '10秒でチャージ。満腹になりにくく、即効性の元気が出る。',
+    price: 280,
+    effects: {
+      hp: 25,
+      caffeine: 20,
+      satiety: 10 // 液体なので軽い
     }
   },
   [ItemId.HIGH_CACAO_CHOCO]: {
@@ -60,7 +85,8 @@ export const ITEMS: Record<ItemId, Item> = {
     effects: {
       hp: 5,
       sanity: 18, // Buffed: 15 -> 18
-      caffeine: 15 
+      caffeine: 15,
+      satiety: 15
     }
   },
   [ItemId.CAFE_LATTE]: {
@@ -71,7 +97,18 @@ export const ITEMS: Record<ItemId, Item> = {
     effects: {
       caffeine: 30, 
       hp: 15,
-      sanity: 15 
+      sanity: 15,
+      satiety: 15 // ミルク分
+    }
+  },
+  [ItemId.DIGESTIVE_ENZYME]: {
+    id: ItemId.DIGESTIVE_ENZYME,
+    name: '強力消化酵素',
+    description: '胃の中身を急速分解し、満腹度を下げる。食べ過ぎた時や連食したい時に。',
+    price: 450,
+    effects: {
+      satiety: -40,
+      hp: -5 // 胃への負担
     }
   },
   // --- Level 3: High Effect & Risk ---
@@ -83,7 +120,8 @@ export const ITEMS: Record<ItemId, Item> = {
     effects: {
       caffeine: 120,
       hp: 10,
-      sanity: -5 
+      sanity: -5,
+      satiety: 20 // 糖分過多
     }
   },
   [ItemId.HERBAL_TEA]: {
@@ -94,7 +132,8 @@ export const ITEMS: Record<ItemId, Item> = {
     effects: {
       caffeine: -100,
       sanity: 35, // Buffed: 30 -> 35
-      hp: 5
+      hp: 5,
+      satiety: 5
     }
   },
   [ItemId.CUP_RAMEN]: {
@@ -104,7 +143,8 @@ export const ITEMS: Record<ItemId, Item> = {
     price: 480, // Increased: 450 -> 480
     effects: {
       hp: 55, // Buffed: 50 -> 55
-      sanity: 5
+      sanity: 5,
+      satiety: 60 // かなり腹に溜まる
     }
   },
   // --- Level 4: Utilities & Buffs ---

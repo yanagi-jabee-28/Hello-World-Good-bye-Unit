@@ -19,6 +19,9 @@ export const formatEffect = (effect: GameEventEffect): string[] => {
   if (effect.caffeine) {
     messages.push(LOG_TEMPLATES.PARAM.CAFFEINE(effect.caffeine));
   }
+  if (effect.satiety) {
+    messages.push(LOG_TEMPLATES.PARAM.SATIETY(effect.satiety));
+  }
   
   if (effect.knowledge) {
     Object.entries(effect.knowledge).forEach(([key, val]) => {
@@ -74,6 +77,7 @@ export const getItemEffectDescription = (item: Item): string => {
     if (effects.hp) parts.push(LOG_TEMPLATES.PARAM.HP(effects.hp));
     if (effects.sanity) parts.push(LOG_TEMPLATES.PARAM.SAN(effects.sanity));
     if (effects.caffeine) parts.push(LOG_TEMPLATES.PARAM.CAFFEINE(effects.caffeine));
+    if (effects.satiety) parts.push(LOG_TEMPLATES.PARAM.SATIETY(effects.satiety));
     
     if (effects.knowledge) {
       Object.entries(effects.knowledge).forEach(([key, val]) => {
@@ -109,6 +113,7 @@ export const getShortEffectString = (item: Item): string => {
   if (effects.hp) parts.push(`HP${effects.hp > 0 ? '+' : ''}${effects.hp}`);
   if (effects.sanity) parts.push(`SAN${effects.sanity > 0 ? '+' : ''}${effects.sanity}`);
   if (effects.caffeine) parts.push(`CFN${effects.caffeine > 0 ? '+' : ''}${effects.caffeine}`);
+  if (effects.satiety) parts.push(`満腹${effects.satiety > 0 ? '+' : ''}${effects.satiety}`);
   
   // バフがある場合は簡易表示
   if (effects.buffs && effects.buffs.length > 0) {

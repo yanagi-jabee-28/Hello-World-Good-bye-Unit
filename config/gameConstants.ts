@@ -8,6 +8,16 @@ export const CAFFEINE_THRESHOLDS = {
   TOXICITY: 150 // 中毒ライン (効率2.0倍, 大ダメージ)
 };
 
+// 満腹度関連 (Satiety)
+export const SATIETY_CONSTANTS = {
+  MAX: 100,
+  DECAY: 5,     // 毎ターンの自然減少量
+  STARVING: 20, // 飢餓ライン (HP/SAN減少)
+  STUFFED: 80,  // 満腹ライン (学習効率低下)
+  STARVING_DMG_HP: 5,
+  STARVING_DMG_SAN: 2,
+};
+
 // バフ関連
 // BUFF_MULTIPLIER_CAP を廃止し、漸近線(Soft Cap)を使用
 // Rebalanced: 2.5 -> 1.5. これにより、バフを重ねがけしても実質倍率が頭打ちになりやすくなる
