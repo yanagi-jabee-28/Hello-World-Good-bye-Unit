@@ -1,6 +1,6 @@
 
-import { GameEvent, RelationshipId, SubjectId, ItemId } from '../../types';
-import { REL_TIERS, WEIGHTS, COOLDOWNS } from '../../config/gameBalance';
+import { GameEvent, RelationshipId, SubjectId, ItemId, TimeSlot } from '../../types';
+import { REL_TIERS, WEIGHTS, COOLDOWNS, REL_GAINS } from '../../config/gameBalance';
 import { Effect } from '../presets/effectTemplates';
 
 /**
@@ -18,8 +18,9 @@ export const PROFESSOR_EVENTS: GameEvent[] = [
     type: 'good',
     weight: WEIGHTS.COMMON,
     effect: {
-      ...Effect.Social.Boost(RelationshipId.PROFESSOR, 'Qm'),
-      ...Effect.Study.Boost(SubjectId.MATH, 'SMALL')
+      ...Effect.Study.Boost(SubjectId.MATH, 'SMALL'),
+      // Balance Update: Increased from standard small/Qm to fix +5 for easier early game
+      relationships: { [RelationshipId.PROFESSOR]: 5 } 
     }
   },
   {
@@ -31,10 +32,25 @@ export const PROFESSOR_EVENTS: GameEvent[] = [
     weight: WEIGHTS.RARE,
     conditions: { maxRelationship: REL_TIERS.MID }, 
     effect: {
-      ...Effect.Social.Boost(RelationshipId.PROFESSOR, 'SMALL'), // Note: Even bad interaction gives tiny rel in original? Changed to match strict logic or define custom
-      relationships: { [RelationshipId.PROFESSOR]: 2 }, // Override slightly
-      ...Effect.Status.DamageExhaust() // Using Exhaust as minor HP dmg replacement
+      relationships: { [RelationshipId.PROFESSOR]: 2 }, // Even bad interaction gives tiny rel (effort seen)
+      ...Effect.Status.DamageExhaust() 
     }
+  },
+  // NEW: Night Effort (Time-based bonus)
+  {
+    id: 'prof_night_effort',
+    trigger: 'action_professor',
+    persona: 'PROFESSOR',
+    text: "【残業】「...まだ残っていたのか」深夜の研究室。教授が缶コーヒーを差し入れてくれた。「無理はするなよ」",
+    type: 'good',
+    weight: WEIGHTS.COMMON,
+    conditions: { timeSlots: [TimeSlot.NIGHT, TimeSlot.LATE_NIGHT] },
+    effect: {
+      relationships: { [RelationshipId.PROFESSOR]: 6 }, // Good boost for effort
+      sanity: 5,
+      inventory: { [ItemId.BLACK_COFFEE]: 1 }
+    },
+    coolDownTurns: COOLDOWNS.SHORT
   },
   {
     id: 'prof_scolding',
@@ -88,10 +104,11 @@ export const PROFESSOR_EVENTS: GameEvent[] = [
     text: "【議論】最新の論文について議論を交わした。対等な研究者として扱われている感覚が心地よい。",
     type: 'good',
     weight: WEIGHTS.UNCOMMON,
-    conditions: { minRelationship: REL_TIERS.HIGH, minAvgScore: 60 },
+    // Balance Update: Relaxed condition (60 -> 55)
+    conditions: { minRelationship: REL_TIERS.HIGH, minAvgScore: 55 },
     effect: {
       ...Effect.Social.Boost(RelationshipId.PROFESSOR, 'LARGE'),
-      ...Effect.Status.RecoverSanity(10) // Custom small value
+      ...Effect.Status.RecoverSanity(10)
     },
     coolDownTurns: COOLDOWNS.SHORT
   },
@@ -102,7 +119,8 @@ export const PROFESSOR_EVENTS: GameEvent[] = [
     text: "【展望】「君には博士課程への進学を勧めたい」具体的なキャリアパスを提示され、モチベーションが向上。",
     type: 'good',
     weight: WEIGHTS.UNCOMMON,
-    conditions: { minRelationship: REL_TIERS.HIGH, minAvgScore: 70 },
+    // Balance Update: Relaxed condition (70 -> 65)
+    conditions: { minRelationship: REL_TIERS.HIGH, minAvgScore: 65 },
     effect: {
       ...Effect.Preset.ProfessorPraise()
     },
@@ -121,7 +139,7 @@ export const PROFESSOR_EVENTS: GameEvent[] = [
     effect: {
       ...Effect.Social.Boost(RelationshipId.PROFESSOR, 'HUGE'),
       knowledge: { 
-        [SubjectId.ALGO]: 18, // Custom Large
+        [SubjectId.ALGO]: 18, 
         [SubjectId.CIRCUIT]: 18 
       } 
     },

@@ -32,9 +32,9 @@ export const SENIOR_EVENTS: GameEvent[] = [
     type: 'flavor',
     weight: WEIGHTS.COMMON,
     effect: {
-      ...Effect.Social.Boost(RelationshipId.SENIOR, 'MEDIUM'),
-      ...Effect.Status.RecoverSanity(5), // Custom minor
-      relationships: { [RelationshipId.PROFESSOR]: 2, [RelationshipId.SENIOR]: 8 } // Merge
+      // Balance Update: Greatly increased relationship gain (Medium -> 12) to make Senior easier to befriend
+      relationships: { [RelationshipId.SENIOR]: 12, [RelationshipId.PROFESSOR]: 2 },
+      ...Effect.Status.RecoverSanity(5),
     }
   },
   {
@@ -61,6 +61,7 @@ export const SENIOR_EVENTS: GameEvent[] = [
     type: 'good',
     weight: WEIGHTS.COMMON,
     conditions: { 
+      // Explicitly allow late night interaction
       timeSlots: [TimeSlot.NIGHT, TimeSlot.LATE_NIGHT], 
       minRelationship: REL_TIERS.MID 
     },

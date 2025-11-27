@@ -8,13 +8,14 @@ import { CAFFEINE_THRESHOLDS } from '../config/gameConstants';
 export const getAvailability = (timeSlot: TimeSlot) => {
   return {
     // Professor: AM/PM(Lecture), Noon(Lunch), AfterSchool(Office Hour). Not Morning, Night.
-    professor: [TimeSlot.AM, TimeSlot.NOON, TimeSlot.AFTERNOON, TimeSlot.AFTER_SCHOOL].includes(timeSlot),
+    // Update: Added NIGHT for "Working Late" events context
+    professor: [TimeSlot.AM, TimeSlot.NOON, TimeSlot.AFTERNOON, TimeSlot.AFTER_SCHOOL, TimeSlot.NIGHT, TimeSlot.LATE_NIGHT].includes(timeSlot),
     
     // Senior: Noon onwards (They wake up late and stay late)
     senior: [TimeSlot.NOON, TimeSlot.AFTERNOON, TimeSlot.AFTER_SCHOOL, TimeSlot.NIGHT, TimeSlot.LATE_NIGHT].includes(timeSlot),
     
-    // Friend: Not Late Night
-    friend: timeSlot !== TimeSlot.LATE_NIGHT,
+    // Friend: Always available (Even late night gaming)
+    friend: true,
   };
 };
 

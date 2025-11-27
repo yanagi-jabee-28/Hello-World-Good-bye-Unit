@@ -1,5 +1,5 @@
 
-import { GameEvent, RelationshipId, SubjectId, ItemId } from '../../types';
+import { GameEvent, RelationshipId, SubjectId, ItemId, TimeSlot } from '../../types';
 import { REL_TIERS, WEIGHTS, COOLDOWNS } from '../../config/gameBalance';
 import { Effect } from '../presets/effectTemplates';
 
@@ -29,6 +29,10 @@ export const FRIEND_EVENTS: GameEvent[] = [
     text: "【遊戯】試験期間中だが、新作ゲームの話で盛り上がる。「現実逃避最高！」",
     type: 'flavor',
     weight: WEIGHTS.COMMON,
+    // Balance Update: Allow late night gaming
+    conditions: {
+      timeSlots: [TimeSlot.AFTER_SCHOOL, TimeSlot.NIGHT, TimeSlot.LATE_NIGHT]
+    },
     effect: {
       ...Effect.Social.Boost(RelationshipId.FRIEND, 'LARGE'),
       ...Effect.Status.RecoverModerate(), // HP&SAN
@@ -57,7 +61,12 @@ export const FRIEND_EVENTS: GameEvent[] = [
     text: "【誘惑】「カラオケ行こうぜ。勉強？ 知らん！」強引に連れ出され、喉が枯れるまで歌った。",
     type: 'flavor',
     weight: WEIGHTS.UNCOMMON,
-    conditions: { maxSanity: 50, minRelationship: REL_TIERS.MID },
+    conditions: { 
+      maxSanity: 50, 
+      minRelationship: REL_TIERS.MID,
+      // Balance Update: Allow late night karaoke
+      timeSlots: [TimeSlot.AFTER_SCHOOL, TimeSlot.NIGHT, TimeSlot.LATE_NIGHT]
+    },
     effect: {
       ...Effect.Preset.Hangout(),
       sanity: 35 // Override Sanity to Huge
