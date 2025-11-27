@@ -148,7 +148,7 @@ const App: React.FC = () => {
         {/* Right: Logs & Actions */}
         <div className="col-span-9 flex flex-col gap-4 h-full min-h-0">
           <div className="flex-1 min-h-0">
-             <LogWindow logs={state.logs} />
+             <LogWindow logs={state.logs} day={state.day} timeSlot={state.timeSlot} />
           </div>
           <div className="shrink-0">
             <ActionPanel 
@@ -169,7 +169,7 @@ const App: React.FC = () => {
              <div className="flex flex-col h-full">
                 {/* Log Window takes remaining space */}
                 <div className="flex-1 min-h-0 overflow-hidden">
-                   <LogWindow logs={state.logs} />
+                   <LogWindow logs={state.logs} day={state.day} timeSlot={state.timeSlot} />
                 </div>
                 {/* Action Panel is scrollable but constrained height */}
                 <div className="shrink-0 h-[55%] border-t-2 border-green-900 bg-black/95 shadow-[0_-5px_20px_rgba(0,0,0,0.5)] z-10 flex flex-col">

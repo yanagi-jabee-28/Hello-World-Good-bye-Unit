@@ -7,9 +7,11 @@ import { Panel } from './ui/Panel';
 
 interface Props {
   logs: LogEntry[];
+  day?: number;
+  timeSlot?: string;
 }
 
-export const LogWindow: React.FC<Props> = ({ logs }) => {
+export const LogWindow: React.FC<Props> = ({ logs, day, timeSlot }) => {
   const bottomRef = useRef<HTMLDivElement>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
 
@@ -53,9 +55,20 @@ export const LogWindow: React.FC<Props> = ({ logs }) => {
       className="h-full" 
       noPadding
       rightAction={
-        <span className="fs-xxs opacity-50 flex items-center gap-1 font-mono animate-pulse">
-          <span className="w-2 h-2 bg-green-500 rounded-full"/> LIVE_FEED
-        </span>
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Mobile Timeline Display */}
+          {(day !== undefined && timeSlot) && (
+            <div className="flex items-center gap-2 md:hidden font-mono text-[10px] sm:text-xs border-r border-gray-700 pr-2 sm:pr-3 mr-1">
+               <span className="text-green-400 font-bold">DAY {day.toString().padStart(2, '0')}</span>
+               <span className="text-yellow-400 font-bold">{timeSlot}</span>
+            </div>
+          )}
+          
+          <span className="fs-xxs opacity-50 flex items-center gap-1 font-mono animate-pulse">
+            <span className="w-2 h-2 bg-green-500 rounded-full"/> 
+            <span className="hidden xs:inline">LIVE_FEED</span>
+          </span>
+        </div>
       }
     >
       <div className="p-4 pt-2 font-mono fs-sm space-y-1">
