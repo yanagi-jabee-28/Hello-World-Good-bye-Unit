@@ -22,10 +22,11 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         description: '出題傾向を探る。確実な情報が得られる。',
         successRate: 90,
         successEffect: {
+          // AUTO_SELECT: Reducer will replace this with weakest subject
           knowledge: { [SubjectId.ALGO]: KNOWLEDGE_GAINS.LARGE },
           relationships: { [RelationshipId.PROFESSOR]: REL_GAINS.SMALL }
         },
-        successLog: "「ここは重点的にやっておきたまえ」試験のヒントを得た。",
+        successLog: "「そこは君の弱点だね」鋭い指摘を受け、苦手分野の理解が深まった。",
         failureEffect: { relationships: { [RelationshipId.PROFESSOR]: -2 } },
         failureLog: "「講義で言ったはずだがね」軽くあしらわれた。"
       },
@@ -99,14 +100,15 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         id: 'opt_senior_past_paper',
         label: '過去問ください！',
         risk: 'low',
-        description: '先輩のコネに頼る。',
+        description: '先輩のコネに頼る。苦手科目の対策データを入手する。',
         successRate: 60,
         successEffect: {
           inventory: { [ItemId.USB_MEMORY]: 1 },
+          // AUTO_SELECT: Reducer will replace this with weakest subject
           knowledge: { [SubjectId.CIRCUIT]: KNOWLEDGE_GAINS.LARGE },
           relationships: { [RelationshipId.SENIOR]: REL_GAINS.LARGE }
         },
-        successLog: "「しょうがねぇなぁ」秘蔵のフォルダを共有してくれた。",
+        successLog: "「しょうがねぇなぁ」一番不安だった科目の過去問フォルダを共有してくれた。",
         failureEffect: { relationships: { [RelationshipId.SENIOR]: -5 } },
         failureLog: "「今は手元にないなー」空振りに終わった。"
       },
@@ -175,14 +177,15 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         id: 'opt_friend_study',
         label: '一緒に勉強する',
         risk: 'low',
-        description: '真面目に課題をこなす。',
+        description: '互いの苦手分野を教え合う。',
         successRate: 90,
         successEffect: {
+          // AUTO_SELECT: Reducer will replace this with weakest subject
           knowledge: { [SubjectId.HUMANITIES]: KNOWLEDGE_GAINS.MEDIUM },
           satiety: -SATIETY_CONSUMPTION.STUDY,
           relationships: { [RelationshipId.FRIEND]: REL_GAINS.MEDIUM }
         },
-        successLog: "一人でやるより捗った気がする。",
+        successLog: "一人では詰まっていた箇所も、教え合うことで理解できた。",
         failureEffect: { sanity: -5 },
         failureLog: "結局お喋りして終わってしまった..."
       },

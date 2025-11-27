@@ -8,6 +8,7 @@ import { evaluateExam } from './examEvaluation';
 import { applyEffect } from './effectProcessor';
 import { INITIAL_STATE, INIT_KNOWLEDGE, INIT_RELATIONSHIPS } from '../config/initialValues';
 import { processTurnEnd } from './turnManager';
+import { selectWeakestSubject } from './studyAutoSelect';
 
 // Handlers
 import { handleStudy } from './handlers/study';
@@ -17,6 +18,13 @@ import { handleAskProfessor, handleAskSenior, handleRelyFriend } from './handler
 import { handleBuyItem, handleUseItem } from './handlers/items';
 
 export { INITIAL_STATE };
+
+// 動的科目選択を適用するイベントオプションIDのリスト
+const DYNAMIC_SUBJECT_OPTIONS = [
+  'opt_prof_ask_exam',   // 教授: 試験について聞く
+  'opt_senior_past_paper', // 先輩: 過去問入手
+  'opt_friend_study'     // 友人: 一緒に勉強
+];
 
 export const gameReducer = (state: GameState, action: GameAction): GameState => {
   // セーブデータのロード
@@ -151,7 +159,24 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
         const isSuccess = Math.random() * 100 < option.successRate;
         
         if (isSuccess) {
-          const effect = option.successEffect;
+          let effect = option.successEffect;
+          
+          // --- 動的科目選択ロジック ---
+          // 指定されたイベントの場合、上昇する科目を「現在最も苦手な科目」に書き換える
+          if (effect && effect.knowledge && DYNAMIC_SUBJECT_OPTIONS.includes(option.id)) {
+            const targetSubject = selectWeakestSubject(newState.knowledge);
+            // 元の定義から上昇量を取得 (どれか1つの値が入っている前提)
+            const amounts = Object.values(effect.knowledge);
+            const amount = amounts.length > 0 ? amounts[0] : 10;
+            
+            // 効果を上書き (新しいオブジェクトを作成)
+            effect = {
+              ...effect,
+              knowledge: { [targetSubject]: amount }
+            };
+          }
+          // --------------------------
+
           let details: string[] = [];
           if (effect) {
             const res = applyEffect(newState, effect);
