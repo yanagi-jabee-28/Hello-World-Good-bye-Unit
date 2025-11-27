@@ -49,15 +49,9 @@ export const processTurnEnd = (state: GameState, isResting: boolean = false): Ga
   // 4. カフェインの自然減衰
   newState.caffeine = clamp(newState.caffeine - CAFFEINE_DECAY, 0, 200);
 
-  // 5. 満腹度の自然減少と飢餓ペナルティ
+  // 5. 満腹度の自然減少 (ペナルティなし、間食制限用)
   newState.satiety = clamp(newState.satiety - SATIETY_CONSTANTS.DECAY, 0, newState.maxSatiety);
   
-  if (newState.satiety <= SATIETY_CONSTANTS.STARVING) {
-    newState.hp = clamp(newState.hp - SATIETY_CONSTANTS.STARVING_DMG_HP, 0, newState.maxHp);
-    newState.sanity = clamp(newState.sanity - SATIETY_CONSTANTS.STARVING_DMG_SAN, 0, newState.maxSanity);
-    pushLog(newState, ACTION_LOGS.SYSTEM.STARVATION, 'danger');
-  }
-
   // 6. カフェイン過剰摂取ダメージ
   if (newState.caffeine >= CAFFEINE_THRESHOLDS.ZONE) {
     const isOverdose = newState.caffeine >= CAFFEINE_THRESHOLDS.TOXICITY;

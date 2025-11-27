@@ -13,7 +13,7 @@ export const LOG_TEMPLATES = {
     SAN: (delta: number) => `SAN${delta > 0 ? '+' : ''}${delta}`,
     MONEY: (delta: number) => `資金${delta > 0 ? '+' : ''}¥${delta.toLocaleString()}`,
     CAFFEINE: (delta: number) => `カフェイン${delta > 0 ? '+' : ''}${delta}`,
-    SATIETY: (delta: number) => `満腹度${delta > 0 ? '+' : ''}${delta}`,
+    SATIETY: (delta: number) => `胃の負担${delta > 0 ? '+' : ''}${delta}`,
     KNOWLEDGE: (subject: string, delta: number) => `${subject}${delta > 0 ? '+' : ''}${delta}`,
     RELATIONSHIP: (target: string, delta: number) => `${target}${delta > 0 ? '+' : ''}${delta}`,
   },
@@ -47,7 +47,7 @@ export const ACTION_LOGS = {
     LATE_NIGHT_FAIL: (subject: string) => `【深夜の寝落ち】気づけば朝チュン。${subject}のノートにはよだれが垂れている...。`,
     JITTER: "【カフェイン中毒】心臓が早鐘を打っている。焦燥感ばかりで手が動かない。",
     MADNESS: "\n【狂気】精神の摩耗と引き換えに、異常な集中力を発揮している。",
-    STUFFED: "【満腹】食べ過ぎて眠気が襲ってくる...。(効率低下)",
+    STUFFED: "【食べ過ぎ】胃が重くて集中できない。インターバルが必要だ。(効率微減)",
   },
 
   // Rest
@@ -93,7 +93,7 @@ export const ACTION_LOGS = {
     RESET_HARD: "【再履修】周回を諦め、新たな気持ちでDAY 1から開始します。（継承なし）",
     RESTART_MSG: "【強くてニューゲーム】前回の学習データの50%を復元しました。",
     LOADED: "【SYSTEM】セーブデータをロードしました。",
-    STARVATION: "【飢餓】空腹で思考がまとまらない...。指先が震える。",
+    STARVATION: "", // 廃止
   }
 };
 

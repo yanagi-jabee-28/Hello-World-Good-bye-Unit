@@ -89,7 +89,7 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
 
   // --- Satiety Penalty (Food Coma) ---
   if (state.satiety >= SATIETY_CONSTANTS.STUFFED) {
-    rawEfficiency *= 0.8;
+    rawEfficiency *= SATIETY_CONSTANTS.STUFFED_PENALTY;
     baseLog += ACTION_LOGS.STUDY.STUFFED;
   }
 

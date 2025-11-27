@@ -8,14 +8,15 @@ export const CAFFEINE_THRESHOLDS = {
   TOXICITY: 150 // 中毒ライン (効率2.0倍, 大ダメージ)
 };
 
-// 満腹度関連 (Satiety)
+// 満腹度関連 (Satiety) - 胃のキャパシティ管理へ変更
 export const SATIETY_CONSTANTS = {
   MAX: 100,
-  DECAY: 5,     // 毎ターンの自然減少量
-  STARVING: 20, // 飢餓ライン (HP/SAN減少)
-  STUFFED: 80,  // 満腹ライン (学習効率低下)
-  STARVING_DMG_HP: 5,
-  STARVING_DMG_SAN: 2,
+  DECAY: 15,     // 減少速度大幅アップ (5->15)
+  STARVING: 10,  // UI表示上の空腹ライン（ペナルティなし）
+  STUFFED: 85,   // 満腹ライン (学習効率低下)
+  STARVING_DMG_HP: 0,  // 飢餓ペナルティ廃止
+  STARVING_DMG_SAN: 0, // 飢餓ペナルティ廃止
+  STUFFED_PENALTY: 0.9 // 満腹ペナルティ緩和 (0.7 -> 0.9)
 };
 
 // バフ関連
