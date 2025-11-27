@@ -24,29 +24,53 @@ export const Button: React.FC<Props> = ({
   onInspect,
   ...props 
 }) => {
-  // Using clip-path for the sci-fi "cut corner" look
+  // Sci-fi corner cut using clip-path
   const clipPath = "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)";
   
-  const baseStyles = "relative font-bold flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:grayscale group overflow-hidden";
+  const baseStyles = `
+    relative font-bold flex items-center justify-center gap-2 
+    transition-all duration-200 
+    disabled:opacity-40 disabled:cursor-not-allowed disabled:grayscale 
+    group overflow-hidden transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]
+  `;
   
   const variants = {
-    primary: "bg-green-950 border border-green-600 text-green-400 hover:bg-green-900 hover:text-green-200 hover:border-green-400 hover:shadow-[0_0_15px_rgba(34,197,94,0.4)]",
-    secondary: "bg-blue-950 border border-blue-600 text-blue-400 hover:bg-blue-900 hover:text-blue-200 hover:border-blue-400 hover:shadow-[0_0_15px_rgba(59,130,246,0.4)]",
-    danger: "bg-red-950 border border-red-600 text-red-400 hover:bg-red-900 hover:text-red-200 hover:border-red-400 hover:shadow-[0_0_15px_rgba(220,38,38,0.4)]",
-    ghost: "bg-transparent border border-transparent text-gray-500 hover:text-gray-300 hover:bg-gray-900",
-    outline: "bg-transparent border border-gray-700 text-gray-400 hover:border-gray-500 hover:text-gray-200 hover:bg-gray-900"
+    primary: `
+      bg-green-900/30 border border-green-600/50 text-green-400 
+      hover:bg-green-800/50 hover:border-green-400 hover:text-green-100 
+      hover:shadow-[0_0_15px_rgba(34,197,94,0.3)]
+      backdrop-blur-sm
+    `,
+    secondary: `
+      bg-blue-900/30 border border-blue-600/50 text-blue-400 
+      hover:bg-blue-800/50 hover:border-blue-400 hover:text-blue-100 
+      hover:shadow-[0_0_15px_rgba(59,130,246,0.3)]
+      backdrop-blur-sm
+    `,
+    danger: `
+      bg-red-900/30 border border-red-600/50 text-red-400 
+      hover:bg-red-800/50 hover:border-red-400 hover:text-red-100 
+      hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]
+      backdrop-blur-sm
+    `,
+    outline: `
+      bg-transparent border border-gray-700 text-gray-400 
+      hover:border-gray-500 hover:text-gray-100 hover:bg-gray-800/50
+    `,
+    ghost: `
+      bg-transparent border border-transparent text-gray-500 
+      hover:text-gray-300 hover:bg-gray-900/30
+    `,
   };
 
   const sizes = {
-    sm: "fs-xxs py-1 px-2 min-h-[32px]",
-    md: "fs-xs py-2 px-3 min-h-[42px]",
-    lg: "fs-sm py-3 px-4 min-h-[52px]"
+    sm: "fs-xxs py-1.5 px-2 min-h-[34px]",
+    md: "fs-xs py-2.5 px-3 min-h-[44px]",
+    lg: "fs-sm py-3.5 px-4 min-h-[56px]"
   };
 
   const widthClass = fullWidth ? 'w-full' : '';
   const alignClass = subLabel ? 'items-start text-left' : 'items-center';
-  
-  // Add padding to right if inspect button is present to prevent overlap
   const inspectPadding = onInspect ? 'pr-8' : '';
 
   return (
@@ -56,20 +80,25 @@ export const Button: React.FC<Props> = ({
       style={variant !== 'ghost' ? { clipPath } : {}}
       {...props}
     >
-      {/* Hover Glitch Effect Bar */}
-      <div className="absolute top-0 left-0 w-1 h-full bg-current opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+      {/* Animated Glitch Bar */}
+      <div className="absolute top-0 left-0 w-1 h-full bg-current opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-[0_0_10px_currentColor]" />
 
-      {icon && <span className={`shrink-0 z-10 ${subLabel ? 'mt-0.5' : ''}`}>{icon}</span>}
+      {icon && <span className={`shrink-0 z-10 ${subLabel ? 'mt-0.5' : ''} group-hover:scale-110 transition-transform duration-200`}>{icon}</span>}
       
       <div className="flex flex-col overflow-hidden z-10 w-full">
-        <span className="truncate leading-tight w-full">{label}</span>
-        {subLabel && <span className="fs-xxs font-normal opacity-60 truncate font-mono mt-0.5 w-full">{subLabel}</span>}
+        <span className="truncate leading-tight w-full group-hover:text-shadow-glow transition-all">{label}</span>
+        {subLabel && (
+          <span className="fs-xxs font-normal opacity-60 truncate font-mono mt-0.5 w-full group-hover:opacity-90 transition-opacity">
+            {subLabel}
+          </span>
+        )}
       </div>
 
-      {/* Background Scanline for texture */}
+      {/* Background Texture */}
       <div className="absolute inset-0 bg-scanlines opacity-10 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out pointer-events-none" />
 
-      {/* Inspect Button (Optional) */}
+      {/* Inspect Button */}
       {onInspect && (
         <div 
           onClick={(e) => {
@@ -79,7 +108,7 @@ export const Button: React.FC<Props> = ({
           className="absolute right-0 top-0 bottom-0 w-8 flex items-center justify-center bg-black/20 hover:bg-white/20 border-l border-white/10 z-20 transition-colors cursor-pointer"
           title="詳細を確認"
         >
-          <Info size={14} className="opacity-70 group-hover:opacity-100" />
+          <Info size={14} className="opacity-50 group-hover:opacity-100 transition-opacity" />
         </div>
       )}
     </button>
