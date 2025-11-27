@@ -430,12 +430,12 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         label: 'リッチに作り込む（挑戦）',
         risk: 'high',
         description: 'GUI付き＋エラーハンドリング完備。成功すれば追加報酬＋評価。',
-        successRate: 50,
+        successRate: 40, // Lowered success rate from 50
         successEffect: {
-          money: 15000,
-          hp: -25,
+          money: 12000, // Reduced reward: 15000 -> 12000
+          hp: -30, // Increased cost: -25 -> -30
           sanity: 10,
-          satiety: -20, // High effort
+          satiety: -30, // Increased cost: -20 -> -30
           knowledge: { [SubjectId.ALGO]: KNOWLEDGE_GAINS.LARGE }
         },
         successLog: "「これは期待以上です！」追加報酬＋高評価レビューを獲得。やりがいを感じた。",
@@ -608,20 +608,21 @@ export const BRANCHING_EVENTS: GameEvent[] = [
       {
         id: 'opt_bug_report',
         label: '正式に報告する',
-        risk: 'low',
-        description: '報告書を作成して提出。堅実な対応。',
-        successRate: 90,
+        risk: 'high', // Increased risk display
+        description: '報告書を作成して提出。報奨金狙いだが、藪蛇になる可能性も。',
+        successRate: 60, // Reduced success rate: 90 -> 60
         successEffect: {
-          money: 20000,
-          relationships: { [RelationshipId.PROFESSOR]: REL_GAINS.LARGE },
+          money: 5000, // Reduced reward: 20000 -> 5000
+          relationships: { [RelationshipId.PROFESSOR]: REL_GAINS.MEDIUM },
           knowledge: { [SubjectId.ALGO]: KNOWLEDGE_GAINS.MEDIUM }
         },
-        successLog: "「素晴らしい！」情報セキュリティチームから感謝状＋報奨金を受け取った。",
+        successLog: "「助かったよ」システム管理者から感謝され、図書カード(換金済)を貰った。",
         failureEffect: {
-          sanity: -10,
-          hp: -5
+          sanity: -15,
+          hp: -5,
+          relationships: { [RelationshipId.PROFESSOR]: -5 }
         },
-        failureLog: "「既知の問題です」既に報告済みだった。徒労に終わった..."
+        failureLog: "「学生が勝手にスキャンするな！」逆に説教された。理不尽だ。"
       },
       {
         id: 'opt_bug_exploit',

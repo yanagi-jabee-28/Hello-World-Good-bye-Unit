@@ -13,20 +13,20 @@ export const ITEMS: Record<ItemId, Item> = {
   [ItemId.MINERAL_WATER]: {
     id: ItemId.MINERAL_WATER,
     name: 'ミネラルウォーター',
-    description: 'カフェイン濃度を中和(-50mg)し、リセットする。',
-    price: 110,
+    description: '口の中をさっぱりさせる。カフェインが少し抜ける。',
+    price: 120, // 110 -> 120
     effects: {
-      caffeine: -50,
-      hp: 5,
-      sanity: 2,
-      satiety: 8 // 水分だが多少お腹にたまる
+      caffeine: -15, // -50 -> -15: ガブ飲みしないと抜けないように変更
+      hp: 2, // 5 -> 2
+      sanity: 1, // 2 -> 1
+      satiety: 5 // 8 -> 5
     }
   },
   [ItemId.BLACK_COFFEE]: {
     id: ItemId.BLACK_COFFEE,
     name: '缶コーヒー(微糖)',
     description: '覚醒剤代わり。1本で覚醒状態(40mg~)へ。',
-    price: 160, // Increased: 150 -> 160
+    price: 160,
     effects: {
       caffeine: 50,
       hp: 2,
@@ -38,9 +38,9 @@ export const ITEMS: Record<ItemId, Item> = {
     id: ItemId.GUMMY_CANDY,
     name: 'ハードグミ',
     description: '噛むことでストレスを軽減。顎が疲れるくらいの弾力が良い。',
-    price: 180, // Increased: 160 -> 180
+    price: 180,
     effects: {
-      sanity: 15, // Buffed: 12 -> 15
+      sanity: 15,
       hp: 2,
       satiety: 18 // よく噛んで食べるので
     }
@@ -60,9 +60,9 @@ export const ITEMS: Record<ItemId, Item> = {
     id: ItemId.PROTEIN_BAR,
     name: 'プロテインバー',
     description: '手軽にタンパク質補給。勉強に必要なのは根性ではなく筋肉だ。',
-    price: 250, // Increased: 220 -> 250
+    price: 250,
     effects: {
-      hp: 35, // Buffed: 30 -> 35
+      hp: 35,
       satiety: 35 // 固形物としてしっかり
     }
   },
@@ -81,10 +81,10 @@ export const ITEMS: Record<ItemId, Item> = {
     id: ItemId.HIGH_CACAO_CHOCO,
     name: '高カカオチョコ',
     description: '脳のエネルギー源。苦味が意識を繋ぎ止める。',
-    price: 320, // Increased: 300 -> 320
+    price: 320,
     effects: {
       hp: 5,
-      sanity: 18, // Buffed: 15 -> 18
+      sanity: 18,
       caffeine: 15,
       satiety: 22 // 脂質
     }
@@ -93,7 +93,7 @@ export const ITEMS: Record<ItemId, Item> = {
     id: ItemId.CAFE_LATTE,
     name: 'カフェラテ',
     description: 'ミルクの優しさが荒んだ心を癒やす。バランスが良い。',
-    price: 380, // Increased: 350 -> 380
+    price: 380,
     effects: {
       caffeine: 30, 
       hp: 15,
@@ -116,7 +116,7 @@ export const ITEMS: Record<ItemId, Item> = {
     id: ItemId.ENERGY_DRINK,
     name: 'ZONe (Ver.Infinity)',
     description: 'デジタル没入エナジー。カフェインを大量摂取し、一気に集中モードへ。',
-    price: 550, // Increased significantly: 400 -> 550
+    price: 550,
     effects: {
       caffeine: 120,
       hp: 10,
@@ -128,10 +128,10 @@ export const ITEMS: Record<ItemId, Item> = {
     id: ItemId.HERBAL_TEA,
     name: '高級ハーブティー',
     description: 'カモミールとラベンダーの香り。カフェインを強力に排出(-100mg)。',
-    price: 600, // Increased: 450 -> 600 (Sanity is valuable)
+    price: 600,
     effects: {
       caffeine: -100,
-      sanity: 35, // Buffed: 30 -> 35
+      sanity: 35,
       hp: 5,
       satiety: 10 // 温かい飲み物
     }
@@ -140,9 +140,9 @@ export const ITEMS: Record<ItemId, Item> = {
     id: ItemId.CUP_RAMEN,
     name: '激辛カップ麺',
     description: '深夜の研究室の味。内臓への負担と引き換えに満足感を得る。',
-    price: 480, // Increased: 450 -> 480
+    price: 480,
     effects: {
-      hp: 55, // Buffed: 50 -> 55
+      hp: 55,
       sanity: 5,
       satiety: 75 // かなり重い
     }
@@ -152,7 +152,7 @@ export const ITEMS: Record<ItemId, Item> = {
     id: ItemId.HOT_EYE_MASK,
     name: 'ホットアイマスク',
     description: '目の疲れを癒やし、休息の質を高める。',
-    price: 1500, // Reverted to higher price: 1200 -> 1500
+    price: 1500,
     effects: {
       buffs: [
         {
@@ -169,9 +169,9 @@ export const ITEMS: Record<ItemId, Item> = {
     id: ItemId.EARPLUGS,
     name: '高性能耳栓',
     description: '世界のノイズを遮断し、内なる宇宙と対話する。',
-    price: 2200, // Increased: 1980 -> 2200
+    price: 2200,
     effects: {
-      sanity: 45 // Buffed: 40 -> 45
+      sanity: 45
     }
   },
   [ItemId.GIFT_SWEETS]: {
@@ -179,13 +179,13 @@ export const ITEMS: Record<ItemId, Item> = {
     name: '手土産スイーツ',
     description: 'デパ地下で買った高級菓子。目上の人への貢ぎ物として最強。',
     specialEffectDescription: '「先輩」または「教授」コマンドで使用。友好度大幅UP&成功確定',
-    price: 3500, // Increased: 3000 -> 3500
+    price: 3500,
   },
   [ItemId.GAMING_SUPPLEMENT]: {
     id: ItemId.GAMING_SUPPLEMENT,
     name: 'ゲーミングサプリ',
     description: '集中力ブースト。副作用で精神が少しずつ削れる。',
-    price: 4500, // Increased: 3800 -> 4500
+    price: 4500,
     effects: {
       buffs: [
         {
@@ -198,7 +198,7 @@ export const ITEMS: Record<ItemId, Item> = {
         {
           name: '反動',
           type: 'SANITY_DRAIN',
-          value: 4, // Increased drain: 3 -> 4
+          value: 4,
           duration: 4,
           description: '毎ターンSAN-4'
         }
@@ -212,13 +212,13 @@ export const ITEMS: Record<ItemId, Item> = {
     name: '「わかる」本',
     description: '試験直前の駆け込み寺。専門書は高いが背に腹は代えられない。',
     specialEffectDescription: '最低点数の科目+15 (使い切り)',
-    price: 10800, // Increased: 8800 -> 10800 (Hard to buy with just part-time job)
+    price: 10800,
   },
   [ItemId.SMART_DRUG]: {
     id: ItemId.SMART_DRUG,
     name: '怪しいサプリ',
     description: '脳内物質を強制分泌させる未承認薬。学習効率が劇的に向上するが、反動も大きい。',
-    price: 15800, // Increased: 12800 -> 15800
+    price: 15800,
     effects: {
       hp: -40,
       buffs: [
@@ -232,7 +232,7 @@ export const ITEMS: Record<ItemId, Item> = {
         {
           name: '精神崩壊',
           type: 'SANITY_DRAIN',
-          value: 12, // Increased drain: 10 -> 12
+          value: 12,
           duration: 3,
           description: '毎ターンSAN-12'
         }

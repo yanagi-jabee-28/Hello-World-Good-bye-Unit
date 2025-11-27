@@ -14,28 +14,28 @@ export const REL_TIERS = {
 
 // --- REWARD VALUES (報酬量) ---
 export const KNOWLEDGE_GAINS = {
-  TINY: 4,     // Slightly boosted
-  SMALL: 7,    // Boosted: 5 -> 7
-  MEDIUM: 12,  // Boosted: 10 -> 12
-  LARGE: 18,   // Boosted: 15 -> 18
-  HUGE: 25,    // Boosted: 20 -> 25
+  TINY: 4,
+  SMALL: 7,
+  MEDIUM: 12,
+  LARGE: 18,
+  HUGE: 25,
 };
 
 export const RECOVERY_VALS = {
-  MINOR: 5,
-  SMALL: 10,
-  MODERATE: 20, // Boosted: 15 -> 20 (Events should heal more to counter stricter economy)
-  LARGE: 30,    // Boosted: 20 -> 30
-  HUGE: 50,     // Boosted: 30 -> 50
+  MINOR: 3,     // 5 -> 3
+  SMALL: 8,     // 10 -> 8
+  MODERATE: 15, // 20 -> 15 (回復量を抑制)
+  LARGE: 25,    // 30 -> 25
+  HUGE: 40,     // 50 -> 40
 };
 
 export const REL_GAINS = {
-  SMALL: 3,
-  Qm: 5,     // Quarter match (minor interaction)
-  MEDIUM: 8,
-  LARGE: 12, // Boosted: 10 -> 12
-  HUGE: 20,  // Boosted: 15 -> 20
-  XY: 25,    // Gift bonus
+  SMALL: 2,    // 3 -> 2
+  Qm: 4,       // 5 -> 4
+  MEDIUM: 7,   // 8 -> 7
+  LARGE: 10,   // 12 -> 10 (友好度を上げにくくする)
+  HUGE: 18,    // 20 -> 18
+  XY: 25,      // Gift bonus
 };
 
 // --- PROBABILITY WEIGHTS (発生重み) ---
