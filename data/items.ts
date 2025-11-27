@@ -5,8 +5,15 @@ export const ITEMS: Record<ItemId, Item> = {
   [ItemId.USB_MEMORY]: {
     id: ItemId.USB_MEMORY,
     name: '先輩のUSB',
-    description: '過去問データが入っている...かもしれない。',
-    specialEffectDescription: '確率(60%)で科目+20 / 失敗でSAN-20 (使い切り)',
+    description: '過去問データが入っている...かもしれない。解析にはリスクが伴う。',
+    specialEffectDescription: '確率(60%)で科目+20 / 失敗でSAN-20 (使い切り・重複可)',
+    price: 99999, // 非売品
+  },
+  [ItemId.VERIFIED_PAST_PAPERS]: {
+    id: ItemId.VERIFIED_PAST_PAPERS,
+    name: '検証済み過去問',
+    description: '有志によって解答が検証された信頼できる過去問データ。',
+    specialEffectDescription: '確率(95%)で科目+30 / 学習効率永続UP (使い切り・重複可)',
     price: 99999, // 非売品
   },
   // --- Level 1: Cheap & Light Effect ---

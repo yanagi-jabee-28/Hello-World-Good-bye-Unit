@@ -211,7 +211,7 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect }) => {
                NO DATA
              </div>
           ) : (
-            <div className="grid grid-cols-2 md:flex md:flex-col gap-1.5">
+            <div className="grid grid-cols-2 md:flex md:flex-col gap-1.5 max-h-[180px] overflow-y-auto custom-scrollbar pr-1">
               {ownedItems.map((itemId) => {
                 const item = ITEMS[itemId];
                 const shortEffect = getShortEffectString(item);

@@ -40,6 +40,7 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
 
   let logType: LogEntry['type'] = 'info';
   let baseLog = ACTION_LOGS.ITEM.USE_DEFAULT(item.name);
+  let itemSuccess = false;
   
   // --- 特殊効果 & フレーバーテキスト (Custom Logic) ---
   switch (itemId) {
@@ -109,11 +110,9 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
           
           effect = mergeEffects(effect, { knowledge: { [target]: kDelta } });
           
-          baseLog = `【解析成功】${item.name}から${SUBJECTS[target].name}の「神過去問」を発掘！これが先輩たちの遺産か...！`;
+          baseLog = `【解析成功】${item.name}から${SUBJECTS[target].name}の「神過去問」を発掘！これが先輩たちの遺産か...！(学習効率UP)`;
           logType = 'success';
-          // Note: hasPastPapers flag needs manual update or effect extension.
-          // For simplicity, we'll update state manually after applyEffect or just assume log covers it.
-          // Better to add flags to GameEventEffect in future.
+          itemSuccess = true;
        } else {
           effect = mergeEffects(effect, { sanity: -20 });
           baseLog = `【解析失敗】${item.name}の中身は...大量のウィルス入りファイルだった。PCがフリーズし、精神的ダメージを受けた。`;
@@ -121,13 +120,32 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
        }
        break;
     }
+    case ItemId.VERIFIED_PAST_PAPERS: {
+        // Very high success rate, but still check rng for flavor
+        if (rng.chance(95)) {
+            const target = rng.pick(Object.values(SubjectId))!;
+            const kDelta = 30;
+            
+            effect = mergeEffects(effect, { knowledge: { [target]: kDelta } });
+            baseLog = `【検証済み】${item.name}を活用した。${SUBJECTS[target].name}の出題傾向が完全に理解できた！(学習効率UP)`;
+            logType = 'success';
+            itemSuccess = true;
+        } else {
+            // Rare failure (file corruption etc)
+            effect = mergeEffects(effect, { sanity: -10 });
+            baseLog = `【破損】${item.name}を開こうとしたが、ファイルが破損していたようだ... 期待が裏切られた。`;
+            logType = 'warning';
+        }
+        break;
+    }
   }
 
   const { newState, messages } = applyEffect(state, effect);
 
-  // Special State Updates
-  if (itemId === ItemId.USB_MEMORY && logType === 'success') {
-    newState.flags.hasPastPapers = true;
+  // Special State Updates: Increment Past Papers Counter
+  // If success, increment counter
+  if (itemSuccess) {
+    newState.flags.hasPastPapers = (newState.flags.hasPastPapers || 0) + 1;
   }
 
   const details = joinMessages(messages, ', ');

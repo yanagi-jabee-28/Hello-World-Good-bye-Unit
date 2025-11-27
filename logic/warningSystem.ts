@@ -114,7 +114,8 @@ export function getExamWarnings(state: GameState): Warning[] {
       });
     }
     
-    if (!hasPastPapers) {
+    // Check number instead of boolean
+    if (!hasPastPapers || hasPastPapers === 0) {
       warnings.push({
         severity: 'info',
         icon: '📚',

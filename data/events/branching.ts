@@ -100,7 +100,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         id: 'opt_senior_past_paper',
         label: '過去問ください！',
         risk: 'low',
-        description: '先輩のコネに頼る。苦手科目の対策データを入手する。',
+        description: '先輩のコネに頼る。何度でも入手できるチャンス。',
         successRate: 60,
         successEffect: {
           inventory: { [ItemId.USB_MEMORY]: 1 },
@@ -188,6 +188,23 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         successLog: "一人では詰まっていた箇所も、教え合うことで理解できた。",
         failureEffect: { sanity: -5 },
         failureLog: "結局お喋りして終わってしまった..."
+      },
+      // New Option: Ask for materials
+      {
+        id: 'opt_friend_ask_materials',
+        label: '資料をねだる',
+        risk: 'high',
+        description: '友達のツテを頼って過去問を探してもらう。',
+        successRate: 50,
+        successEffect: {
+            inventory: { [ItemId.VERIFIED_PAST_PAPERS]: 1 },
+            relationships: { [RelationshipId.FRIEND]: REL_GAINS.SMALL }
+        },
+        successLog: "「しょうがないなー」友人が入手した『検証済み過去問』を分けてくれた！神！",
+        failureEffect: {
+            relationships: { [RelationshipId.FRIEND]: -5 }
+        },
+        failureLog: "「そんな都合のいいものないよ」と呆れられた。"
       },
       {
         id: 'opt_friend_random',

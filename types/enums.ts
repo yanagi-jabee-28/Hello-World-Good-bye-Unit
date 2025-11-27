@@ -32,6 +32,7 @@ export enum GameStatus {
 
 export enum ItemId {
   USB_MEMORY = 'USB_MEMORY',
+  VERIFIED_PAST_PAPERS = 'VERIFIED_PAST_PAPERS', // New: High success rate
   MINERAL_WATER = 'MINERAL_WATER', // Decaf / HP small
   BLACK_COFFEE = 'BLACK_COFFEE',
   GUMMY_CANDY = 'GUMMY_CANDY', // Sanity small

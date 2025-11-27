@@ -19,7 +19,7 @@ export interface ExamMetrics {
   
   // 人脈補正
   professorBonus: number;        // 教授友好度 → 重点範囲リーク (1.0 ~ 1.2)
-  seniorLeakBonus: number;       // 過去問効果 (1.0 ~ 1.1)
+  seniorLeakBonus: number;       // 過去問効果 (1.0 ~ 1.3+)
   
   // 狂気システム
   madnessStack: number;          // 累積精神負荷
@@ -125,8 +125,20 @@ export function evaluateExam(
   const professorBonus = 1.0 + Math.min(0.15, profRel / 600); // 最大1.15倍 (少しマイルドに)
 
   const seniorRel = Object.values(state.relationships)[1] || 0; // SENIOR
-  const hasPastPapers = state.flags.hasPastPapers || false;
-  const seniorLeakBonus = hasPastPapers ? 1.15 : (1.0 + Math.min(0.05, seniorRel / 1000));
+  
+  // Changed: Scale bonus based on number of past papers
+  const papersCount = state.flags.hasPastPapers || 0;
+  let seniorLeakBonus = 1.0;
+  
+  if (papersCount > 0) {
+    // Base 1.10 for first paper, then small increments
+    seniorLeakBonus = 1.10 + (papersCount - 1) * 0.05;
+    // Cap at reasonable max (e.g., 1.3x)
+    seniorLeakBonus = Math.min(1.3, seniorLeakBonus);
+  } else {
+    // Slight bonus for relationship if no papers
+    seniorLeakBonus = 1.0 + Math.min(0.05, seniorRel / 1000);
+  }
 
   // === 4. 狂気システム ===
   const madnessStack = state.flags.madnessStack || 0;

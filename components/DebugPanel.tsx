@@ -95,8 +95,8 @@ export const DebugPanel: React.FC<Props> = ({ state }) => {
             <span className="text-orange-400">{state.flags.caffeineDependent ? 'YES' : 'NO'}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-400">過去問入手:</span>
-            <span className="text-green-400">{state.flags.hasPastPapers ? 'YES' : 'NO'}</span>
+            <span className="text-gray-400">過去問入手数:</span>
+            <span className="text-green-400">{state.flags.hasPastPapers || 0} (Stack)</span>
           </div>
         </div>
       </div>

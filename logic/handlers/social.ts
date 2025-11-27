@@ -86,9 +86,8 @@ export const handleAskSenior = (state: GameState): GameState => {
     else if (rand < 0.6) receivedItem = ItemId.REFERENCE_BOOK;
     else receivedItem = ItemId.ENERGY_DRINK;
 
-    if (receivedItem === ItemId.USB_MEMORY && currentState.flags.hasPastPapers) {
-        receivedItem = ItemId.ENERGY_DRINK; 
-    }
+    // REMOVED: Check preventing duplicate USB
+    // if (receivedItem === ItemId.USB_MEMORY && currentState.flags.hasPastPapers) { ... }
 
     const effect: GameEventEffect = {
       inventory: { 
@@ -112,48 +111,34 @@ export const handleAskSenior = (state: GameState): GameState => {
       const pastPaperOpt = menuEvent.options?.find((o: any) => o.id === 'opt_senior_past_paper');
       
       if (pastPaperOpt) {
-        if (currentState.flags.hasPastPapers) {
-           if (rng.chance(50)) {
-              pastPaperOpt.successEffect = {
-                inventory: { [ItemId.REFERENCE_BOOK]: 1 },
-                knowledge: { [SubjectId.CIRCUIT]: KNOWLEDGE_GAINS.MEDIUM },
-                relationships: { [RelationshipId.SENIOR]: REL_GAINS.MEDIUM }
-              };
-              pastPaperOpt.successLog = "「過去問はもう持ってるだろ？これでも読んどけ」と参考書を貸してくれた。";
-           } else {
-              pastPaperOpt.successEffect = {
-                inventory: { [ItemId.ENERGY_DRINK]: 2 },
-                relationships: { [RelationshipId.SENIOR]: REL_GAINS.MEDIUM }
-              };
-              pastPaperOpt.successLog = "「データは渡したろ？あとは気合だ」エナドリを2本押し付けられた。";
-           }
-        } else {
-           const rand = rng.random();
-           if (rand < 0.4) {
-              pastPaperOpt.successLog = "「しょうがねぇなぁ」秘蔵のフォルダを共有してくれた。神データだ！";
-           } 
-           else if (rand < 0.7) {
-              pastPaperOpt.successEffect = {
-                inventory: { [ItemId.REFERENCE_BOOK]: 1 },
-                knowledge: { [SubjectId.CIRCUIT]: KNOWLEDGE_GAINS.MEDIUM },
-                relationships: { [RelationshipId.SENIOR]: REL_GAINS.MEDIUM }
-              };
-              pastPaperOpt.successLog = "「これやるよ。俺にはもう不要だからな」使い込まれた参考書を譲り受けた！";
-           } 
-           else if (rand < 0.9) {
-              pastPaperOpt.successEffect = {
-                inventory: { [ItemId.ENERGY_DRINK]: 1, [ItemId.HOT_EYE_MASK]: 1 },
-                relationships: { [RelationshipId.SENIOR]: REL_GAINS.Qm }
-              };
-              pastPaperOpt.successLog = "「過去問はないけど、これで気合入れろよ」差し入れを貰った。";
-           } 
-           else {
-              pastPaperOpt.successEffect = {
-                knowledge: { [SubjectId.CIRCUIT]: KNOWLEDGE_GAINS.HUGE },
-                relationships: { [RelationshipId.SENIOR]: REL_GAINS.MEDIUM }
-              };
-              pastPaperOpt.successLog = "「データは無いけど、ここ絶対出るぞ」先輩がノートを見せてくれた。";
-           }
+        // UPDATED: Simplified logic to always allow trying for papers, but varying results
+        const rand = rng.random();
+        
+        if (rand < 0.4) {
+           pastPaperOpt.successLog = "「しょうがねぇなぁ」秘蔵のフォルダを共有してくれた。神データだ！";
+           // successEffect is defined in events/branching.ts and gives USB_MEMORY
+        } 
+        else if (rand < 0.7) {
+           pastPaperOpt.successEffect = {
+              inventory: { [ItemId.REFERENCE_BOOK]: 1 },
+              knowledge: { [SubjectId.CIRCUIT]: KNOWLEDGE_GAINS.MEDIUM },
+              relationships: { [RelationshipId.SENIOR]: REL_GAINS.MEDIUM }
+           };
+           pastPaperOpt.successLog = "「これやるよ。俺にはもう不要だからな」使い込まれた参考書を譲り受けた！";
+        } 
+        else if (rand < 0.9) {
+           pastPaperOpt.successEffect = {
+              inventory: { [ItemId.ENERGY_DRINK]: 1, [ItemId.HOT_EYE_MASK]: 1 },
+              relationships: { [RelationshipId.SENIOR]: REL_GAINS.Qm }
+           };
+           pastPaperOpt.successLog = "「過去問はないけど、これで気合入れろよ」差し入れを貰った。";
+        } 
+        else {
+           pastPaperOpt.successEffect = {
+              knowledge: { [SubjectId.CIRCUIT]: KNOWLEDGE_GAINS.HUGE },
+              relationships: { [RelationshipId.SENIOR]: REL_GAINS.MEDIUM }
+           };
+           pastPaperOpt.successLog = "「データは無いけど、ここ絶対出るぞ」先輩がノートを見せてくれた。";
         }
       }
 
@@ -166,7 +151,7 @@ export const handleAskSenior = (state: GameState): GameState => {
   const newState = executeEvent(currentState, 'action_senior', ACTION_LOGS.SOCIAL.SENIOR_ABSENT);
 
   if (newState.eventHistory[0] === 'senior_past_exam') {
-    newState.flags.hasPastPapers = true;
+    newState.flags.hasPastPapers = (newState.flags.hasPastPapers || 0) + 1;
   }
 
   return newState;
@@ -188,7 +173,7 @@ export const handleRelyFriend = (state: GameState): GameState => {
   const newState = executeEvent(currentState, 'action_friend', ACTION_LOGS.SOCIAL.FRIEND_BUSY);
 
   if (newState.eventHistory[0] === 'friend_cloud_leak') {
-    newState.flags.hasPastPapers = true;
+    newState.flags.hasPastPapers = (newState.flags.hasPastPapers || 0) + 1;
   }
 
   return newState;

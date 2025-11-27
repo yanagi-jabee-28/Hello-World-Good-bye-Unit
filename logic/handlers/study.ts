@@ -123,6 +123,13 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
     baseLog += ACTION_LOGS.STUDY.MADNESS;
   }
 
+  // --- Past Papers Bonus (Stacking) ---
+  if ((state.flags.hasPastPapers || 0) > 0) {
+    const paperBonus = 1.0 + (state.flags.hasPastPapers * 0.1); // +10% per stack
+    rawEfficiency *= paperBonus;
+    baseLog += ` [過去問効果 x${paperBonus.toFixed(1)}]`;
+  }
+
   // Apply Buffs
   const studyBuffs = state.activeBuffs.filter(b => b.type === 'STUDY_EFFICIENCY');
   if (studyBuffs.length > 0) {

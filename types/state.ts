@@ -28,7 +28,7 @@ export interface GameFlags {
   sleepDebt: number;       // 睡眠負債 (0-5+)
   lastSleepQuality: number;// 前回の睡眠の質 (0.5-1.0)
   caffeineDependent: boolean; // カフェイン依存症フラグ
-  hasPastPapers: boolean;  // 過去問入手フラグ
+  hasPastPapers: number;   // 過去問入手数 (Stackable)
   madnessStack: number;    // 狂気スタック (0-4)
   examRisk: boolean;       // 最終日無理をしたか
 }

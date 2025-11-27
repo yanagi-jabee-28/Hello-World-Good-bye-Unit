@@ -52,7 +52,7 @@ export const INITIAL_STATE: GameState = {
     sleepDebt: 0,
     lastSleepQuality: 1.0,
     caffeineDependent: false,
-    hasPastPapers: false,
+    hasPastPapers: 0, // Initialize as number
     madnessStack: 0,
     examRisk: false,
   },
