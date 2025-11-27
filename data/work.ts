@@ -14,7 +14,7 @@ export interface WorkConfig {
 const MORNING_CONFIG: WorkConfig = {
   label: "早朝・午前シフト",
   description: "軽作業",
-  salary: 2200,
+  salary: 2800,
   hpCost: 15,
   sanityCost: 5,
   logText: "【早朝シフト】眠い目をこすりながら搬入作業をこなした。",

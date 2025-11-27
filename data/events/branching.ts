@@ -483,7 +483,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         description: '確実に稼げるが、時間と体力を消費。',
         successRate: 100,
         successEffect: {
-          money: 5000,
+          money: 3000, // Balance Update: 5000 -> 3000 (Unskilled labor nerf)
           hp: -20,
           sanity: -10,
           satiety: -SATIETY_CONSUMPTION.WORK
@@ -503,7 +503,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
           sanity: 15,
           knowledge: { [SubjectId.ALGO]: KNOWLEDGE_GAINS.MEDIUM }
         },
-        successLog: "完璧に動作。1時間で終わらせて残り時間はネットサーフィン。天才か？",
+        successLog: "完璧な自動化スクリプトが完成。1時間で終わらせて残り時間はネットサーフィン。実質時給¥5,000！",
         failureEffect: {
           sanity: -20,
           hp: -10
