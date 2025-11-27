@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { GameState, ItemId, SubjectId, TimeSlot } from '../types';
+import { GameState, ItemId, SubjectId, TimeSlot, RelationshipId } from '../types';
 import { SUBJECTS } from '../data/subjects';
 import { ITEMS } from '../data/items';
 import { getAvailability, getStudyHint } from '../logic/advisor';
@@ -9,6 +9,7 @@ import { getShortEffectString } from '../utils/logFormatter';
 import { getExamWarnings } from '../logic/warningSystem';
 import { BookOpen, Users, Gamepad2, Package, School, GraduationCap, UserPlus, AlertTriangle, ShoppingCart, Briefcase, Bed, Sun, Moon, BatteryCharging, Ban, Zap } from 'lucide-react';
 import { Button } from './ui/Button';
+import { ProgressButton } from './ui/ProgressButton';
 import { Badge } from './ui/Badge';
 import { CollapsibleSection } from './ui/CollapsibleSection';
 
@@ -71,15 +72,17 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect }) => {
   const renderAcademic = (isMobile: boolean = false) => (
     <div className="space-y-1.5">
       {Object.values(SUBJECTS).map((sub) => (
-        <Button
+        <ProgressButton
           key={sub.id}
           onClick={() => actions.study(sub.id)}
           label={sub.name}
           subLabel={`Difficulty: ${sub.difficulty}x`}
           icon={<School size={14} />}
-          variant="primary"
-          fullWidth
-          size={isMobile ? "lg" : "sm"}
+          progress={state.knowledge[sub.id]}
+          maxValue={100}
+          className={isMobile ? "min-h-[52px]" : "min-h-[48px]"}
+          ariaLabel={`${sub.name}を勉強する。現在の理解度 ${state.knowledge[sub.id]}%`}
+          variant="default"
         />
       ))}
     </div>
@@ -121,39 +124,43 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect }) => {
 
   const renderSocial = (isMobile: boolean = false) => (
     <div className="space-y-1.5">
-      <Button
+      <ProgressButton
         onClick={actions.askProfessor}
         disabled={!isProfAvailable}
         label="教授に質問"
         subLabel={isProfAvailable ? "AVAILABLE" : "OFFLINE"}
         icon={<GraduationCap size={14} />}
-        variant={isProfAvailable ? "outline" : "ghost"}
-        className={isProfAvailable ? "border-indigo-800 text-indigo-400 hover:border-indigo-600" : ""}
-        fullWidth
-        size={isMobile ? "lg" : "sm"}
+        progress={state.relationships[RelationshipId.PROFESSOR]}
+        maxValue={100}
+        className={isMobile ? "min-h-[52px]" : "min-h-[48px]"}
+        ariaLabel={`教授に質問する。友好度 ${state.relationships[RelationshipId.PROFESSOR]}%`}
+        variant="professor"
       />
-      <Button
+      <ProgressButton
         onClick={actions.askSenior}
         disabled={!isSeniorAvailable}
         label="先輩を頼る"
         subLabel={isSeniorAvailable ? "AVAILABLE" : "OFFLINE"}
         icon={<Users size={14} />}
-        variant={isSeniorAvailable ? "outline" : "ghost"}
-        className={isSeniorAvailable ? "border-purple-800 text-purple-400 hover:border-purple-600" : ""}
-        fullWidth
-        size={isMobile ? "lg" : "sm"}
+        progress={state.relationships[RelationshipId.SENIOR]}
+        maxValue={100}
+        className={isMobile ? "min-h-[52px]" : "min-h-[48px]"}
+        ariaLabel={`先輩を頼る。友好度 ${state.relationships[RelationshipId.SENIOR]}%`}
+        variant="senior"
       />
-      <Button
+      <ProgressButton
         onClick={actions.relyFriend}
         disabled={!isFriendAvailable}
         label="友人と協力"
         subLabel={isFriendAvailable ? "AVAILABLE" : "SLEEPING"}
         icon={<UserPlus size={14} />}
-        variant={isFriendAvailable ? "outline" : "ghost"}
-        className={isFriendAvailable ? "border-pink-800 text-pink-400 hover:border-pink-600" : ""}
-        fullWidth
-        size={isMobile ? "lg" : "sm"}
+        progress={state.relationships[RelationshipId.FRIEND]}
+        maxValue={100}
+        className={isMobile ? "min-h-[52px]" : "min-h-[48px]"}
+        ariaLabel={`友人と協力する。友好度 ${state.relationships[RelationshipId.FRIEND]}%`}
+        variant="friend"
       />
+      {/* Escapism uses standard button as it doesn't track a specific progress bar */}
       <Button
         onClick={actions.escapism}
         label="現実逃避"
