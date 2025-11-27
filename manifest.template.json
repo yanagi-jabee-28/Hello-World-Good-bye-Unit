@@ -6,8 +6,8 @@
   "background_color": "#050505",
   "display": "standalone",
   "orientation": "portrait",
-  "start_url": "/Hello-World-Good-bye-Unit/",
-  "scope": "/Hello-World-Good-bye-Unit/",
+  "start_url": "__BASE_URL__",
+  "scope": "__BASE_URL__",
   "icons": [
     {
       "src": "icon.svg",

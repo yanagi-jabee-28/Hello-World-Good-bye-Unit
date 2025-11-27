@@ -1,7 +1,7 @@
 // Service Worker for offline support and PWA installability
 const CACHE_NAME = 'rsa-adv-v1';
-// Assets cached - use explicit repo subpath for GitHub Pages hosting
-const BASE = '/Hello-World-Good-bye-Unit';
+// Assets cached - BASE will be replaced during build
+const BASE = '__BASE_URL__'.replace(/\/$/, ''); // Remove trailing slash
 const ASSETS = [
   `${BASE}/`,
   `${BASE}/index.html`,
