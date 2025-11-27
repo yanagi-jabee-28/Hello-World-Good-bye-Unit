@@ -2,7 +2,7 @@
 import { GameState, TimeSlot } from '../types';
 import { clamp, chance } from '../utils/common';
 import { pushLog } from './stateHelpers';
-import { CAFFEINE_DECAY, CAFFEINE_THRESHOLDS, EVENT_CONSTANTS, SATIETY_CONSTANTS } from '../config/gameConstants';
+import { CAFFEINE_DECAY, CAFFEINE_THRESHOLDS, EVENT_CONSTANTS, SATIETY_CONSTANTS, SATIETY_CONSUMPTION } from '../config/gameConstants';
 import { getNextTimeSlot } from './time';
 import { executeEvent } from './eventManager';
 import { ACTION_LOGS } from '../data/constants/logMessages';
@@ -49,8 +49,12 @@ export const processTurnEnd = (state: GameState, isResting: boolean = false): Ga
   // 4. カフェインの自然減衰
   newState.caffeine = clamp(newState.caffeine - CAFFEINE_DECAY, 0, 200);
 
-  // 5. 満腹度の自然減少 (ペナルティなし、間食制限用)
-  newState.satiety = clamp(newState.satiety - SATIETY_CONSTANTS.DECAY, 0, newState.maxSatiety);
+  // 5. 満腹度の自然減少 (行動による消費が主、ここは基礎代謝のみ)
+  const baseSatietyDecay = state.timeSlot === TimeSlot.LATE_NIGHT 
+    ? Math.floor(SATIETY_CONSTANTS.DECAY * SATIETY_CONSUMPTION.LATE_NIGHT_MULT)
+    : SATIETY_CONSTANTS.DECAY;
+  
+  newState.satiety = clamp(newState.satiety - baseSatietyDecay, 0, newState.maxSatiety);
   
   // 6. カフェイン過剰摂取ダメージ
   if (newState.caffeine >= CAFFEINE_THRESHOLDS.ZONE) {

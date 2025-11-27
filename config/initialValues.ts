@@ -24,7 +24,7 @@ export const INITIAL_STATE: GameState = {
   sanity: 100,
   maxSanity: 100,
   caffeine: 0,
-  satiety: 50, // Normal start
+  satiety: 20, // Reduced from 50 to 20 (Hungry start)
   maxSatiety: 100,
   knowledge: { ...INIT_KNOWLEDGE },
   relationships: { ...INIT_RELATIONSHIPS },

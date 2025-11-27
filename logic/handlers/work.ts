@@ -1,9 +1,9 @@
 
-import { GameState, LogEntry, GameEventEffect } from '../../types';
+import { GameState, LogEntry, GameEventEffect, TimeSlot } from '../../types';
 import { joinMessages } from '../../utils/logFormatter';
 import { pushLog } from '../stateHelpers';
 import { getWorkConfig } from '../../data/work';
-import { CAFFEINE_THRESHOLDS } from '../../config/gameConstants';
+import { CAFFEINE_THRESHOLDS, SATIETY_CONSUMPTION } from '../../config/gameConstants';
 import { selectEvent, recordEventOccurrence } from '../eventManager';
 import { ALL_EVENTS } from '../../data/events';
 import { applyEffect, mergeEffects } from '../effectProcessor';
@@ -26,11 +26,17 @@ export const handleWork = (state: GameState): GameState => {
   // 3. 基本パラメータの計算
   const config = getWorkConfig(state.timeSlot);
   
+  let satietyCost = SATIETY_CONSUMPTION.WORK;
+  if (state.timeSlot === TimeSlot.LATE_NIGHT) {
+    satietyCost = Math.floor(satietyCost * SATIETY_CONSUMPTION.LATE_NIGHT_MULT);
+  }
+
   // 基本効果オブジェクトを作成
   const baseEffect: GameEventEffect = {
     money: config.salary,
     hp: -config.hpCost,
-    sanity: -config.sanityCost
+    sanity: -config.sanityCost,
+    satiety: -satietyCost
   };
 
   // カフェイン補正
@@ -39,10 +45,12 @@ export const handleWork = (state: GameState): GameState => {
     baseEffect.money = Math.floor((baseEffect.money || 0) * 1.5);
     baseEffect.hp = Math.floor((baseEffect.hp || 0) * 1.5);
     baseEffect.sanity = Math.floor((baseEffect.sanity || 0) * 1.5);
+    if (baseEffect.satiety) baseEffect.satiety = Math.floor(baseEffect.satiety * SATIETY_CONSUMPTION.CAFFEINE_TOXIC_MULT);
     caffeineMsg = "中毒稼働(報酬UP/消耗大)";
   } else if (state.caffeine >= CAFFEINE_THRESHOLDS.ZONE) {
     baseEffect.money = Math.floor((baseEffect.money || 0) * 1.3);
     baseEffect.hp = Math.floor((baseEffect.hp || 0) * 1.2);
+    if (baseEffect.satiety) baseEffect.satiety = Math.floor(baseEffect.satiety * SATIETY_CONSUMPTION.CAFFEINE_ZONE_MULT);
     caffeineMsg = "ZONE稼働(報酬UP)";
   } else if (state.caffeine >= CAFFEINE_THRESHOLDS.AWAKE) {
     baseEffect.money = Math.floor((baseEffect.money || 0) * 1.1);

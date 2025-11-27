@@ -1,6 +1,7 @@
 
 import { GameEvent, RelationshipId, SubjectId, ItemId, TimeSlot } from '../../types';
 import { WEIGHTS, COOLDOWNS, REL_TIERS, RECOVERY_VALS, KNOWLEDGE_GAINS, REL_GAINS } from '../../config/gameBalance';
+import { SATIETY_CONSUMPTION } from '../../config/gameConstants';
 
 export const BRANCHING_EVENTS: GameEvent[] = [
   // --- NEW: INTERACTION MENUS (Triggered directly by handlers) ---
@@ -89,6 +90,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         successEffect: {
           hp: RECOVERY_VALS.LARGE,
           sanity: RECOVERY_VALS.SMALL,
+          satiety: 60, // Meal
           relationships: { [RelationshipId.SENIOR]: REL_GAINS.MEDIUM }
         },
         successLog: "学食で一番高い定食を奢ってもらった。「しっかり食えよ！」"
@@ -151,6 +153,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         successRate: 100,
         successEffect: {
           hp: RECOVERY_VALS.LARGE,
+          satiety: -SATIETY_CONSUMPTION.REST,
           relationships: { [RelationshipId.FRIEND]: REL_GAINS.Qm }
         },
         successLog: "ダラダラと過ごして体力を回復した。"
@@ -163,6 +166,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         successRate: 100,
         successEffect: {
           sanity: RECOVERY_VALS.LARGE,
+          satiety: -SATIETY_CONSUMPTION.ESCAPISM,
           relationships: { [RelationshipId.FRIEND]: REL_GAINS.Qm }
         },
         successLog: "愚痴を言い合ってスッキリした。"
@@ -175,6 +179,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         successRate: 90,
         successEffect: {
           knowledge: { [SubjectId.HUMANITIES]: KNOWLEDGE_GAINS.MEDIUM },
+          satiety: -SATIETY_CONSUMPTION.STUDY,
           relationships: { [RelationshipId.FRIEND]: REL_GAINS.MEDIUM }
         },
         successLog: "一人でやるより捗った気がする。",
@@ -213,7 +218,8 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         successEffect: {
           relationships: { [RelationshipId.PROFESSOR]: 8 },
           hp: -10,
-          sanity: -5
+          sanity: -5,
+          satiety: -SATIETY_CONSUMPTION.WORK
         },
         successLog: "数時間かけてデータを整理した。教授から感謝され、お茶をご馳走になった。"
       },
@@ -226,13 +232,15 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         successEffect: {
           relationships: { [RelationshipId.PROFESSOR]: 25 },
           knowledge: { [SubjectId.ALGO]: 15 },
-          sanity: 10
+          sanity: 10,
+          satiety: -SATIETY_CONSUMPTION.STUDY
         },
         successLog: "完璧な自動化スクリプトを提出した！「素晴らしい！君は天才か？」教授は大興奮だ。",
         failureEffect: {
           relationships: { [RelationshipId.PROFESSOR]: -10 },
           sanity: -20,
-          hp: -15
+          hp: -15,
+          satiety: -SATIETY_CONSUMPTION.WORK
         },
         failureLog: "バグで教授の大切なデータを一部破損させてしまった...。雷が落ちる。"
       },
@@ -268,13 +276,15 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         successRate: 50,
         successEffect: {
           money: 5000,
+          satiety: -10,
           relationships: { [RelationshipId.SENIOR]: 10 }
         },
         successLog: "予想外に上手くいった！割の良いバイトだった。",
         failureEffect: {
           hp: -15,
           money: -1000,
-          sanity: -10
+          sanity: -10,
+          satiety: -15
         },
         failureLog: "完全に騙された。タダ働きさせられた挙句、経費を引かれた..."
       },
@@ -310,6 +320,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         successEffect: {
           sanity: 30,
           hp: -20,
+          satiety: -SATIETY_CONSUMPTION.SOCIAL,
           relationships: { [RelationshipId.FRIEND]: 10 }
         },
         successLog: "延々とくだらない話で盛り上がった。精神的なデトックスにはなったが、通話を終えるとどっと疲れが出た。"
@@ -349,6 +360,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         successRate: 70,
         successEffect: {
           sanity: 10,
+          satiety: -5,
           relationships: { [RelationshipId.FRIEND]: REL_GAINS.MEDIUM }
         },
         successLog: "「...だよな、やるしかないか」友人の目に光が戻った。",
@@ -401,12 +413,14 @@ export const BRANCHING_EVENTS: GameEvent[] = [
           money: 8000,
           hp: -15,
           sanity: -5,
+          satiety: -SATIETY_CONSUMPTION.WORK,
           knowledge: { [SubjectId.ALGO]: KNOWLEDGE_GAINS.SMALL }
         },
         successLog: "仕様通りに実装し、問題なく納品できた。「助かりました！」",
         failureEffect: {
           hp: -20,
           sanity: -15,
+          satiety: -SATIETY_CONSUMPTION.WORK,
           money: -1000
         },
         failureLog: "スクレイピング先のサイト構造が変わっていて動作せず。返金対応になった..."
@@ -421,12 +435,14 @@ export const BRANCHING_EVENTS: GameEvent[] = [
           money: 15000,
           hp: -25,
           sanity: 10,
+          satiety: -20, // High effort
           knowledge: { [SubjectId.ALGO]: KNOWLEDGE_GAINS.LARGE }
         },
         successLog: "「これは期待以上です！」追加報酬＋高評価レビューを獲得。やりがいを感じた。",
         failureEffect: {
           hp: -30,
           sanity: -25,
+          satiety: -20,
           money: 3000
         },
         failureLog: "作り込みすぎて納期に間に合わず。基本報酬の半額＋評価ダウン..."
@@ -466,7 +482,8 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         successEffect: {
           money: 5000,
           hp: -20,
-          sanity: -10
+          sanity: -10,
+          satiety: -SATIETY_CONSUMPTION.WORK
         },
         successLog: "延々とExcelに数字を打ち込んだ。脳死作業だったが、確実に報酬を得た。"
       },
@@ -526,6 +543,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
           money: 4000,
           hp: -10,
           sanity: -5,
+          satiety: -SATIETY_CONSUMPTION.SOCIAL,
           relationships: { [RelationshipId.FRIEND]: REL_GAINS.MEDIUM }
         },
         successLog: "「わかりやすかったです！」後輩から感謝された。謝礼と共に評判も上がった。",
@@ -546,6 +564,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
           money: 10000,
           hp: -20,
           sanity: 5,
+          satiety: -15,
           relationships: { [RelationshipId.FRIEND]: REL_GAINS.LARGE }
         },
         successLog: "「試験、満点取れました！」噂が広まり、複数の後輩から依頼が殺到。収入源になった。",
@@ -658,6 +677,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         successRate: 80,
         successEffect: {
           money: 2000,
+          satiety: -5,
           relationships: { [RelationshipId.SENIOR]: REL_GAINS.MEDIUM }
         },
         successLog: "「メモリ不良だな」原因を特定し、業者を紹介。謝礼を受け取った。",
@@ -676,13 +696,15 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         successEffect: {
           money: 8000,
           relationships: { [RelationshipId.SENIOR]: REL_GAINS.LARGE },
-          knowledge: { [SubjectId.CIRCUIT]: KNOWLEDGE_GAINS.LARGE }
+          knowledge: { [SubjectId.CIRCUIT]: KNOWLEDGE_GAINS.LARGE },
+          satiety: -15
         },
         successLog: "「マジか！ 神かよ！」完全復旧に成功。先輩から高額謝礼＋噂が広まった。",
         failureEffect: {
           money: -5000,
           sanity: -25,
           hp: -15,
+          satiety: -10,
           relationships: { [RelationshipId.SENIOR]: -10 }
         },
         failureLog: "修理中に基盤をショートさせ、完全に壊してしまった。弁償する羽目に..."
@@ -721,6 +743,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         successRate: 70,
         successEffect: {
           hp: -15,
+          satiety: -10,
           knowledge: { [SubjectId.ALGO]: KNOWLEDGE_GAINS.SMALL }
         },
         successLog: "地道な作業の末、なんとかマージできた。コードへの理解も深まった気がする。",
@@ -796,7 +819,8 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         successRate: 40,
         successEffect: {
           sanity: 15,
-          hp: 5
+          hp: 5,
+          satiety: -SATIETY_CONSUMPTION.REST
         },
         successLog: "完璧なパワーナップ。脳が再起動した。",
         failureEffect: {
@@ -837,6 +861,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         successRate: 75,
         successEffect: {
           sanity: RECOVERY_VALS.LARGE,
+          satiety: -SATIETY_CONSUMPTION.ESCAPISM,
           relationships: { [RelationshipId.FRIEND]: REL_GAINS.MEDIUM }
         },
         successLog: "「おっ、いいぜ！」友人が車で颯爽と登場。そのままカラオケで雨宿りした。",

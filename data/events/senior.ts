@@ -67,6 +67,7 @@ export const SENIOR_EVENTS: GameEvent[] = [
     effect: {
       ...Effect.Status.RecoverHp(50), // Huge
       ...Effect.Status.RecoverSanity(10),
+      satiety: 70, // Huge satiety boost
       ...Effect.Social.Boost(RelationshipId.SENIOR, 'LARGE')
     },
     coolDownTurns: COOLDOWNS.MEDIUM

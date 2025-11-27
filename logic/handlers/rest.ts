@@ -4,13 +4,14 @@ import { ACTION_LOGS } from '../../data/constants/logMessages';
 import { applySoftCap, clamp } from '../../utils/common';
 import { joinMessages } from '../../utils/logFormatter';
 import { pushLog } from '../stateHelpers';
-import { CAFFEINE_THRESHOLDS, BUFF_SOFT_CAP_ASYMPTOTE } from '../../config/gameConstants';
+import { CAFFEINE_THRESHOLDS, BUFF_SOFT_CAP_ASYMPTOTE, SATIETY_CONSUMPTION } from '../../config/gameConstants';
 import { applyEffect } from '../effectProcessor';
 
 export const handleRest = (state: GameState): GameState => {
   let hpRecov = 0;
   let sanityRecov = 0;
   let caffeineDrop = -25;
+  let satietyCost = SATIETY_CONSUMPTION.REST;
   let baseLog = "";
   let logType: LogEntry['type'] = 'info';
 
@@ -27,6 +28,7 @@ export const handleRest = (state: GameState): GameState => {
       logType = 'success';
       debtReduction = 5;
       quality = 1.0;
+      satietyCost = Math.floor(satietyCost * SATIETY_CONSUMPTION.LATE_NIGHT_MULT);
       break;
 
     case TimeSlot.MORNING:
@@ -94,7 +96,8 @@ export const handleRest = (state: GameState): GameState => {
   const effect: GameEventEffect = {
     hp: hpRecov,
     sanity: sanityRecov,
-    caffeine: caffeineDrop
+    caffeine: caffeineDrop,
+    satiety: -satietyCost
   };
 
   // Apply
@@ -110,10 +113,16 @@ export const handleRest = (state: GameState): GameState => {
 };
 
 export const handleEscapism = (state: GameState): GameState => {
+  let satietyCost = SATIETY_CONSUMPTION.ESCAPISM;
+  if (state.timeSlot === TimeSlot.LATE_NIGHT) {
+    satietyCost = Math.floor(satietyCost * SATIETY_CONSUMPTION.LATE_NIGHT_MULT);
+  }
+
   const effect: GameEventEffect = {
     sanity: 35,
     hp: 10,
-    relationships: {}
+    relationships: {},
+    satiety: -satietyCost
   };
   
   let baseLog = "";

@@ -3,18 +3,28 @@ import { GameState, RelationshipId, SubjectId, ItemId, GameEventEffect } from '.
 import { clamp } from '../../utils/common';
 import { joinMessages } from '../../utils/logFormatter';
 import { LOG_TEMPLATES, ACTION_LOGS } from '../../data/constants/logMessages';
-import { executeEvent, recordEventOccurrence } from '../eventManager';
+import { executeEvent, recordEventOccurrence, applyEventEffect } from '../eventManager';
 import { pushLog } from '../stateHelpers';
 import { ITEMS } from '../../data/items';
 import { SUBJECTS } from '../../data/subjects';
 import { ALL_EVENTS } from '../../data/events';
 import { KNOWLEDGE_GAINS, REL_GAINS } from '../../config/gameBalance';
+import { SATIETY_CONSUMPTION } from '../../config/gameConstants';
 import { rng } from '../../utils/rng';
-import { applyEffect } from '../effectProcessor';
+import { applyEffect, mergeEffects } from '../effectProcessor';
+
+// Helper to apply default social satiety cost
+const applySocialCost = (state: GameState): GameState => {
+  const { newState } = applyEffect(state, { satiety: -SATIETY_CONSUMPTION.SOCIAL });
+  return newState;
+};
 
 export const handleAskProfessor = (state: GameState): GameState => {
+  // Apply base social cost first
+  let currentState = applySocialCost(state);
+
   // Gift handling
-  if ((state.inventory[ItemId.GIFT_SWEETS] || 0) > 0) {
+  if ((currentState.inventory[ItemId.GIFT_SWEETS] || 0) > 0) {
     let effect: GameEventEffect = {
       inventory: { [ItemId.GIFT_SWEETS]: -1 },
       relationships: { [RelationshipId.PROFESSOR]: 25 },
@@ -33,26 +43,26 @@ export const handleAskProfessor = (state: GameState): GameState => {
         rewardLog = "「いい茶菓子だ。特別に試験のヒントを教えよう」";
     }
 
-    const { newState, messages } = applyEffect(state, effect);
+    const { newState, messages } = applyEffect(currentState, effect);
     pushLog(newState, `【贈答】${ITEMS[ItemId.GIFT_SWEETS].name}を教授室に持参した。\n${rewardLog}\n(${joinMessages(messages, ', ')})`, 'success');
     return newState;
   }
 
   // Menu Event Trigger
-  if (state.relationships[RelationshipId.PROFESSOR] >= 60) {
+  if (currentState.relationships[RelationshipId.PROFESSOR] >= 60) {
     const menuEvent = ALL_EVENTS.find(e => e.id === 'prof_interaction_menu');
     if (menuEvent) {
-      const recordedState = recordEventOccurrence(state, menuEvent.id);
+      const recordedState = recordEventOccurrence(currentState, menuEvent.id);
       recordedState.pendingEvent = menuEvent;
       return recordedState;
     }
   }
 
   // Default Event
-  const newState = executeEvent(state, 'action_professor', ACTION_LOGS.SOCIAL.PROF_ABSENT);
+  const newState = executeEvent(currentState, 'action_professor', ACTION_LOGS.SOCIAL.PROF_ABSENT);
   
   // Passive bonus check
-  if (newState.relationships[RelationshipId.PROFESSOR] > state.relationships[RelationshipId.PROFESSOR]) {
+  if (newState.relationships[RelationshipId.PROFESSOR] > currentState.relationships[RelationshipId.PROFESSOR]) {
       if (rng.chance(30)) {
           const subIds = Object.values(SubjectId);
           const target = rng.pick(subIds)!;
@@ -65,15 +75,18 @@ export const handleAskProfessor = (state: GameState): GameState => {
 };
 
 export const handleAskSenior = (state: GameState): GameState => {
+  // Apply base social cost
+  let currentState = applySocialCost(state);
+
   // Gift handling
-  if ((state.inventory[ItemId.GIFT_SWEETS] || 0) > 0) {
+  if ((currentState.inventory[ItemId.GIFT_SWEETS] || 0) > 0) {
     let receivedItem = ItemId.BLACK_COFFEE;
     const rand = rng.random();
     if (rand < 0.3) receivedItem = ItemId.USB_MEMORY;
     else if (rand < 0.6) receivedItem = ItemId.REFERENCE_BOOK;
     else receivedItem = ItemId.ENERGY_DRINK;
 
-    if (receivedItem === ItemId.USB_MEMORY && state.flags.hasPastPapers) {
+    if (receivedItem === ItemId.USB_MEMORY && currentState.flags.hasPastPapers) {
         receivedItem = ItemId.ENERGY_DRINK; 
     }
 
@@ -86,20 +99,20 @@ export const handleAskSenior = (state: GameState): GameState => {
       sanity: 10
     };
 
-    const { newState, messages } = applyEffect(state, effect);
+    const { newState, messages } = applyEffect(currentState, effect);
     pushLog(newState, `【贈答】${ITEMS[ItemId.GIFT_SWEETS].name}を差し入れた。先輩は上機嫌だ！\n「おっ、気が利くな！これやるよ」とお返しを貰った。\n(${joinMessages(messages, ', ')})`, 'success');
     return newState;
   }
 
   // Menu Event
-  if (state.relationships[RelationshipId.SENIOR] >= 50) {
+  if (currentState.relationships[RelationshipId.SENIOR] >= 50) {
     const menuEventOriginal = ALL_EVENTS.find(e => e.id === 'senior_interaction_menu');
     if (menuEventOriginal) {
       const menuEvent = JSON.parse(JSON.stringify(menuEventOriginal));
       const pastPaperOpt = menuEvent.options?.find((o: any) => o.id === 'opt_senior_past_paper');
       
       if (pastPaperOpt) {
-        if (state.flags.hasPastPapers) {
+        if (currentState.flags.hasPastPapers) {
            if (rng.chance(50)) {
               pastPaperOpt.successEffect = {
                 inventory: { [ItemId.REFERENCE_BOOK]: 1 },
@@ -144,13 +157,13 @@ export const handleAskSenior = (state: GameState): GameState => {
         }
       }
 
-      const recordedState = recordEventOccurrence(state, menuEvent.id);
+      const recordedState = recordEventOccurrence(currentState, menuEvent.id);
       recordedState.pendingEvent = menuEvent;
       return recordedState;
     }
   }
 
-  const newState = executeEvent(state, 'action_senior', ACTION_LOGS.SOCIAL.SENIOR_ABSENT);
+  const newState = executeEvent(currentState, 'action_senior', ACTION_LOGS.SOCIAL.SENIOR_ABSENT);
 
   if (newState.eventHistory[0] === 'senior_past_exam') {
     newState.flags.hasPastPapers = true;
@@ -160,16 +173,19 @@ export const handleAskSenior = (state: GameState): GameState => {
 };
 
 export const handleRelyFriend = (state: GameState): GameState => {
-  if (state.relationships[RelationshipId.FRIEND] >= 40) {
+  // Apply base social cost
+  let currentState = applySocialCost(state);
+
+  if (currentState.relationships[RelationshipId.FRIEND] >= 40) {
     const menuEvent = ALL_EVENTS.find(e => e.id === 'friend_interaction_menu');
     if (menuEvent) {
-      const recordedState = recordEventOccurrence(state, menuEvent.id);
+      const recordedState = recordEventOccurrence(currentState, menuEvent.id);
       recordedState.pendingEvent = menuEvent;
       return recordedState;
     }
   }
 
-  const newState = executeEvent(state, 'action_friend', ACTION_LOGS.SOCIAL.FRIEND_BUSY);
+  const newState = executeEvent(currentState, 'action_friend', ACTION_LOGS.SOCIAL.FRIEND_BUSY);
 
   if (newState.eventHistory[0] === 'friend_cloud_leak') {
     newState.flags.hasPastPapers = true;

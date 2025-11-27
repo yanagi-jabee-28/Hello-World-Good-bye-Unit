@@ -5,7 +5,7 @@ import { ACTION_LOGS } from '../../data/constants/logMessages';
 import { applySoftCap } from '../../utils/common';
 import { joinMessages } from '../../utils/logFormatter';
 import { pushLog } from '../stateHelpers';
-import { CAFFEINE_THRESHOLDS, BUFF_SOFT_CAP_ASYMPTOTE, SATIETY_CONSTANTS } from '../../config/gameConstants';
+import { CAFFEINE_THRESHOLDS, BUFF_SOFT_CAP_ASYMPTOTE, SATIETY_CONSTANTS, SATIETY_CONSUMPTION } from '../../config/gameConstants';
 import { applyEffect } from '../effectProcessor';
 
 /**
@@ -25,6 +25,7 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
   let rawEfficiency = 1.1;
   let hpCost = Math.floor(10 * pressure); 
   let sanityCost = Math.floor(10 * pressure);
+  let satietyCost = SATIETY_CONSUMPTION.STUDY;
   
   let baseLog = "";
   let logType: LogEntry['type'] = 'info';
@@ -82,6 +83,7 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
       rawEfficiency *= 1.5; 
       sanityCost += 20;
       hpCost += 10;
+      satietyCost = Math.floor(satietyCost * SATIETY_CONSUMPTION.LATE_NIGHT_MULT);
       baseLog = ACTION_LOGS.STUDY.LATE_NIGHT_ZONE(subject.name);
       logType = 'warning'; 
       break;
@@ -98,12 +100,14 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
     rawEfficiency *= 2.0;
     hpCost += 15; 
     sanityCost += 15; 
+    satietyCost = Math.floor(satietyCost * SATIETY_CONSUMPTION.CAFFEINE_TOXIC_MULT);
     baseLog += " (中毒状態: 限界突破)";
     logType = 'danger';
   } else if (state.caffeine >= CAFFEINE_THRESHOLDS.ZONE) {
     rawEfficiency *= 1.5;
     hpCost += 5; 
     sanityCost += 5; 
+    satietyCost = Math.floor(satietyCost * SATIETY_CONSUMPTION.CAFFEINE_ZONE_MULT);
     baseLog += " (ZONE状態: 高負荷・高効率)";
     logType = 'success';
   } else if (state.caffeine >= CAFFEINE_THRESHOLDS.AWAKE) {
@@ -141,6 +145,7 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
   // Build Final Effect
   effect.hp = -hpCost;
   effect.sanity = -sanityCost;
+  effect.satiety = -satietyCost;
   effect.knowledge![subjectId] = knowledgeGain;
 
   // Apply Effect
