@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Activity, BookOpen, Package } from 'lucide-r
 import { BioMonitor } from './BioMonitor';
 import { AcademicMonitor } from './AcademicMonitor';
 import { InventoryList } from './InventoryList';
+import { Sound } from '../../utils/sound';
 
 interface Props {
   state: GameState;
@@ -31,12 +32,26 @@ export const SwipeableStatus: React.FC<Props> = ({ state }) => {
     }
   ];
 
+  const handlePrev = () => {
+    if (currentPage > 0) {
+      Sound.play('button_click');
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentPage < pages.length - 1) {
+      Sound.play('button_click');
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-black/50">
       {/* Header / Nav */}
       <div className="flex items-center justify-between p-2 bg-gray-900/50 border-b border-gray-800">
         <button
-          onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+          onClick={handlePrev}
           disabled={currentPage === 0}
           className="p-2 text-green-500 disabled:text-gray-700 disabled:opacity-30 hover:bg-gray-800 rounded transition-colors"
         >
@@ -59,7 +74,7 @@ export const SwipeableStatus: React.FC<Props> = ({ state }) => {
         </div>
 
         <button
-          onClick={() => setCurrentPage(Math.min(pages.length - 1, currentPage + 1))}
+          onClick={handleNext}
           disabled={currentPage === pages.length - 1}
           className="p-2 text-green-500 disabled:text-gray-700 disabled:opacity-30 hover:bg-gray-800 rounded transition-colors"
         >

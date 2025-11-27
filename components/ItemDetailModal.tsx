@@ -4,6 +4,7 @@ import { Item, ItemId } from '../types';
 import { getItemEffectDescription } from '../utils/logFormatter';
 import { X, ShoppingCart, Zap, Info } from 'lucide-react';
 import { Panel } from './ui/Panel';
+import { Sound } from '../utils/sound';
 
 interface Props {
   item: Item;
@@ -24,8 +25,13 @@ export const ItemDetailModal: React.FC<Props> = ({
   canUse = false,
   mode
 }) => {
+  const handleClose = () => {
+    Sound.play('button_click');
+    onClose();
+  };
+
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') handleClose(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
@@ -34,7 +40,7 @@ export const ItemDetailModal: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-[fadeIn_0.2s]">
-      <div className="absolute inset-0" onClick={onClose} />
+      <div className="absolute inset-0" onClick={handleClose} />
       
       <div className="relative w-full max-w-md pointer-events-auto">
         <Panel title={`ITEM_DATA: ${item.name}`} variant="system" className="border-2 border-green-500 shadow-[0_0_30px_rgba(34,197,94,0.2)]">
@@ -123,7 +129,7 @@ export const ItemDetailModal: React.FC<Props> = ({
               )}
 
               <button 
-                onClick={onClose}
+                onClick={handleClose}
                 className="px-4 border border-gray-700 hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
               >
                 <X size={20} />

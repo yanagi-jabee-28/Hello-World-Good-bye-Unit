@@ -44,6 +44,11 @@ export const SaveLoadModal: React.FC<Props> = ({
     setSaveList(getSaveList());
   };
 
+  const handleClose = () => {
+    Sound.play('button_click');
+    onClose();
+  };
+
   const handleSave = (slotId: SaveSlotId) => {
     saveToSlot(currentState, slotId);
     refreshList();
@@ -65,6 +70,7 @@ export const SaveLoadModal: React.FC<Props> = ({
   };
 
   const handleExport = () => {
+    Sound.play('button_click');
     const json = exportSaveData(currentState);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -78,6 +84,7 @@ export const SaveLoadModal: React.FC<Props> = ({
   };
 
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    Sound.play('button_click');
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -87,19 +94,23 @@ export const SaveLoadModal: React.FC<Props> = ({
         onClose();
       })
       .catch((err) => {
+        Sound.play('failure');
         alert('セーブデータの読み込みに失敗しました。\n' + err.message);
       });
   };
 
   const handleFactoryReset = () => {
+    Sound.play('alert'); // DANGER
     setConfirmAction({ type: 'reset' });
   };
 
   const handleSoftReset = () => {
+    Sound.play('button_click');
     setConfirmAction({ type: 'soft_reset' });
   };
 
   const handleHardRestart = () => {
+    Sound.play('button_click');
     setConfirmAction({ type: 'hard_restart' });
   };
 
@@ -142,7 +153,10 @@ export const SaveLoadModal: React.FC<Props> = ({
         <div className="flex items-center gap-2 ml-4">
           {activeTab === 'SAVE' && (
              <button
-               onClick={() => setConfirmAction({ type: 'overwrite', slotId: slot.id })}
+               onClick={() => {
+                 Sound.play('button_click');
+                 setConfirmAction({ type: 'overwrite', slotId: slot.id });
+               }}
                className="px-3 py-1 bg-green-900/30 border border-green-700 text-green-400 fs-xs hover:bg-green-700 hover:text-black transition-colors"
              >
                SAVE
@@ -150,7 +164,10 @@ export const SaveLoadModal: React.FC<Props> = ({
           )}
           {activeTab === 'LOAD' && hasData && (
              <button
-               onClick={() => handleLoad(slot.id)}
+               onClick={() => {
+                 Sound.play('button_click');
+                 setConfirmAction({ type: 'load', slotId: slot.id });
+               }}
                className="px-3 py-1 bg-blue-900/30 border border-blue-700 text-blue-400 fs-xs hover:bg-blue-700 hover:text-black transition-colors"
              >
                LOAD
@@ -158,7 +175,10 @@ export const SaveLoadModal: React.FC<Props> = ({
           )}
           {!isAuto && hasData && (
              <button
-               onClick={() => setConfirmAction({ type: 'delete', slotId: slot.id })}
+               onClick={() => {
+                 Sound.play('button_click');
+                 setConfirmAction({ type: 'delete', slotId: slot.id });
+               }}
                className="p-1 text-gray-600 hover:text-red-500 transition-colors"
                title="Delete Slot"
              >
@@ -179,7 +199,7 @@ export const SaveLoadModal: React.FC<Props> = ({
            <h2 className="text-xl font-bold text-green-500 flex items-center gap-2 tracking-wider">
              <HardDrive className="text-green-400" /> SYSTEM_MENU
            </h2>
-           <button onClick={onClose} className="text-green-700 hover:text-green-400 transition-colors">
+           <button onClick={handleClose} className="text-green-700 hover:text-green-400 transition-colors">
              <X size={24} />
            </button>
         </div>
@@ -189,7 +209,10 @@ export const SaveLoadModal: React.FC<Props> = ({
            {['SAVE', 'LOAD', 'SYSTEM'].map(t => (
              <button
                key={t}
-               onClick={() => setActiveTab(t as Tab)}
+               onClick={() => {
+                 Sound.play('button_click');
+                 setActiveTab(t as Tab);
+               }}
                className={`flex-1 py-3 fs-sm font-bold tracking-widest transition-colors ${
                  activeTab === t 
                  ? 'bg-green-900/30 text-green-400 border-b-2 border-green-500' 
@@ -379,15 +402,21 @@ export const SaveLoadModal: React.FC<Props> = ({
                </p>
                <div className="flex gap-3 justify-end">
                  <button 
-                   onClick={() => setConfirmAction(null)}
+                   onClick={() => {
+                     Sound.play('button_click');
+                     setConfirmAction(null);
+                   }}
                    className="px-4 py-2 fs-xs font-bold text-gray-500 hover:text-white transition-colors border border-transparent hover:border-gray-600"
                  >
                    CANCEL
                  </button>
                  <button 
                    onClick={() => {
+                     Sound.play('button_click'); // Feedback on click
+                     
                      if (confirmAction.type === 'overwrite' && confirmAction.slotId) handleSave(confirmAction.slotId);
                      if (confirmAction.type === 'delete' && confirmAction.slotId) handleDelete(confirmAction.slotId);
+                     if (confirmAction.type === 'load' && confirmAction.slotId) handleLoad(confirmAction.slotId);
                      
                      if (confirmAction.type === 'soft_reset') {
                        onSoftReset();
