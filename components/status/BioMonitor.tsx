@@ -51,15 +51,25 @@ export const BioMonitor: React.FC<Props> = ({ state }) => {
             label="HP (体力)" 
             value={state.hp} 
             max={state.maxHp} 
-            colorClass={state.hp < 30 ? 'bg-red-600 animate-pulse shadow-[0_0_10px_rgba(220,38,38,0.5)]' : 'bg-gradient-to-r from-green-600 to-green-400'} 
+            colorClass={
+              state.hp < 30 
+                ? 'bg-red-600 shadow-[0_0_15px_rgba(220,38,38,0.6)]' 
+                : 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.4)]'
+            } 
             subLabel={`${state.hp}%`}
+            animate={state.hp < 30}
           />
           <ProgressBar 
             label="SAN (正気度)" 
             value={state.sanity} 
             max={state.maxSanity} 
-            colorClass={state.sanity < 30 ? 'bg-purple-600 animate-pulse shadow-[0_0_10px_rgba(147,51,234,0.5)]' : 'bg-gradient-to-r from-blue-600 to-cyan-400'} 
+            colorClass={
+              state.sanity < 30 
+                ? 'bg-purple-600 shadow-[0_0_15px_rgba(147,51,234,0.6)]' 
+                : 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]'
+            } 
             subLabel={`${state.sanity}%`}
+            animate={state.sanity < 30}
           />
         </div>
 
