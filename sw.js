@@ -1,10 +1,12 @@
 // Service Worker for offline support and PWA installability
 const CACHE_NAME = 'rsa-adv-v1';
+// Assets cached - use explicit repo subpath for GitHub Pages hosting
+const BASE = '/Hello-World-Good-bye-Unit';
 const ASSETS = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icon.svg'
+  `${BASE}/`,
+  `${BASE}/index.html`,
+  `${BASE}/manifest.json`,
+  `${BASE}/icon.svg`
 ];
 
 self.addEventListener('install', (event) => {
