@@ -7,9 +7,10 @@ import { getAvailability, getStudyHint } from '../logic/advisor';
 import { getWorkConfig } from '../data/work';
 import { getShortEffectString } from '../utils/logFormatter';
 import { getExamWarnings } from '../logic/warningSystem';
-import { BookOpen, Users, Gamepad2, Package, School, GraduationCap, UserPlus, AlertTriangle, ShoppingCart, Briefcase, Bed, Sun, Moon, BatteryCharging, Ban, Coffee, Zap } from 'lucide-react';
+import { BookOpen, Users, Gamepad2, Package, School, GraduationCap, UserPlus, AlertTriangle, ShoppingCart, Briefcase, Bed, Sun, Moon, BatteryCharging, Ban, Zap } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
+import { CollapsibleSection } from './ui/CollapsibleSection';
 
 interface Props {
   state: GameState;
@@ -66,12 +67,144 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect }) => {
   };
   const restConfig = getRestConfig(timeSlot);
 
+  // Render Functions for reusability
+  const renderAcademic = (isMobile: boolean = false) => (
+    <div className="space-y-1.5">
+      {Object.values(SUBJECTS).map((sub) => (
+        <Button
+          key={sub.id}
+          onClick={() => actions.study(sub.id)}
+          label={sub.name}
+          subLabel={`Difficulty: ${sub.difficulty}x`}
+          icon={<School size={14} />}
+          variant="primary"
+          fullWidth
+          size={isMobile ? "lg" : "sm"}
+        />
+      ))}
+    </div>
+  );
+
+  const renderLife = (isMobile: boolean = false) => (
+    <div className="space-y-1.5">
+      <Button
+        onClick={actions.rest}
+        label={restConfig.label}
+        subLabel={restConfig.desc}
+        icon={restConfig.icon}
+        variant="secondary"
+        fullWidth
+        size={isMobile ? "lg" : "sm"}
+      />
+      <Button
+        onClick={actions.work}
+        label={workConfig.label}
+        subLabel={`EARN: ¥${workConfig.salary.toLocaleString()}`}
+        icon={<Briefcase size={14} />}
+        variant="outline"
+        className="border-orange-800 text-orange-400 hover:border-orange-600"
+        fullWidth
+        size={isMobile ? "lg" : "sm"}
+      />
+      <Button
+        onClick={actions.openShop}
+        label="生協 NET"
+        subLabel="PURCHASE"
+        icon={<ShoppingCart size={14} />}
+        variant="outline"
+        className="border-cyan-800 text-cyan-400 hover:border-cyan-600"
+        fullWidth
+        size={isMobile ? "lg" : "sm"}
+      />
+    </div>
+  );
+
+  const renderSocial = (isMobile: boolean = false) => (
+    <div className="space-y-1.5">
+      <Button
+        onClick={actions.askProfessor}
+        disabled={!isProfAvailable}
+        label="教授に質問"
+        subLabel={isProfAvailable ? "AVAILABLE" : "OFFLINE"}
+        icon={<GraduationCap size={14} />}
+        variant={isProfAvailable ? "outline" : "ghost"}
+        className={isProfAvailable ? "border-indigo-800 text-indigo-400 hover:border-indigo-600" : ""}
+        fullWidth
+        size={isMobile ? "lg" : "sm"}
+      />
+      <Button
+        onClick={actions.askSenior}
+        disabled={!isSeniorAvailable}
+        label="先輩を頼る"
+        subLabel={isSeniorAvailable ? "AVAILABLE" : "OFFLINE"}
+        icon={<Users size={14} />}
+        variant={isSeniorAvailable ? "outline" : "ghost"}
+        className={isSeniorAvailable ? "border-purple-800 text-purple-400 hover:border-purple-600" : ""}
+        fullWidth
+        size={isMobile ? "lg" : "sm"}
+      />
+      <Button
+        onClick={actions.relyFriend}
+        disabled={!isFriendAvailable}
+        label="友人と協力"
+        subLabel={isFriendAvailable ? "AVAILABLE" : "SLEEPING"}
+        icon={<UserPlus size={14} />}
+        variant={isFriendAvailable ? "outline" : "ghost"}
+        className={isFriendAvailable ? "border-pink-800 text-pink-400 hover:border-pink-600" : ""}
+        fullWidth
+        size={isMobile ? "lg" : "sm"}
+      />
+      <Button
+        onClick={actions.escapism}
+        label="現実逃避"
+        subLabel="SAN RECOVERY"
+        icon={<Gamepad2 size={14} />}
+        variant="outline"
+        className="border-pink-900/50 text-pink-400/70 hover:border-pink-600 hover:text-pink-300"
+        fullWidth
+        size={isMobile ? "lg" : "sm"}
+      />
+    </div>
+  );
+
+  const renderInventory = (isMobile: boolean = false) => (
+    <div className="space-y-1.5">
+      {ownedItems.length === 0 ? (
+         <div className="fs-xxs text-gray-600 p-4 border border-gray-800 border-dashed text-center rounded h-full flex items-center justify-center bg-black/30">
+           NO DATA
+         </div>
+      ) : (
+        <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2 md:flex md:flex-col'} gap-1.5 max-h-[180px] overflow-y-auto custom-scrollbar pr-1`}>
+          {ownedItems.map((itemId) => {
+            const item = ITEMS[itemId];
+            const shortEffect = getShortEffectString(item);
+            
+            return (
+              <Button
+                key={itemId}
+                onClick={() => actions.useItem(itemId)}
+                label={`${item.name}`}
+                subLabel={`x${state.inventory[itemId]} | ${shortEffect}`}
+                icon={<Zap size={12} />}
+                variant="outline"
+                className="border-gray-700 text-gray-300 hover:border-gray-500 bg-gray-900/50"
+                fullWidth
+                size={isMobile ? "lg" : "sm"}
+                onInspect={onInspect ? () => onInspect(itemId, 'inventory') : undefined}
+              />
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-black/50 h-full content-start overflow-y-auto custom-scrollbar">
+    <div className="h-full bg-black/50 content-start overflow-y-auto custom-scrollbar">
       
-      {/* Warnings Overlay/Banner */}
+      {/* Warnings Banner (Common) */}
       {warnings.length > 0 && (
-        <div className="col-span-2 md:col-span-4">
+        <div className="p-3 pb-1">
           <div className={`p-2 border-l-4 flex items-start gap-3 ${hasCriticalWarning ? 'bg-red-950/30 border-red-600' : 'bg-yellow-950/30 border-yellow-600'}`}>
             <AlertTriangle className={hasCriticalWarning ? 'text-red-500 animate-pulse' : 'text-yellow-500'} size={18} />
             <div className="flex-1">
@@ -88,152 +221,59 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect }) => {
         </div>
       )}
 
-      {/* ACADEMIC */}
-      <div className="col-span-2 md:col-span-1 space-y-2">
-        <div className="flex justify-between items-center px-1">
-           <span className="fs-xxs font-bold text-gray-500 flex items-center gap-1"><BookOpen size={10} /> ACADEMIC_MODULE</span>
-           <Badge variant={caffeine > 100 ? 'warning' : 'outline'} className="scale-75 origin-right">{studyHint.split('(')[0]}</Badge>
-        </div>
-        <div className="space-y-1.5">
-          {Object.values(SUBJECTS).map((sub) => (
-            <Button
-              key={sub.id}
-              onClick={() => actions.study(sub.id)}
-              label={sub.name}
-              subLabel={`Difficulty: ${sub.difficulty}x`}
-              icon={<School size={14} />}
-              variant="primary"
-              fullWidth
-              size="sm"
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* LIFE & ECONOMY */}
-      <div className="col-span-1 space-y-2">
-        <div className="fs-xxs font-bold text-gray-500 flex items-center gap-1 px-1">
-           <Briefcase size={10} /> LIFE_SUPPORT
-        </div>
-        <div className="space-y-1.5">
-          <Button
-            onClick={actions.rest}
-            label={restConfig.label}
-            subLabel={restConfig.desc}
-            icon={restConfig.icon}
-            variant="secondary"
-            fullWidth
-            size="sm"
-          />
-          <Button
-            onClick={actions.work}
-            label={workConfig.label}
-            subLabel={`EARN: ¥${workConfig.salary.toLocaleString()}`}
-            icon={<Briefcase size={14} />}
-            variant="outline"
-            className="border-orange-800 text-orange-400 hover:border-orange-600"
-            fullWidth
-            size="sm"
-          />
-          <Button
-            onClick={actions.openShop}
-            label="生協 NET"
-            subLabel="PURCHASE"
-            icon={<ShoppingCart size={14} />}
-            variant="outline"
-            className="border-cyan-800 text-cyan-400 hover:border-cyan-600"
-            fullWidth
-            size="sm"
-          />
-        </div>
-      </div>
-
-      {/* SOCIAL */}
-      <div className="col-span-1 space-y-2">
-        <div className="fs-xxs font-bold text-gray-500 flex items-center gap-1 px-1">
-           <Users size={10} /> SOCIAL_LINK
-        </div>
-        <div className="space-y-1.5">
-          <Button
-            onClick={actions.askProfessor}
-            disabled={!isProfAvailable}
-            label="教授に質問"
-            subLabel={isProfAvailable ? "AVAILABLE" : "OFFLINE"}
-            icon={<GraduationCap size={14} />}
-            variant={isProfAvailable ? "outline" : "ghost"}
-            className={isProfAvailable ? "border-indigo-800 text-indigo-400 hover:border-indigo-600" : ""}
-            fullWidth
-            size="sm"
-          />
-          <Button
-            onClick={actions.askSenior}
-            disabled={!isSeniorAvailable}
-            label="先輩を頼る"
-            subLabel={isSeniorAvailable ? "AVAILABLE" : "OFFLINE"}
-            icon={<Users size={14} />}
-            variant={isSeniorAvailable ? "outline" : "ghost"}
-            className={isSeniorAvailable ? "border-purple-800 text-purple-400 hover:border-purple-600" : ""}
-            fullWidth
-            size="sm"
-          />
-          <Button
-            onClick={actions.relyFriend}
-            disabled={!isFriendAvailable}
-            label="友人と協力"
-            subLabel={isFriendAvailable ? "AVAILABLE" : "SLEEPING"}
-            icon={<UserPlus size={14} />}
-            variant={isFriendAvailable ? "outline" : "ghost"}
-            className={isFriendAvailable ? "border-pink-800 text-pink-400 hover:border-pink-600" : ""}
-            fullWidth
-            size="sm"
-          />
-          <Button
-            onClick={actions.escapism}
-            label="現実逃避"
-            subLabel="SAN RECOVERY"
-            icon={<Gamepad2 size={14} />}
-            variant="outline"
-            className="border-pink-900/50 text-pink-400/70 hover:border-pink-600 hover:text-pink-300"
-            fullWidth
-            size="sm"
-          />
-        </div>
-      </div>
-
-      {/* INVENTORY */}
-      <div className="col-span-2 md:col-span-1 space-y-2">
-        <div className="fs-xxs font-bold text-gray-500 flex items-center gap-1 px-1">
-           <Package size={10} /> STORAGE
-        </div>
-        <div className="space-y-1.5">
-          {ownedItems.length === 0 ? (
-             <div className="fs-xxs text-gray-600 p-4 border border-gray-800 border-dashed text-center rounded h-full flex items-center justify-center bg-black/30">
-               NO DATA
-             </div>
-          ) : (
-            <div className="grid grid-cols-2 md:flex md:flex-col gap-1.5 max-h-[180px] overflow-y-auto custom-scrollbar pr-1">
-              {ownedItems.map((itemId) => {
-                const item = ITEMS[itemId];
-                const shortEffect = getShortEffectString(item);
-                
-                return (
-                  <Button
-                    key={itemId}
-                    onClick={() => actions.useItem(itemId)}
-                    label={`${item.name}`}
-                    subLabel={`x${state.inventory[itemId]} | ${shortEffect}`}
-                    icon={<Zap size={12} />}
-                    variant="outline"
-                    className="border-gray-700 text-gray-300 hover:border-gray-500 bg-gray-900/50"
-                    fullWidth
-                    size="sm"
-                    onInspect={onInspect ? () => onInspect(itemId, 'inventory') : undefined}
-                  />
-                );
-              })}
+      {/* === DESKTOP LAYOUT (Hidden on Mobile) === */}
+      <div className="hidden md:grid grid-cols-4 gap-3 p-3">
+         {/* ACADEMIC */}
+         <div className="col-span-1 space-y-2">
+            <div className="flex justify-between items-center px-1">
+               <span className="fs-xxs font-bold text-gray-500 flex items-center gap-1"><BookOpen size={10} /> ACADEMIC</span>
+               <Badge variant={caffeine > 100 ? 'warning' : 'outline'} className="scale-75 origin-right">{studyHint.split('(')[0]}</Badge>
             </div>
-          )}
-        </div>
+            {renderAcademic()}
+         </div>
+
+         {/* LIFE & ECONOMY */}
+         <div className="col-span-1 space-y-2">
+            <div className="fs-xxs font-bold text-gray-500 flex items-center gap-1 px-1">
+               <Briefcase size={10} /> LIFE
+            </div>
+            {renderLife()}
+         </div>
+
+         {/* SOCIAL */}
+         <div className="col-span-1 space-y-2">
+            <div className="fs-xxs font-bold text-gray-500 flex items-center gap-1 px-1">
+               <Users size={10} /> SOCIAL
+            </div>
+            {renderSocial()}
+         </div>
+
+         {/* INVENTORY */}
+         <div className="col-span-1 space-y-2">
+            <div className="fs-xxs font-bold text-gray-500 flex items-center gap-1 px-1">
+               <Package size={10} /> STORAGE
+            </div>
+            {renderInventory()}
+         </div>
+      </div>
+
+      {/* === MOBILE LAYOUT (Visible on Mobile) === */}
+      <div className="md:hidden p-2 space-y-1">
+         <CollapsibleSection title="ACADEMIC (学習)" defaultOpen={true}>
+            {renderAcademic(true)}
+         </CollapsibleSection>
+         
+         <CollapsibleSection title="LIFE SUPPORT (生活)" defaultOpen={true}>
+            {renderLife(true)}
+         </CollapsibleSection>
+         
+         <CollapsibleSection title="SOCIAL LINK (人脈)" defaultOpen={true}>
+            {renderSocial(true)}
+         </CollapsibleSection>
+         
+         <CollapsibleSection title="INVENTORY (所持品)" defaultOpen={true}>
+            {renderInventory(true)}
+         </CollapsibleSection>
       </div>
     </div>
   );
