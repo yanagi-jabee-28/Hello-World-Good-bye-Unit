@@ -6,7 +6,7 @@ export const ITEMS: Record<ItemId, Item> = {
     id: ItemId.USB_MEMORY,
     name: '先輩のUSB',
     description: '過去問データが入っている...かもしれない。解析にはリスクが伴う。',
-    specialEffectDescription: '確率(60%)で科目+20 / 失敗でSAN-20 (使い切り・重複可)',
+    specialEffectDescription: '確率(アルゴ依存)で科目+20 / 失敗でSAN-20 (使い切り・重複可)',
     price: 99999, // 非売品
   },
   [ItemId.VERIFIED_PAST_PAPERS]: {

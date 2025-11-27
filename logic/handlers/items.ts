@@ -104,18 +104,26 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
       break;
     }
     case ItemId.USB_MEMORY: {
-       if (rng.chance(60)) {
+       const algoScore = state.knowledge[SubjectId.ALGO] || 0;
+       // Success rate calculation:
+       // Base 30% + 0.6% per Algo Point.
+       // Algo 0: 30%
+       // Algo 50: 60%
+       // Algo 100: 90% (Capped at 95%)
+       const successRate = Math.min(95, 30 + (algoScore * 0.6));
+
+       if (rng.chance(successRate)) {
           const target = rng.pick(Object.values(SubjectId))!;
           const kDelta = 20;
           
           effect = mergeEffects(effect, { knowledge: { [target]: kDelta } });
           
-          baseLog = `【解析成功】${item.name}から${SUBJECTS[target].name}の「神過去問」を発掘！これが先輩たちの遺産か...！(学習効率UP)`;
+          baseLog = `【解析成功】(成功率${successRate.toFixed(0)}%) アルゴリズムの知識を駆使し、暗号化を解除！${SUBJECTS[target].name}の「神過去問」を発掘！(学習効率UP)`;
           logType = 'success';
           itemSuccess = true;
        } else {
           effect = mergeEffects(effect, { sanity: -20 });
-          baseLog = `【解析失敗】${item.name}の中身は...大量のウィルス入りファイルだった。PCがフリーズし、精神的ダメージを受けた。`;
+          baseLog = `【解析失敗】(成功率${successRate.toFixed(0)}%) 解析中にウィルスを踏んだ...。アルゴリズムの理解度が足りなかったか？PCがフリーズし、精神的ダメージを受けた。`;
           logType = 'danger';
        }
        break;
