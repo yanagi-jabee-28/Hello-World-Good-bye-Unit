@@ -65,6 +65,7 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
     case TimeSlot.AFTERNOON:
       rawEfficiency *= 0.95; 
       hpCost += 2; 
+      effect.relationships![RelationshipId.PROFESSOR] = 3;
       baseLog = ACTION_LOGS.STUDY.AFTERNOON_FIGHT(subject.name);
       break;
 
