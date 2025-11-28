@@ -8,6 +8,7 @@
 
 ## 📜 目次
 
+0. [ドキュメントガバナンス](#0-ドキュメントガバナンス)
 1. [全体コンセプト](#1-全体コンセプト)
 2. [コアゲームループ](#2-コアゲームループ)
 3. [難易度曲線と60点の壁](#3-難易度曲線と60点の壁)
@@ -16,6 +17,37 @@
 6. [イベントシステム](#6-イベントシステム)
 7. [アーキテクチャ設計](#7-アーキテクチャ設計)
 8. [バランス調整の哲学](#8-バランス調整の哲学)
+
+---
+
+## 0. ドキュメントガバナンス
+
+### 0.1 役割と適用範囲
+- この設計書はゲームバランス、UI、シナリオ、オーディオ、実装規約を統合的に管理する唯一の一次情報源とする。
+- `ITEMS_DESIGN.md`、`config/gameBalance.ts`、`data/events/*`、`logic/*` の改定は必ず本章を更新し、差分の根拠を残す。
+- 60点ラインに影響する仕様はプレイヤー体験へ直接波及するため、影響分析メモを Pull Request に添付する。
+
+### 0.2 更新ワークフロー
+1. 変更目的を Model/View/Controller に分類し、影響するプレイヤー行動を列挙。
+2. 期待されるバランスシミュレーションを `scripts/balance-report.ts` で取得し、Before/After を貼付。
+3. `logic/effectProcessor.test.ts` と `logic/turnManager.test.ts` を実行し、忘却曲線・カフェイン系の回 regress を検出。
+4. UI 仕様が変わる場合は `components/` 配下のデザインタスクと setlist を `DESIGN_PHILOSOPHY.md` に同期。
+5. ドキュメント更新後、`docs/PWA_SETUP.md` や `TAURI_SETUP.md` 等の周辺資料との整合性を確認。
+
+### 0.3 クロスファイル依存マップ
+| セクション | 参照先ファイル | 同期内容 |
+|-------------|----------------|----------|
+| 2. コアゲームループ | `logic/turnManager.ts`, `logic/reducer.ts` | ターンフロー、警告システム |
+| 3. 難易度曲線 | `logic/handlers/study.ts`, `config/gameBalance.ts` | 知識獲得倍率、閾値 |
+| 4. リソース管理 | `config/gameConstants.ts`, `logic/effectProcessor.ts` | HP/SAN/満腹度/カフェイン定数 |
+| 6. イベントシステム | `data/events/*`, `logic/eventManager.ts` | 重み付け、cooldown |
+| 7. アーキテクチャ設計 | `components/**`, `hooks/**`, `types/**` | FSD 構造、Zustand ストア |
+
+### 0.4 将来編集チェックリスト
+- 60点ラインを跨ぐ仕様変更では、視覚的/ログ/バランス/チュートリアルの4視点で差分を検証。
+- 新リソースや行動カテゴリを追加する際は、リソース管理ルール (セクション4) に最小-最大レンジを追記。
+- 体験至上主義に反する処理 (長時間ブロッキング、音切れ) が疑われる場合、`useGameSound.ts` と `components/OverlayLayer.tsx` を優先監査。
+- DLC や将来の After Story 拡張はセクション 11 のロードマップへ必ず追記し、既存難易度を崩さないガードを設置。
 
 ---
 

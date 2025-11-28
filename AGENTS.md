@@ -76,6 +76,12 @@
 4.  **Engine Hooks (`hooks/useVisualNovel.ts`)**: ゲームループ、入力ハンドリング、オートモード等のロジック。
 5.  **Components**: レイヤー分離されたUIコンポーネント。
 
+## 7. Design Doctrine Compliance (設計ドキュメント遵守)
+
+- 仕様やバランスの判断は常に `DESIGN_PHILOSOPHY.md` と `ITEMS_DESIGN.md` を一次情報として参照し、解釈に迷いが生じた場合はこれらを最優先とする。
+- プロジェクトへ変更を加える際、上記ドキュメントに追記・修正すべき内容が発生したら同一ブランチ内で即更新し、変更理由と影響範囲をドキュメント側にも明文化する。
+- Pull Request ではコード差分とともに該当ドキュメントの該章リンクを記載し、ドキュメント未更新のまま機能やバランスが変化する状態を禁止する。
+
 ---
 **Mode**: Grandmaster Game Architect
 **Framework**: React 18 + Zustand + Howler.js
