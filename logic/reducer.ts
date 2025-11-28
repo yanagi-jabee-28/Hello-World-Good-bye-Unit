@@ -148,6 +148,8 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
   newState.logs = [...state.logs];
   newState.flags = { ...state.flags };
   
+  let timeAdvanced = true; // デフォルトで時間経過あり
+
   // 分岐イベント選択の処理
   if (action.type === ActionType.RESOLVE_EVENT) {
     const { optionId } = action.payload;
@@ -162,21 +164,13 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
           let effect = option.successEffect;
           
           // --- 動的科目選択ロジック ---
-          // 指定されたイベントの場合、上昇する科目を「現在最も苦手な科目」に書き換える
           if (effect && effect.knowledge && DYNAMIC_SUBJECT_OPTIONS.includes(option.id)) {
             const targetSubject = selectWeakestSubject(newState.knowledge);
-            // 元の定義から上昇量を取得 (どれか1つの値が入っている前提)
             const amounts = Object.values(effect.knowledge);
             const amount = amounts.length > 0 ? amounts[0] : 10;
-            
-            // 効果を上書き (新しいオブジェクトを作成)
-            effect = {
-              ...effect,
-              knowledge: { [targetSubject]: amount }
-            };
+            effect = { ...effect, knowledge: { [targetSubject]: amount } };
           }
-          // --------------------------
-
+          
           let details: string[] = [];
           if (effect) {
             const res = applyEffect(newState, effect);
@@ -203,73 +197,73 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     }
 
     newState.pendingEvent = null;
-    return newState;
-  }
-
-  if (newState.pendingEvent) {
+    timeAdvanced = false; // イベント解決時は時間を進めない（アクション実行時に既に進んでいるか、即時解決のため）
+  } 
+  // イベント待機中なら、RESOLVE_EVENT以外のアクションはブロック
+  else if (newState.pendingEvent) {
     return state;
   }
-
-  let timeAdvanced = true;
-
-  switch (action.type) {
-    case ActionType.STUDY:
-      newState = handleStudy(newState, action.payload);
-      if (newState.sanity < 30) {
-        newState.flags.madnessStack = Math.min(4, newState.flags.madnessStack + 1);
-      }
-      break;
-    case ActionType.REST:
-      newState = handleRest(newState);
-      break;
-    case ActionType.WORK:
-      newState = handleWork(newState);
-      break;
-    case ActionType.ESCAPISM:
-      newState = handleEscapism(newState);
-      break;
-    case ActionType.ASK_PROFESSOR:
-      newState = handleAskProfessor(newState);
-      newState.lastSocialTurn = newState.turnCount; 
-      break;
-    case ActionType.ASK_SENIOR:
-      newState = handleAskSenior(newState);
-      newState.lastSocialTurn = newState.turnCount; 
-      break;
-    case ActionType.RELY_FRIEND:
-      newState = handleRelyFriend(newState);
-      newState.lastSocialTurn = newState.turnCount; 
-      break;
-    case ActionType.BUY_ITEM:
-      newState = handleBuyItem(newState, action.payload);
-      timeAdvanced = false;
-      break;
-    case ActionType.USE_ITEM:
-      newState = handleUseItem(newState, action.payload);
-      timeAdvanced = false;
-      break;
+  // 通常アクションの処理
+  else {
+    switch (action.type) {
+      case ActionType.STUDY:
+        newState = handleStudy(newState, action.payload);
+        if (newState.sanity < 30) {
+          newState.flags.madnessStack = Math.min(4, newState.flags.madnessStack + 1);
+        }
+        break;
+      case ActionType.REST:
+        newState = handleRest(newState);
+        break;
+      case ActionType.WORK:
+        newState = handleWork(newState);
+        break;
+      case ActionType.ESCAPISM:
+        newState = handleEscapism(newState);
+        break;
+      case ActionType.ASK_PROFESSOR:
+        newState = handleAskProfessor(newState);
+        newState.lastSocialTurn = newState.turnCount; 
+        break;
+      case ActionType.ASK_SENIOR:
+        newState = handleAskSenior(newState);
+        newState.lastSocialTurn = newState.turnCount; 
+        break;
+      case ActionType.RELY_FRIEND:
+        newState = handleRelyFriend(newState);
+        newState.lastSocialTurn = newState.turnCount; 
+        break;
+      case ActionType.BUY_ITEM:
+        newState = handleBuyItem(newState, action.payload);
+        timeAdvanced = false;
+        break;
+      case ActionType.USE_ITEM:
+        newState = handleUseItem(newState, action.payload);
+        timeAdvanced = false;
+        break;
+    }
   }
 
-  // 時間経過処理の委譲
+  // 時間経過処理の委譲 (生存している場合のみ turnManager が機能するが、死亡判定は後述)
   if (timeAdvanced) {
     const isResting = action.type === ActionType.REST || action.type === ActionType.ESCAPISM;
     newState = processTurnEnd(newState, isResting);
   }
 
-  // ゲーム終了判定
+  // ゲーム終了判定 (アクションやイベント解決の後に必ず実施)
   if (newState.day > 7) {
     const metrics = evaluateExam(newState);
     newState.status = metrics.passed ? GameStatus.VICTORY : GameStatus.FAILURE;
-    newState.pendingEvent = null; // Clear any pending events on finish
+    newState.pendingEvent = null; 
     if (newState.status === GameStatus.VICTORY) pushLog(newState, ACTION_LOGS.SYSTEM.VICTORY, 'success');
     else pushLog(newState, ACTION_LOGS.SYSTEM.FAILURE, 'danger');
   } else if (newState.hp <= 0) {
     newState.status = GameStatus.GAME_OVER_HP;
-    newState.pendingEvent = null; // Clear any pending events on game over
+    newState.pendingEvent = null;
     pushLog(newState, ACTION_LOGS.SYSTEM.GAME_OVER_HP, 'danger');
   } else if (newState.sanity <= 0) {
     newState.status = GameStatus.GAME_OVER_SANITY;
-    newState.pendingEvent = null; // Clear any pending events on game over
+    newState.pendingEvent = null;
     pushLog(newState, ACTION_LOGS.SYSTEM.GAME_OVER_MADNESS, 'danger');
   }
 
