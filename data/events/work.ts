@@ -1,7 +1,8 @@
 
 import { GameEvent, TimeSlot } from '../../types';
-import { WEIGHTS, COOLDOWNS, RECOVERY_VALS } from '../../config/gameBalance';
+import { WEIGHTS, COOLDOWNS, RECOVERY_VALS, COSTS, SUCCESS_RATES } from '../../config/gameBalance';
 import { Effect } from '../presets/effectTemplates';
+import { highRiskOption, lowRiskOption, safeOption } from '../builders';
 
 /**
  * WORK EVENTS
@@ -21,50 +22,46 @@ export const WORK_EVENTS: GameEvent[] = [
     conditions: { timeSlots: [TimeSlot.NIGHT, TimeSlot.LATE_NIGHT] },
     coolDownTurns: COOLDOWNS.LONG,
     options: [
-      {
+      highRiskOption({
         id: 'opt_work_fix_force',
         label: '力技で復旧',
-        risk: 'high',
         description: 'リスクを負って独自パッチを当てる。成功すれば英雄、失敗すれば戦犯。',
-        successRate: 40,
+        successRate: SUCCESS_RATES.VERY_LOW, // 40%
         successEffect: {
           money: 15000, // Bonus
-          hp: -20,
-          sanity: -10
+          hp: COSTS.HP.LARGE,
+          sanity: COSTS.SANITY.MEDIUM
         },
         successLog: "「神か！？」独自のパッチが奇跡的に噛み合った。特別ボーナスが支給された。",
         failureEffect: {
-          hp: -30,
-          sanity: -30,
-          money: 2000 // Base pay only (reduced)
+          hp: COSTS.HP.HUGE,
+          sanity: COSTS.SANITY.CRITICAL,
+          money: 2000 // Base pay only
         },
         failureLog: "二次被害が発生...。朝まで泥沼の復旧作業に従事させられた。"
-      },
-      {
+      }),
+      lowRiskOption({
         id: 'opt_work_fix_manual',
         label: '地道にログ解析',
-        risk: 'low',
         description: '徹夜覚悟で原因を特定する。',
-        successRate: 90,
+        successRate: SUCCESS_RATES.VERY_HIGH, // 90%
         successEffect: {
-          money: 10000, // Overtime pay
-          hp: -40,
-          sanity: -20
+          money: COSTS.MONEY.REWARD_LARGE, // Overtime pay
+          hp: COSTS.HP.CRITICAL,
+          sanity: COSTS.SANITY.HUGE
         },
         successLog: "朝日が昇る頃、ようやく原因を特定・修正した。身体はボロボロだが、信頼は得た。"
-      },
-      {
+      }),
+      safeOption({
         id: 'opt_work_escape',
         label: '体調不良で帰る',
-        risk: 'safe',
         description: 'これ以上の責任は負えない。',
-        successRate: 100,
         successEffect: {
           money: 1000, // Minimum pay
-          sanity: -5
+          sanity: COSTS.SANITY.SMALL
         },
         successLog: "「すいません、限界です...」現場を後にした。罪悪感が残る。"
-      }
+      })
     ]
   },
   {
@@ -77,24 +74,21 @@ export const WORK_EVENTS: GameEvent[] = [
     conditions: { timeSlots: [TimeSlot.AFTER_SCHOOL, TimeSlot.NOON, TimeSlot.AFTERNOON] },
     coolDownTurns: COOLDOWNS.MEDIUM,
     options: [
-      {
+      safeOption({
         id: 'opt_work_apologize',
         label: 'ひたすら謝る',
-        risk: 'safe',
         description: '精神を削って嵐が過ぎるのを待つ。',
-        successRate: 100,
         successEffect: {
           money: 5000,
           sanity: -25
         },
         successLog: "1時間サンドバッグになった。給料分は働いたはずだ。"
-      },
-      {
+      }),
+      highRiskOption({
         id: 'opt_work_argue',
         label: '論理的に反論',
-        risk: 'high',
         description: '相手の矛盾を突く。成功すればスカッとするが...',
-        successRate: 30,
+        successRate: SUCCESS_RATES.RISKY, // 30%
         successEffect: {
           money: 5000,
           sanity: 10
@@ -102,10 +96,10 @@ export const WORK_EVENTS: GameEvent[] = [
         successLog: "完全論破。相手はぐうの音も出ずに引き下がった。精神衛生上とても良い。",
         failureEffect: {
           money: 0, // Fired/Penalized
-          sanity: -10
+          sanity: COSTS.SANITY.MEDIUM
         },
         failureLog: "「生意気だ！」火に油を注ぎ、バイトをクビ（即日退勤）になった。"
-      }
+      })
     ]
   },
 
@@ -160,8 +154,8 @@ export const WORK_EVENTS: GameEvent[] = [
     weight: 15,
     conditions: { timeSlots: [TimeSlot.LATE_NIGHT] },
     effect: {
-      hp: -10, // Extra cost
-      sanity: -10
+      hp: COSTS.HP.SMALL, // Extra cost
+      sanity: COSTS.SANITY.MEDIUM
     }
   },
   {
@@ -173,9 +167,9 @@ export const WORK_EVENTS: GameEvent[] = [
     weight: 5,
     conditions: { timeSlots: [TimeSlot.LATE_NIGHT] },
     effect: {
-      money: -3000, // Penalty (reduced salary)
-      hp: -20,
-      sanity: -20
+      money: COSTS.MONEY.PENALTY_MEDIUM, // Penalty (reduced salary)
+      hp: COSTS.HP.LARGE,
+      sanity: COSTS.SANITY.HUGE
     }
   },
 
@@ -213,7 +207,7 @@ export const WORK_EVENTS: GameEvent[] = [
     conditions: { timeSlots: [TimeSlot.NOON, TimeSlot.AFTERNOON, TimeSlot.AFTER_SCHOOL, TimeSlot.NIGHT] },
     effect: {
       money: -500, // Reduced salary
-      sanity: -10
+      sanity: COSTS.SANITY.MEDIUM
     }
   },
 

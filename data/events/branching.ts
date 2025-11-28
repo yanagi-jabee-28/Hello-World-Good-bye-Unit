@@ -1,7 +1,8 @@
 
 import { GameEvent, RelationshipId, SubjectId, ItemId, TimeSlot } from '../../types';
-import { WEIGHTS, COOLDOWNS, REL_TIERS, RECOVERY_VALS, KNOWLEDGE_GAINS, REL_GAINS } from '../../config/gameBalance';
+import { WEIGHTS, COOLDOWNS, REL_TIERS, RECOVERY_VALS, KNOWLEDGE_GAINS, REL_GAINS, COSTS, SUCCESS_RATES } from '../../config/gameBalance';
 import { SATIETY_CONSUMPTION } from '../../config/gameConstants';
+import { safeOption, lowRiskOption, midRiskOption, highRiskOption, createOption } from '../builders';
 
 export const BRANCHING_EVENTS: GameEvent[] = [
   // --- NEW: INTERACTION MENUS (Triggered directly by handlers) ---
@@ -15,12 +16,11 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     type: 'mixed',
     weight: 0, // Handled manually
     options: [
-      {
+      lowRiskOption({
         id: 'opt_prof_ask_exam',
         label: '今回の試験について聞く',
-        risk: 'low',
         description: '出題傾向を探る。確実な情報が得られる。',
-        successRate: 90,
+        successRate: SUCCESS_RATES.VERY_HIGH, // 90%
         successEffect: {
           // AUTO_SELECT: Reducer will replace this with weakest subject
           knowledge: { [SubjectId.ALGO]: KNOWLEDGE_GAINS.LARGE },
@@ -32,47 +32,46 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         successLog: "「そこは君の弱点だね」鋭い指摘を受け、苦手分野の理解が深まった。",
         failureEffect: { relationships: { [RelationshipId.PROFESSOR]: -2 } },
         failureLog: "「講義で言ったはずだがね」軽くあしらわれた。"
-      },
-      {
+      }),
+      highRiskOption({
         id: 'opt_prof_ask_paper',
         label: '過去問をお願いする',
-        risk: 'high',
         description: '直球勝負。成功すればデカイが、心証を損ねるリスクあり。',
-        successRate: 40,
+        successRate: SUCCESS_RATES.VERY_LOW, // 40%
         successEffect: {
           inventory: { [ItemId.USB_MEMORY]: 1 },
           relationships: { [RelationshipId.PROFESSOR]: REL_GAINS.MEDIUM },
-          hp: -15,
-          sanity: -15
+          hp: COSTS.HP.MEDIUM,
+          sanity: COSTS.SANITY.MEDIUM
         },
         successLog: "「君の熱意に免じて特別だ」...なんと、教授自らデータをくれた！",
         failureEffect: {
           relationships: { [RelationshipId.PROFESSOR]: -15 },
-          sanity: -10
+          sanity: COSTS.SANITY.MEDIUM
         },
         failureLog: "「学生の本分を履き違えるな！」厳しく叱責された。"
-      },
-      {
+      }),
+      createOption({
         id: 'opt_prof_ask_book',
         label: '参考書籍を借りる',
-        risk: 'low',
         description: '学習資料をねだる。',
-        successRate: 60,
+        risk: 'low',
+        successRate: SUCCESS_RATES.LOW, // 60%
         successEffect: {
           inventory: { [ItemId.REFERENCE_BOOK]: 1 },
           relationships: { [RelationshipId.PROFESSOR]: REL_GAINS.Qm },
-          hp: -5
+          hp: COSTS.HP.TINY
         },
         successLog: "「これを持っていくといい」教授の著書を貸してもらった。",
         failureEffect: { relationships: { [RelationshipId.PROFESSOR]: -5 } },
         failureLog: "貸せる本はないと断られた。"
-      },
+      }),
       {
         id: 'opt_prof_random',
         label: '【ランダム】成り行きに任せる',
         risk: 'high',
         description: '教授の機嫌次第。何が起こるかわからない。',
-        successRate: 100,
+        successRate: SUCCESS_RATES.GUARANTEED,
         chainTrigger: 'action_professor',
         successLog: "「ん、暇なのかね？」教授との時間が始まった。"
       }
@@ -88,12 +87,10 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     type: 'mixed',
     weight: 0, // Handled manually
     options: [
-      {
+      safeOption({
         id: 'opt_senior_meal',
         label: 'ご飯に行きましょう',
-        risk: 'safe',
         description: '奢ってもらって回復する。',
-        successRate: 100,
         successEffect: {
           hp: RECOVERY_VALS.LARGE,
           sanity: RECOVERY_VALS.SMALL,
@@ -101,29 +98,26 @@ export const BRANCHING_EVENTS: GameEvent[] = [
           relationships: { [RelationshipId.SENIOR]: REL_GAINS.MEDIUM }
         },
         successLog: "学食で一番高い定食を奢ってもらった。「しっかり食えよ！」"
-      },
-      {
+      }),
+      midRiskOption({
         id: 'opt_senior_past_paper',
         label: '過去問ください！',
-        risk: 'low',
         description: '先輩のコネに頼る。何度でも入手できるチャンス。',
-        successRate: 60,
+        successRate: SUCCESS_RATES.LOW, // 60%
         successEffect: {
           inventory: { [ItemId.USB_MEMORY]: 1 },
-          // AUTO_SELECT: Reducer will replace this with weakest subject
           knowledge: { [SubjectId.CIRCUIT]: KNOWLEDGE_GAINS.LARGE },
           relationships: { [RelationshipId.SENIOR]: REL_GAINS.LARGE }
         },
         successLog: "「しょうがねぇなぁ」一番不安だった科目の過去問フォルダを共有してくれた。",
         failureEffect: { relationships: { [RelationshipId.SENIOR]: -5 } },
         failureLog: "「今は手元にないなー」空振りに終わった。"
-      },
-      {
+      }),
+      lowRiskOption({
         id: 'opt_senior_item',
         label: '何かいいモノないですか',
-        risk: 'low',
         description: 'アイテムをねだる。',
-        successRate: 70,
+        successRate: SUCCESS_RATES.MID, // 70%
         successEffect: {
           inventory: { [ItemId.ENERGY_DRINK]: 1 },
           relationships: { [RelationshipId.SENIOR]: REL_GAINS.Qm }
@@ -131,13 +125,13 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         successLog: "「これでも飲んで頑張れ」エナドリを恵んでくれた。",
         failureEffect: { relationships: { [RelationshipId.SENIOR]: -2 } },
         failureLog: "「俺が欲しいくらいだよ」と笑われた。"
-      },
+      }),
       {
         id: 'opt_senior_random',
         label: '【ランダム】先輩に絡む',
         risk: 'high',
         description: '先輩の気まぐれに付き合う。何が起こるかわからない。',
-        successRate: 100,
+        successRate: SUCCESS_RATES.GUARANTEED,
         chainTrigger: 'action_senior',
         successLog: "「おう、なんだ？」先輩に捕まった。"
       }
@@ -153,80 +147,72 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     type: 'mixed',
     weight: 0, // Handled manually
     options: [
-      {
+      safeOption({
         id: 'opt_friend_heal_hp',
         label: 'HP回復 (休憩)',
-        risk: 'safe',
         description: 'のんびり過ごして体力を回復する。',
-        successRate: 100,
         successEffect: {
           hp: RECOVERY_VALS.LARGE,
           satiety: -SATIETY_CONSUMPTION.REST,
           relationships: { [RelationshipId.FRIEND]: REL_GAINS.Qm }
         },
         successLog: "ダラダラと過ごして体力を回復した。"
-      },
-      {
+      }),
+      safeOption({
         id: 'opt_friend_heal_san',
         label: 'SAN回復 (遊び)',
-        risk: 'safe',
         description: 'パーッと遊んでストレス発散。',
-        successRate: 100,
         successEffect: {
           sanity: RECOVERY_VALS.LARGE,
           satiety: -SATIETY_CONSUMPTION.ESCAPISM,
           relationships: { [RelationshipId.FRIEND]: REL_GAINS.Qm }
         },
         successLog: "愚痴を言い合ってスッキリした。"
-      },
-      {
+      }),
+      safeOption({
         id: 'opt_friend_study',
         label: '一緒に勉強する',
-        risk: 'safe',
         description: '教え合うことで理解が深まる。ただし雑談で時間を取られる。',
-        successRate: 100,
         successEffect: {
-          // AUTO_SELECT: Reducer will replace this with weakest subject
-          knowledge: { [SubjectId.HUMANITIES]: 10 }, // 効率微減
+          knowledge: { [SubjectId.HUMANITIES]: 10 },
           satiety: -18,
           relationships: { [RelationshipId.FRIEND]: REL_GAINS.SMALL },
-          hp: -8,      // 外出の疲労
-          sanity: -5   // 「自分のペースで勉強できない」ストレス
+          hp: -8,
+          sanity: -5
         },
         successLog: "一人では詰まっていた箇所も、教え合うことで理解できた。ただし、雑談で1時間は無駄にした。",
-      },
-      // New Option: Ask for materials
-      {
+      }),
+      createOption({
         id: 'opt_friend_ask_materials',
         label: '資料をねだる',
         risk: 'high',
         description: '友達のツテを頼って過去問を探してもらう。',
-        successRate: 50,
+        successRate: SUCCESS_RATES.LOW, // 50%
         successEffect: {
             inventory: { [ItemId.VERIFIED_PAST_PAPERS]: 1 },
             relationships: { [RelationshipId.FRIEND]: REL_GAINS.SMALL },
-            hp: -5 // Cost
+            hp: COSTS.HP.TINY
         },
         successLog: "「しょうがないなー」友人が入手した『検証済み過去問』を分けてくれた！神！",
         failureEffect: {
             relationships: { [RelationshipId.FRIEND]: -5 },
-            hp: -5 // Cost
+            hp: COSTS.HP.TINY
         },
         failureLog: "「そんな都合のいいものないよ」と呆れられた。"
-      },
+      }),
       {
         id: 'opt_friend_random',
         label: 'おまかせ',
         risk: 'high',
         description: '友人の提案に乗る。何が起こるかわからない。',
-        successRate: 100,
-        chainTrigger: 'action_friend', // ランダムイベントを連鎖させる
+        successRate: SUCCESS_RATES.GUARANTEED,
+        chainTrigger: 'action_friend',
         successLog: "友人の提案に乗ってみることにした。"
       }
     ]
   },
 
-  // --- PROFESSOR EVENTS (Existing) ---
+  // --- PROFESSOR EVENTS ---
   {
     id: 'prof_special_task',
     trigger: 'action_professor',
@@ -237,56 +223,51 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     conditions: { minRelationship: REL_TIERS.MID },
     coolDownTurns: COOLDOWNS.LONG,
     options: [
-      {
+      safeOption({
         id: 'opt_prof_task_accept',
         label: '手伝う (堅実)',
-        risk: 'safe',
         description: '地道に作業する。友好度は確実に上がる。',
-        successRate: 100,
         successEffect: {
           relationships: { [RelationshipId.PROFESSOR]: 8 },
-          hp: -10,
-          sanity: -5,
+          hp: COSTS.HP.SMALL,
+          sanity: COSTS.SANITY.SMALL,
           satiety: -SATIETY_CONSUMPTION.WORK
         },
         successLog: "数時間かけてデータを整理した。教授から感謝され、お茶をご馳走になった。"
-      },
-      {
+      }),
+      highRiskOption({
         id: 'opt_prof_task_script',
         label: 'スクリプト化 (挑戦)',
-        risk: 'high',
         description: '自動化プログラムを組む。成功すれば絶大な評価。失敗は許されない。',
-        successRate: 40,
+        successRate: SUCCESS_RATES.VERY_LOW, // 40%
         successEffect: {
           relationships: { [RelationshipId.PROFESSOR]: 25 },
           knowledge: { [SubjectId.ALGO]: 15 },
-          sanity: 10,
+          sanity: COSTS.SANITY.BOOST_MID,
           satiety: -SATIETY_CONSUMPTION.STUDY
         },
         successLog: "完璧な自動化スクリプトを提出した！「素晴らしい！君は天才か？」教授は大興奮だ。",
         failureEffect: {
           relationships: { [RelationshipId.PROFESSOR]: -10 },
-          sanity: -20,
-          hp: -15,
+          sanity: COSTS.SANITY.HUGE,
+          hp: COSTS.HP.MEDIUM,
           satiety: -SATIETY_CONSUMPTION.WORK
         },
         failureLog: "バグで教授の大切なデータを一部破損させてしまった...。雷が落ちる。"
-      },
-      {
+      }),
+      safeOption({
         id: 'opt_prof_task_decline',
         label: '丁重に断る',
-        risk: 'safe',
         description: '勉強を優先する。',
-        successRate: 100,
         successEffect: {
           relationships: { [RelationshipId.PROFESSOR]: -2 }
         },
         successLog: "「そうか、試験も近いしな」教授は少し残念そうだった。"
-      }
+      })
     ]
   },
 
-  // --- SENIOR EVENTS (Existing) ---
+  // --- SENIOR EVENTS ---
   {
     id: 'senior_gamble_offer',
     trigger: 'action_senior',
@@ -296,41 +277,38 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     weight: WEIGHTS.RARE,
     conditions: { minRelationship: REL_TIERS.MID, minMoney: 1000 },
     options: [
-      {
+      highRiskOption({
         id: 'opt_senior_gamble_yes',
         label: '乗る',
-        risk: 'high',
         description: '成功率50%。勝てば臨時収入、負ければ損失。',
-        successRate: 50,
+        successRate: SUCCESS_RATES.LOW, // 50%
         successEffect: {
           money: 5000,
-          satiety: -10,
+          satiety: COSTS.SATIETY.SMALL,
           relationships: { [RelationshipId.SENIOR]: 10 }
         },
         successLog: "予想外に上手くいった！割の良いバイトだった。",
         failureEffect: {
-          hp: -15,
-          money: -1000,
-          sanity: -10,
-          satiety: -15
+          hp: COSTS.HP.MEDIUM,
+          money: COSTS.MONEY.PENALTY_SMALL,
+          sanity: COSTS.SANITY.MEDIUM,
+          satiety: COSTS.SATIETY.MEDIUM
         },
         failureLog: "完全に騙された。タダ働きさせられた挙句、経費を引かれた..."
-      },
-      {
+      }),
+      safeOption({
         id: 'opt_senior_gamble_no',
         label: 'やめておく',
-        risk: 'safe',
         description: '君子危うきに近寄らず。',
-        successRate: 100,
         successEffect: {
           sanity: 5
         },
         successLog: "丁重に断った。リスク管理もエンジニアの素養だ。"
-      }
+      })
     ]
   },
 
-  // --- FRIEND EVENTS (Existing) ---
+  // --- FRIEND EVENTS ---
   {
     id: 'friend_long_call',
     trigger: 'action_friend',
@@ -339,26 +317,26 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     type: 'mixed',
     weight: WEIGHTS.UNCOMMON,
     options: [
-      {
+      createOption({
         id: 'opt_friend_call_answer',
         label: '出る',
-        risk: 'low',
+        risk: 'low', 
+        successRate: SUCCESS_RATES.GUARANTEED,
         description: '長電話に付き合う。SAN値は回復するが、体力を消耗する。',
-        successRate: 100,
         successEffect: {
-          sanity: 30,
-          hp: -20,
+          sanity: COSTS.SANITY.RECOVER_SMALL,
+          hp: COSTS.HP.LARGE,
           satiety: -SATIETY_CONSUMPTION.SOCIAL,
           relationships: { [RelationshipId.FRIEND]: 10 }
         },
         successLog: "延々とくだらない話で盛り上がった。精神的なデトックスにはなったが、通話を終えるとどっと疲れが出た。"
-      },
-      {
+      }),
+      createOption({
         id: 'opt_friend_call_ignore',
         label: '今は無理',
         risk: 'safe',
         description: '学習時間を優先する。',
-        successRate: 80,
+        successRate: SUCCESS_RATES.HIGH, // 80%
         successEffect: {
           hp: 5
         },
@@ -368,7 +346,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
           relationships: { [RelationshipId.FRIEND]: -2 }
         },
         failureLog: "着信が気になって集中力が削がれた...。"
-      }
+      })
     ]
   },
   {
@@ -380,12 +358,11 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     weight: WEIGHTS.UNCOMMON,
     conditions: { maxSanity: 40 },
     options: [
-      {
+      midRiskOption({
         id: 'opt_friend_cheerup',
         label: '励ます',
-        risk: 'low',
         description: 'ポジティブな言葉をかける。成功すれば双方回復。',
-        successRate: 70,
+        successRate: SUCCESS_RATES.MID, // 70%
         successEffect: {
           sanity: 10,
           satiety: -5,
@@ -393,22 +370,20 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         },
         successLog: "「...だよな、やるしかないか」友人の目に光が戻った。",
         failureEffect: {
-          sanity: -15,
+          sanity: COSTS.SANITY.MEDIUM,
           hp: -5
         },
         failureLog: "励ましが逆効果だった。「お前は余裕そうでいいよな...」空気が凍った。"
-      },
-      {
+      }),
+      safeOption({
         id: 'opt_friend_escape',
         label: 'そっとしておく',
-        risk: 'safe',
         description: '距離を取って自分の精神を守る。',
-        successRate: 100,
         successEffect: {
           sanity: -5
         },
         successLog: "触らぬ神に祟りなし。今は距離を置こう。"
-      }
+      })
     ]
   },
 
@@ -416,7 +391,7 @@ export const BRANCHING_EVENTS: GameEvent[] = [
   // NEW MONEY-EARNING BRANCHING EVENTS
   // ==========================================
 
-  // 1. Freelance Opportunity (Turn End, High Algo)
+  // 1. Freelance Opportunity
   {
     id: 'freelance_opportunity',
     trigger: 'turn_end',
@@ -425,69 +400,65 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     type: 'mixed',
     weight: WEIGHTS.UNCOMMON,
     conditions: { 
-      minKnowledge: { [SubjectId.ALGO]: 40 }, // Changed from knowledge to minKnowledge
+      minKnowledge: { [SubjectId.ALGO]: 40 },
       minHp: 30,
-      timeSlots: [TimeSlot.AFTER_SCHOOL, TimeSlot.NIGHT, TimeSlot.LATE_NIGHT] // Restricted to later hours
+      timeSlots: [TimeSlot.AFTER_SCHOOL, TimeSlot.NIGHT, TimeSlot.LATE_NIGHT]
     },
     coolDownTurns: COOLDOWNS.LONG,
     options: [
-      {
+      lowRiskOption({
         id: 'opt_freelance_accept',
         label: '引き受ける（堅実）',
-        risk: 'low',
         description: '基本的な実装で確実に納品。体力消費は中程度。',
-        successRate: 80,
+        successRate: SUCCESS_RATES.HIGH, // 80%
         successEffect: {
           money: 8000,
-          hp: -15,
+          hp: COSTS.HP.MEDIUM,
           sanity: -5,
           satiety: -SATIETY_CONSUMPTION.WORK,
           knowledge: { [SubjectId.ALGO]: KNOWLEDGE_GAINS.SMALL }
         },
         successLog: "仕様通りに実装し、問題なく納品できた。「助かりました！」",
         failureEffect: {
-          hp: -20,
-          sanity: -15,
+          hp: COSTS.HP.LARGE,
+          sanity: COSTS.SANITY.MEDIUM,
           satiety: -SATIETY_CONSUMPTION.WORK,
-          money: -1000
+          money: COSTS.MONEY.PENALTY_SMALL
         },
         failureLog: "スクレイピング先のサイト構造が変わっていて動作せず。返金対応になった..."
-      },
-      {
+      }),
+      highRiskOption({
         id: 'opt_freelance_overdeliver',
         label: 'リッチに作り込む（挑戦）',
-        risk: 'high',
         description: 'GUI付き＋エラーハンドリング完備。成功すれば追加報酬＋評価。',
-        successRate: 40, // Lowered success rate from 50
+        successRate: SUCCESS_RATES.VERY_LOW, // 40%
         successEffect: {
-          money: 12000, // Reduced reward: 15000 -> 12000
-          hp: -30, // Increased cost: -25 -> -30
+          money: COSTS.MONEY.XL_REWARD,
+          hp: COSTS.HP.HUGE,
           sanity: 10,
-          satiety: -30, // Increased cost: -20 -> -30
+          satiety: COSTS.SATIETY.XXL,
           knowledge: { [SubjectId.ALGO]: KNOWLEDGE_GAINS.LARGE }
         },
         successLog: "「これは期待以上です！」追加報酬＋高評価レビューを獲得。やりがいを感じた。",
         failureEffect: {
-          hp: -30,
+          hp: COSTS.HP.HUGE,
           sanity: -25,
-          satiety: -20,
-          money: 3000
+          satiety: COSTS.SATIETY.XL,
+          money: COSTS.MONEY.PENALTY_MID
         },
         failureLog: "作り込みすぎて納期に間に合わず。基本報酬の半額＋評価ダウン..."
-      },
-      {
+      }),
+      safeOption({
         id: 'opt_freelance_decline',
         label: '見送る',
-        risk: 'safe',
         description: '今は本業に集中する。',
-        successRate: 100,
         successEffect: { sanity: 5 },
         successLog: "リスクを取らないのも戦略だ。余計なトラブルは避けた。"
-      }
+      })
     ]
   },
 
-  // 2. Data Entry Gig (Turn End, Low Money)
+  // 2. Data Entry Gig
   {
     id: 'data_entry_gig',
     trigger: 'turn_end',
@@ -497,57 +468,51 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     weight: WEIGHTS.COMMON,
     conditions: { 
       minHp: 25,
-      timeSlots: [TimeSlot.NOON, TimeSlot.AFTERNOON, TimeSlot.AFTER_SCHOOL] // Restricted to daytime on campus
+      timeSlots: [TimeSlot.NOON, TimeSlot.AFTERNOON, TimeSlot.AFTER_SCHOOL]
     },
     coolDownTurns: COOLDOWNS.MEDIUM,
     options: [
-      {
+      safeOption({
         id: 'opt_data_entry_work',
         label: '引き受ける',
-        risk: 'safe',
         description: '5時間拘束。脳死作業で確実な報酬。',
-        successRate: 100,
         successEffect: {
           money: 2000,
           hp: -28,
-          sanity: -15,
+          sanity: COSTS.SANITY.MEDIUM,
           satiety: -35
         },
         successLog: "延々とExcelに数字を打ち込んだ。時給換算すると虚しくなる額だが、背に腹は代えられない。"
-      },
-      {
+      }),
+      midRiskOption({
         id: 'opt_data_entry_automate',
         label: 'スクリプトで自動化',
-        risk: 'high',
         description: 'Pythonで自動化して楽をする。バレなければ最高効率。',
-        // conditions: { minKnowledge: { [SubjectId.ALGO]: 50 } }, // Option level condition
-        successRate: 60,
+        successRate: SUCCESS_RATES.LOW, // 60%
         successEffect: {
           money: 5000,
-          hp: -5,
+          hp: COSTS.HP.TINY,
           sanity: 15,
           knowledge: { [SubjectId.ALGO]: KNOWLEDGE_GAINS.MEDIUM }
         },
         successLog: "完璧な自動化スクリプトが完成。1時間で終わらせて残り時間はネットサーフィン。実質時給¥5,000！",
         failureEffect: {
-          sanity: -20,
-          hp: -10
+          sanity: COSTS.SANITY.HUGE,
+          hp: COSTS.HP.SMALL
         },
         failureLog: "スクリプトがバグって納品できず。タダ働きになった。悔しい..."
-      },
-      {
+      }),
+      safeOption({
         id: 'opt_data_entry_skip',
         label: 'やめておく',
-        risk: 'safe',
         description: '体力温存を優先する。',
-        successRate: 100,
         successEffect: { hp: 5 },
         successLog: "単純作業で消耗するよりマシだ。体力を温存した。"
-      }
+      })
     ]
   },
 
-  // 3. Tutoring Offer (Action Friend)
+  // 3. Tutoring Offer
   {
     id: 'tutoring_offer',
     trigger: 'action_friend',
@@ -556,69 +521,64 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     type: 'mixed',
     weight: WEIGHTS.UNCOMMON,
     conditions: { 
-      // minKnowledge: { [SubjectId.MATH]: 60 },
       minRelationship: REL_TIERS.MID 
     },
     coolDownTurns: COOLDOWNS.LONG,
     options: [
-      {
+      lowRiskOption({
         id: 'opt_tutor_accept',
         label: '引き受ける（標準）',
-        risk: 'low',
         description: '基礎を丁寧に教える。確実に報酬を得られる。',
-        successRate: 85,
+        successRate: 85, // Custom High
         successEffect: {
           money: 4000,
-          hp: -10,
-          sanity: -5,
+          hp: COSTS.HP.SMALL,
+          sanity: COSTS.SANITY.SMALL,
           satiety: -SATIETY_CONSUMPTION.SOCIAL,
           relationships: { [RelationshipId.FRIEND]: REL_GAINS.MEDIUM }
         },
         successLog: "「わかりやすかったです！」後輩から感謝された。謝礼と共に評判も上がった。",
         failureEffect: {
-          sanity: -15,
-          hp: -15,
+          sanity: COSTS.SANITY.MEDIUM,
+          hp: COSTS.HP.MEDIUM,
           relationships: { [RelationshipId.FRIEND]: -5 }
         },
         failureLog: "「え、そこわかんないです...」説明が空回りし、気まずい空気に。"
-      },
-      {
+      }),
+      highRiskOption({
         id: 'opt_tutor_intensive',
         label: '過去問パターン徹底指導',
-        risk: 'high',
         description: '応用問題まで完璧に仕上げる。成功すれば高額報酬＋人脈拡大。',
-        successRate: 50,
+        successRate: SUCCESS_RATES.LOW, // 50%
         successEffect: {
-          money: 10000,
-          hp: -20,
+          money: COSTS.MONEY.LARGE_REWARD,
+          hp: COSTS.HP.LARGE,
           sanity: 5,
-          satiety: -15,
+          satiety: COSTS.SATIETY.MEDIUM,
           relationships: { [RelationshipId.FRIEND]: REL_GAINS.LARGE }
         },
         successLog: "「試験、満点取れました！」噂が広まり、複数の後輩から依頼が殺到。収入源になった。",
         failureEffect: {
           hp: -25,
-          sanity: -20,
+          sanity: COSTS.SANITY.HUGE,
           relationships: { [RelationshipId.FRIEND]: -8 }
         },
         failureLog: "応用問題で自分が詰まってしまい、後輩を困惑させた。最悪の結果に..."
-      },
-      {
+      }),
+      safeOption({
         id: 'opt_tutor_decline',
         label: '断る',
-        risk: 'safe',
         description: '自分の勉強を優先する。',
-        successRate: 100,
         successEffect: { 
-          sanity: -5,
+          sanity: COSTS.SANITY.SMALL,
           relationships: { [RelationshipId.FRIEND]: -3 }
         },
         successLog: "「ごめん、今は余裕ないんだ」断った。少し気まずい。"
-      }
+      })
     ]
   },
 
-  // 4. Bug Bounty (Turn End, Very Rare)
+  // 4. Bug Bounty
   {
     id: 'bug_bounty_discovery',
     trigger: 'turn_end',
@@ -627,41 +587,38 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     type: 'mixed',
     weight: WEIGHTS.RARE,
     conditions: { 
-      // minKnowledge: { [SubjectId.ALGO]: 70 },
       minHp: 40 
     },
     maxOccurrences: 2,
-    coolDownTurns: 14, // Very Long
+    coolDownTurns: 14,
     options: [
-      {
+      midRiskOption({
         id: 'opt_bug_report',
         label: '正式に報告する',
-        risk: 'high', // Increased risk display
         description: '報告書を作成して提出。報奨金狙いだが、藪蛇になる可能性も。',
-        successRate: 60, // Reduced success rate: 90 -> 60
+        successRate: SUCCESS_RATES.LOW, // 60%
         successEffect: {
-          money: 5000, // Reduced reward: 20000 -> 5000
+          money: COSTS.MONEY.REWARD_MEDIUM,
           relationships: { [RelationshipId.PROFESSOR]: REL_GAINS.MEDIUM },
           knowledge: { [SubjectId.ALGO]: KNOWLEDGE_GAINS.MEDIUM }
         },
         successLog: "「助かったよ」システム管理者から感謝され、図書カード(換金済)を貰った。",
         failureEffect: {
-          sanity: -15,
-          hp: -5,
+          sanity: COSTS.SANITY.MEDIUM,
+          hp: COSTS.HP.SMALL,
           relationships: { [RelationshipId.PROFESSOR]: -5 }
         },
         failureLog: "「学生が勝手にスキャンするな！」逆に説教された。理不尽だ。"
-      },
-      {
+      }),
+      highRiskOption({
         id: 'opt_bug_exploit',
         label: '悪用する（危険）',
-        risk: 'high',
         description: '闇市場で売却。大金を得られるが、バレたら退学確定。',
-        successRate: 30,
+        successRate: SUCCESS_RATES.RISKY, // 30%
         successEffect: {
           money: 50000,
-          sanity: -30,
-          hp: -10
+          sanity: COSTS.SANITY.CRITICAL,
+          hp: COSTS.HP.SMALL
         },
         successLog: "匿名で情報を売却し、巨額を手にした。罪悪感が重くのしかかる...",
         failureEffect: {
@@ -670,20 +627,18 @@ export const BRANCHING_EVENTS: GameEvent[] = [
           money: -10000
         },
         failureLog: "【緊急】セキュリティチームに検知され、事情聴取を受けた。処分は免れたが、記録に残った..."
-      },
-      {
+      }),
+      safeOption({
         id: 'opt_bug_ignore',
         label: '何もしない',
-        risk: 'safe',
         description: '見なかったことにする。',
-        successRate: 100,
-        successEffect: { sanity: -5 },
+        successEffect: { sanity: COSTS.SANITY.SMALL },
         successLog: "関わらないのが一番だ。静観を決め込んだ。"
-      }
+      })
     ]
   },
 
-  // 5. Electronics Repair (Turn End, Senior Persona)
+  // 5. Electronics Repair
   {
     id: 'electronics_repair',
     trigger: 'turn_end',
@@ -692,67 +647,62 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     type: 'mixed',
     weight: WEIGHTS.UNCOMMON,
     conditions: { 
-      // minKnowledge: { [SubjectId.CIRCUIT]: 50 },
       minRelationship: REL_TIERS.LOW,
-      timeSlots: [TimeSlot.NOON, TimeSlot.AFTERNOON, TimeSlot.AFTER_SCHOOL, TimeSlot.NIGHT, TimeSlot.LATE_NIGHT] // Senior availability
+      timeSlots: [TimeSlot.NOON, TimeSlot.AFTERNOON, TimeSlot.AFTER_SCHOOL, TimeSlot.NIGHT, TimeSlot.LATE_NIGHT]
     },
     coolDownTurns: COOLDOWNS.MEDIUM,
     options: [
-      {
+      lowRiskOption({
         id: 'opt_repair_diagnose',
         label: '診断する（慎重）',
-        risk: 'low',
         description: '原因特定だけして、修理は業者に任せる提案。',
-        successRate: 80,
+        successRate: SUCCESS_RATES.HIGH, // 80%
         successEffect: {
           money: 2000,
-          satiety: -5,
+          satiety: COSTS.SATIETY.TINY,
           relationships: { [RelationshipId.SENIOR]: REL_GAINS.MEDIUM }
         },
         successLog: "「メモリ不良だな」原因を特定し、業者を紹介。謝礼を受け取った。",
         failureEffect: {
-          sanity: -10,
+          sanity: COSTS.SANITY.MEDIUM,
           relationships: { [RelationshipId.SENIOR]: -3 }
         },
         failureLog: "「結局わかんねーのかよ」原因不明で終わり、気まずい空気に。"
-      },
-      {
+      }),
+      highRiskOption({
         id: 'opt_repair_fix',
         label: '自力で修理（挑戦）',
-        risk: 'high',
         description: '完全修理を試みる。成功すれば高額謝礼＋評判UP。',
-        successRate: 55,
+        successRate: 55, // Custom
         successEffect: {
           money: 8000,
           relationships: { [RelationshipId.SENIOR]: REL_GAINS.LARGE },
           knowledge: { [SubjectId.CIRCUIT]: KNOWLEDGE_GAINS.LARGE },
-          satiety: -15
+          satiety: COSTS.SATIETY.MEDIUM
         },
         successLog: "「マジか！ 神かよ！」完全復旧に成功。先輩から高額謝礼＋噂が広まった。",
         failureEffect: {
-          money: -5000,
+          money: COSTS.MONEY.PENALTY_LARGE,
           sanity: -25,
-          hp: -15,
-          satiety: -10,
+          hp: COSTS.HP.MEDIUM,
+          satiety: COSTS.SATIETY.MEDIUM,
           relationships: { [RelationshipId.SENIOR]: -10 }
         },
         failureLog: "修理中に基盤をショートさせ、完全に壊してしまった。弁償する羽目に..."
-      },
-      {
+      }),
+      safeOption({
         id: 'opt_repair_decline',
         label: '断る',
-        risk: 'safe',
         description: '責任を取りたくない。',
-        successRate: 100,
         successEffect: { 
           relationships: { [RelationshipId.SENIOR]: -2 }
         },
         successLog: "「悪い、専門外なんだ」丁重に断った。少し距離ができた。"
-      }
+      })
     ]
   },
 
-  // --- TURN END EVENTS (Existing) ---
+  // --- TURN END EVENTS ---
   {
     id: 'branching_git_conflict',
     trigger: 'turn_end',
@@ -764,52 +714,48 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     conditions: { timeSlots: [TimeSlot.AFTER_SCHOOL, TimeSlot.NIGHT, TimeSlot.LATE_NIGHT] },
     coolDownTurns: COOLDOWNS.MEDIUM,
     options: [
-      {
+      midRiskOption({
         id: 'opt_git_manual_fix',
         label: '手動で解消',
-        risk: 'low',
         description: 'Diffを丁寧に読んで修正する。時間はかかるが確実性は高い。',
-        successRate: 70,
+        successRate: SUCCESS_RATES.MID, // 70%
         successEffect: {
-          hp: -15,
-          satiety: -10,
+          hp: COSTS.HP.MEDIUM,
+          satiety: COSTS.SATIETY.SMALL,
           knowledge: { [SubjectId.ALGO]: KNOWLEDGE_GAINS.SMALL }
         },
         successLog: "地道な作業の末、なんとかマージできた。コードへの理解も深まった気がする。",
         failureEffect: {
-          sanity: -15,
-          hp: -20
+          sanity: COSTS.SANITY.LARGE,
+          hp: COSTS.HP.LARGE
         },
         failureLog: "修正中に新たなバグを埋め込んでしまった...。泥沼だ。"
-      },
-      {
+      }),
+      highRiskOption({
         id: 'opt_git_force_push',
         label: 'Force Push',
-        risk: 'high',
         description: '「俺のコードが正しい」全てを上書きする賭け。',
-        successRate: 30,
+        successRate: SUCCESS_RATES.RISKY, // 30%
         successEffect: {
-          sanity: 10,
-          hp: -5
+          sanity: COSTS.SANITY.BOOST_MID,
+          hp: COSTS.HP.TINY
         },
         successLog: "神に祈りながらEnterッ！...奇跡的に動いた。強引だが解決だ。",
         failureEffect: {
-          sanity: -30,
+          sanity: COSTS.SANITY.CRITICAL,
           knowledge: { [SubjectId.ALGO]: -5 }
         },
         failureLog: "必要なコードまで消し飛んだ。取り返しがつかない..."
-      },
-      {
+      }),
+      safeOption({
         id: 'opt_git_giveup',
         label: '諦めて寝る',
-        risk: 'safe',
         description: '今日の作業はなかったことにする。精神的ダメージは最小限。',
-        successRate: 100,
         successEffect: {
           sanity: 5
         },
         successLog: "「git reset --hard」...美しい虚無だ。寝よう。"
-      }
+      })
     ]
   },
   {
@@ -823,40 +769,38 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     conditions: { timeSlots: [TimeSlot.AFTERNOON, TimeSlot.NIGHT], caffeineMax: 20 },
     coolDownTurns: COOLDOWNS.SHORT,
     options: [
-      {
+      lowRiskOption({
         id: 'opt_drowsiness_slap',
         label: '頬を叩く',
-        risk: 'low',
         description: '物理的衝撃で目を覚ます。',
-        successRate: 60,
+        successRate: SUCCESS_RATES.LOW, // 60%
         successEffect: {
-          hp: -5,
+          hp: COSTS.HP.TINY,
           sanity: 5
         },
         successLog: "バチン！痛みが脳を刺激し、意識がクリアになった。",
         failureEffect: {
-          hp: -5,
-          sanity: -10
+          hp: COSTS.HP.TINY,
+          sanity: COSTS.SANITY.MEDIUM
         },
         failureLog: "痛いだけで眠気は消えない。惨めだ..."
-      },
-      {
+      }),
+      highRiskOption({
         id: 'opt_drowsiness_nap',
         label: '5分仮眠',
-        risk: 'high',
         description: '短時間の睡眠で回復を狙う。寝過ごすリスクあり。',
-        successRate: 40,
+        successRate: SUCCESS_RATES.VERY_LOW, // 40%
         successEffect: {
-          sanity: 15,
+          sanity: COSTS.SANITY.BOOST_LARGE,
           hp: 5,
           satiety: -SATIETY_CONSUMPTION.REST
         },
         successLog: "完璧なパワーナップ。脳が再起動した。",
         failureEffect: {
-          sanity: -15
+          sanity: COSTS.SANITY.LARGE
         },
         failureLog: "気づけば1時間経っていた...。自己嫌悪でSAN値が減る。"
-      }
+      })
     ]
   },
   { 
@@ -869,22 +813,19 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     conditions: { timeSlots: [TimeSlot.MORNING, TimeSlot.AFTER_SCHOOL, TimeSlot.NIGHT] },
     coolDownTurns: COOLDOWNS.MEDIUM,
     options: [
-      {
+      safeOption({
         id: 'opt_rain_taxi',
         label: 'タクシーを使う',
-        risk: 'safe',
         description: '金を払って快適に帰る。',
-        successRate: 100,
         successEffect: {
           money: -2000,
           hp: 5
         },
         successLog: "快適な移動。出費は痛いが、体調には代えられない。"
-      },
-      {
+      }),
+      lowRiskOption({
         id: 'opt_rain_call_friend',
         label: '友人に電話する',
-        risk: 'low',
         description: '迎えに来てもらい、そのまま遊びに行く。',
         conditions: { minRelationship: REL_TIERS.MID }, // 30
         successRate: 75,
@@ -895,28 +836,27 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         },
         successLog: "「おっ、いいぜ！」友人が車で颯爽と登場。そのままカラオケで雨宿りした。",
         failureEffect: {
-          hp: -10,
-          sanity: -10
+          hp: COSTS.HP.SMALL,
+          sanity: COSTS.SANITY.MEDIUM
         },
         failureLog: "電話は繋がらなかった...。雨の中、孤独を噛み締めながら帰った。"
-      },
-      {
+      }),
+      midRiskOption({
         id: 'opt_rain_run',
         label: '走って帰る',
-        risk: 'high',
         description: '気合で乗り切る。',
-        successRate: 50,
+        successRate: SUCCESS_RATES.LOW, // 50%
         successEffect: {
-          hp: -5,
+          hp: COSTS.HP.TINY,
           sanity: 5
         },
         successLog: "ずぶ濡れだが、なんだか爽やかな気分だ。風邪も引かなそうだ。",
         failureEffect: {
-          hp: -20,
-          sanity: -5
+          hp: COSTS.HP.LARGE,
+          sanity: COSTS.SANITY.SMALL
         },
         failureLog: "完全に冷えた。明日熱が出るかもしれない..."
-      }
+      })
     ]
   },
   {
@@ -928,25 +868,23 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     weight: 2, // Very Rare
     maxOccurrences: 1,
     options: [
-      {
+      lowRiskOption({
         id: 'opt_bsod_wait',
         label: '待つ',
-        risk: 'low',
         description: 'OSの復旧機能を信じる。',
-        successRate: 60,
+        successRate: SUCCESS_RATES.LOW, // 60%
         successEffect: {
-          sanity: -5
+          sanity: COSTS.SANITY.SMALL
         },
         successLog: "再起動後、自動保存ファイルが残っていた！OSに感謝。",
         failureEffect: {
           sanity: -25
         },
         failureLog: "データは消えていた。虚無だけが残った。"
-      },
-      {
+      }),
+      highRiskOption({
         id: 'opt_bsod_hit',
         label: '叩く',
-        risk: 'high',
         description: '昭和の修理法。精密機器には逆効果の可能性大。',
         successRate: 20,
         successEffect: {
@@ -954,23 +892,21 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         },
         successLog: "ガンッ！...画面が戻った！？奇跡だ。",
         failureEffect: {
-          money: -5000,
-          sanity: -30
+          money: COSTS.MONEY.PENALTY_LARGE,
+          sanity: COSTS.SANITY.CRITICAL
         },
         failureLog: "バキッという嫌な音がした。PCが物理的に壊れた..."
-      },
-      {
+      }),
+      safeOption({
         id: 'opt_bsod_giveup',
         label: '諦めてスマホを見る',
-        risk: 'safe',
         description: '現実逃避。PCのことは忘れる。',
-        successRate: 100,
         successEffect: {
           sanity: 10,
           hp: 5
         },
         successLog: "今日はもう店じまいだ。猫の動画を見て癒やされた。"
-      }
+      })
     ]
   },
   {
@@ -979,52 +915,48 @@ export const BRANCHING_EVENTS: GameEvent[] = [
     persona: 'SYSTEM',
     text: "【発掘】実験室のジャンク箱から、型番不明の謎のICチップを発見した。オーラを感じる。",
     type: 'mixed',
-    weight: WEIGHTS.UNCOMMON, // Replaces Lost Wallet with same/similar weight
+    weight: WEIGHTS.UNCOMMON,
     options: [
-      {
+      safeOption({
         id: 'opt_junk_datasheet',
         label: '型番を特定する',
-        risk: 'safe',
         description: '顕微鏡とテスターを使って地道に調べる。回路の勉強になる。',
-        successRate: 100,
         successEffect: {
           knowledge: { [SubjectId.CIRCUIT]: KNOWLEDGE_GAINS.MEDIUM },
-           sanity: -5 // Tiresome
+           sanity: COSTS.SANITY.SMALL
         },
         successLog: "地道な測定の結果、廃盤になったレアなオペアンプだと判明した。回路特性への理解が深まった。"
-      },
-      {
+      }),
+      highRiskOption({
         id: 'opt_junk_test',
         label: '通電してみる',
-        risk: 'high',
         description: '男なら一発勝負。回路に組み込んで電源ON。',
-        successRate: 30,
+        successRate: SUCCESS_RATES.RISKY, // 30%
         successEffect: {
           knowledge: { [SubjectId.CIRCUIT]: KNOWLEDGE_GAINS.LARGE },
           sanity: 15
         },
         successLog: "動いた！しかもこれ、超高性能なFPGAだ！この感動はプライスレス。",
         failureEffect: {
-          hp: -15,
-          sanity: -10
+          hp: COSTS.HP.MEDIUM,
+          sanity: COSTS.SANITY.MEDIUM
         },
         failureLog: "「逆電圧か！？」強烈な異臭と共にチップが破裂。飛散した破片が頬をかすめた。顔が煤だらけだ。"
-      },
-      {
+      }),
+      lowRiskOption({
         id: 'opt_junk_auction',
         label: 'ヤフオクに出す',
-        risk: 'low',
         description: '「動作未確認ジャンク」として出品。小銭を稼ぐ。',
-        successRate: 80,
+        successRate: SUCCESS_RATES.HIGH, // 80%
         successEffect: {
           money: 3000
         },
         successLog: "「NCNR（ノークレーム・ノーリターン）」で出品したら、マニアが即決価格で落札してくれた。",
         failureEffect: {
-          sanity: -5
+          sanity: COSTS.SANITY.SMALL
         },
         failureLog: "「送料の方が高い」とクレームが来て、結局廃棄する羽目になった。徒労だ。"
-      }
+      })
     ]
   }
 ];

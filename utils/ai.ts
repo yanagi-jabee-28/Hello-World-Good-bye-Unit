@@ -2,6 +2,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { GameState, GameStatus, SubjectId, RelationshipId } from "../types";
 import { SUBJECTS } from "../data/subjects";
+import { average, maxOrDefault, minOrDefault, floor } from "./math";
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -26,13 +27,13 @@ export const generateGameEvaluation = async (state: GameState): Promise<string> 
 
   // 履歴データの分析
   const history = state.statsHistory;
-  const turns = history.length || 1;
   
-  const avgHp = Math.floor(history.reduce((sum, h) => sum + h.hp, 0) / turns);
-  const avgSanity = Math.floor(history.reduce((sum, h) => sum + h.sanity, 0) / turns);
-  const avgCaffeine = Math.floor(history.reduce((sum, h) => sum + h.caffeine, 0) / turns);
-  const maxCaffeine = Math.max(...history.map(h => h.caffeine), 0);
-  const minSanity = Math.min(...history.map(h => h.sanity), 100);
+  // ユーティリティを使用して計算を集約・簡略化
+  const avgHp = floor(average(history.map(h => h.hp)));
+  const avgSanity = floor(average(history.map(h => h.sanity)));
+  const avgCaffeine = floor(average(history.map(h => h.caffeine)));
+  const maxCaffeine = maxOrDefault(history.map(h => h.caffeine), 0);
+  const minSanity = minOrDefault(history.map(h => h.sanity), 100);
 
   const analysisData = `
     平均HP: ${avgHp} (100点満点中)

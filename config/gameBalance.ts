@@ -53,3 +53,57 @@ export const COOLDOWNS = {
   MEDIUM: 5,
   LONG: 10,
 };
+
+// --- SUCCESS RATES (成功確率) [New] ---
+export const SUCCESS_RATES = {
+  GUARANTEED: 100,
+  VERY_HIGH: 90,
+  HIGH: 80,
+  MID: 70, // 標準的な成功率
+  LOW: 60,
+  VERY_LOW: 40,
+  RISKY: 30,
+} as const;
+
+// --- GENERIC COSTS & REWARDS (汎用コスト・報酬) [New] ---
+export const COSTS = {
+  HP: {
+    TINY: -5,
+    SMALL: -10,
+    MEDIUM: -15,
+    LARGE: -20,
+    HUGE: -30,
+    CRITICAL: -40,
+  },
+  SANITY: {
+    TINY: -3,
+    SMALL: -5,
+    MEDIUM: -10,
+    LARGE: -15,
+    HUGE: -20,
+    CRITICAL: -30,
+    BOOST_MID: 15,
+    BOOST_LARGE: 25,
+    RECOVER_SMALL: 5,
+  },
+  MONEY: {
+    PENALTY_SMALL: -1000,
+    PENALTY_MEDIUM: -3000,
+    PENALTY_MID: -3000,
+    PENALTY_LARGE: -5000,
+    REWARD_SMALL: 2000,
+    REWARD_MEDIUM: 5000,
+    REWARD_LARGE: 10000,
+    LARGE_REWARD: 10000,
+    REWARD_HUGE: 20000,
+    XL_REWARD: 30000,
+  },
+  SATIETY: {
+    TINY: -5,
+    SMALL: -10,
+    MEDIUM: -20,
+    LARGE: -30,
+    XL: -40,
+    XXL: -60,
+  }
+} as const;

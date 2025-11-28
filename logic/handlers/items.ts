@@ -3,6 +3,7 @@ import { GameState, ItemId, SubjectId, LogEntry, GameEventEffect } from '../../t
 import { ITEMS } from '../../data/items';
 import { SUBJECTS } from '../../data/subjects';
 import { getItemEffectDescription, joinMessages } from '../../utils/logFormatter';
+import { formatSuccessRate } from '../../utils/math';
 import { ACTION_LOGS, LOG_TEMPLATES } from '../../data/constants/logMessages';
 import { pushLog } from '../stateHelpers';
 import { applyEffect, mergeEffects } from '../effectProcessor';
@@ -118,18 +119,18 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
           
           effect = mergeEffects(effect, { knowledge: { [target]: kDelta } });
           
-          baseLog = `【解析成功】(成功率${successRate.toFixed(0)}%) アルゴリズムの知識を駆使し、暗号化を解除！${SUBJECTS[target].name}の「神過去問」を発掘！(学習効率UP)`;
+          baseLog = `【解析成功】(${formatSuccessRate(successRate)}) アルゴリズムの知識を駆使し、暗号化を解除！${SUBJECTS[target].name}の「神過去問」を発掘！(学習効率UP)`;
           logType = 'success';
           itemSuccess = true;
        } else {
           effect = mergeEffects(effect, { sanity: -20 });
-          baseLog = `【解析失敗】(成功率${successRate.toFixed(0)}%) 解析中にウィルスを踏んだ...。アルゴリズムの理解度が足りなかったか？PCがフリーズし、精神的ダメージを受けた。`;
+          baseLog = `【解析失敗】(${formatSuccessRate(successRate)}) 解析中にウィルスを踏んだ...。アルゴリズムの理解度が足りなかったか？PCがフリーズし、精神的ダメージを受けた。`;
           logType = 'danger';
        }
        break;
     }
     case ItemId.VERIFIED_PAST_PAPERS: {
-        // Very high success rate, but still check rng for flavor
+        // Very high success rate
         if (rng.chance(95)) {
             const target = rng.pick(Object.values(SubjectId))!;
             const kDelta = 30;
@@ -139,7 +140,7 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
             logType = 'success';
             itemSuccess = true;
         } else {
-            // Rare failure (file corruption etc)
+            // Rare failure
             effect = mergeEffects(effect, { sanity: -10 });
             baseLog = `【破損】${item.name}を開こうとしたが、ファイルが破損していたようだ... 期待が裏切られた。`;
             logType = 'warning';
@@ -151,7 +152,6 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
   const { newState, messages } = applyEffect(state, effect);
 
   // Special State Updates: Increment Past Papers Counter
-  // If success, increment counter
   if (itemSuccess) {
     newState.flags.hasPastPapers = (newState.flags.hasPastPapers || 0) + 1;
   }

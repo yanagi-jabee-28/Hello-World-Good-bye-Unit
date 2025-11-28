@@ -5,7 +5,7 @@ import { ACTION_LOGS } from '../../data/constants/logMessages';
 import { applySoftCap } from '../../utils/common';
 import { joinMessages } from '../../utils/logFormatter';
 import { pushLog } from '../stateHelpers';
-import { CAFFEINE_THRESHOLDS, BUFF_SOFT_CAP_ASYMPTOTE, SATIETY_CONSTANTS, SATIETY_CONSUMPTION } from '../../config/gameConstants';
+import { CAFFEINE_THRESHOLDS, BUFF_SOFT_CAP_ASYMPTOTE, SATIETY_CONSTANTS, SATIETY_CONSUMPTION, STUDY_CONSTANTS } from '../../config/gameConstants';
 import { applyEffect } from '../effectProcessor';
 
 /**
@@ -117,15 +117,15 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
   }
 
   // --- Madness Bonus ---
-  if (state.sanity < 30) {
-    rawEfficiency *= 1.3; 
-    hpCost += 10; 
+  if (state.sanity < STUDY_CONSTANTS.MADNESS_THRESHOLD) {
+    rawEfficiency *= STUDY_CONSTANTS.MADNESS_EFFICIENCY_BONUS; 
+    hpCost += STUDY_CONSTANTS.MADNESS_HP_COST; 
     baseLog += ACTION_LOGS.STUDY.MADNESS;
   }
 
   // --- Past Papers Bonus (Stacking) ---
   if ((state.flags.hasPastPapers || 0) > 0) {
-    const paperBonus = 1.0 + (state.flags.hasPastPapers * 0.1); // +10% per stack
+    const paperBonus = 1.0 + (state.flags.hasPastPapers * STUDY_CONSTANTS.PAST_PAPERS_BONUS_PER_STACK); 
     rawEfficiency *= paperBonus;
     baseLog += ` [過去問効果 x${paperBonus.toFixed(1)}]`;
   }

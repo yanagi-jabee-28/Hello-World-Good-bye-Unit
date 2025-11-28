@@ -36,6 +36,14 @@ export const SATIETY_CONSUMPTION = {
   CAFFEINE_TOXIC_MULT: 2.0,   // 中毒状態は激しく消費 (1.5 -> 2.0)
 };
 
+// 学習関連定数 [New]
+export const STUDY_CONSTANTS = {
+  PAST_PAPERS_BONUS_PER_STACK: 0.1, // 過去問1つあたりのボーナス
+  MADNESS_THRESHOLD: 30, // 狂気ボーナス発動閾値(SAN)
+  MADNESS_EFFICIENCY_BONUS: 1.3, // 狂気時の効率ボーナス
+  MADNESS_HP_COST: 10, // 狂気時の追加HP消費
+};
+
 // バフ関連
 export const BUFF_SOFT_CAP_ASYMPTOTE = 1.5; 
 
