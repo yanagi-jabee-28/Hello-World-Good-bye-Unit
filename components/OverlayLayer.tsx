@@ -73,7 +73,8 @@ export const OverlayLayer: React.FC<OverlayLayerProps> = ({
           onSetUiScale={actions.setUiScale}
         />
       )}
-      {state.pendingEvent && (
+      {/* Event Dialog: Don't show if game over sequence is active */}
+      {state.pendingEvent && !showDeathSequence && !showEndingScreen && (
         <EventDialog 
           event={state.pendingEvent} 
           onResolve={actions.resolveEvent} 

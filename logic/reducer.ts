@@ -260,13 +260,16 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
   if (newState.day > 7) {
     const metrics = evaluateExam(newState);
     newState.status = metrics.passed ? GameStatus.VICTORY : GameStatus.FAILURE;
+    newState.pendingEvent = null; // Clear any pending events on finish
     if (newState.status === GameStatus.VICTORY) pushLog(newState, ACTION_LOGS.SYSTEM.VICTORY, 'success');
     else pushLog(newState, ACTION_LOGS.SYSTEM.FAILURE, 'danger');
   } else if (newState.hp <= 0) {
     newState.status = GameStatus.GAME_OVER_HP;
+    newState.pendingEvent = null; // Clear any pending events on game over
     pushLog(newState, ACTION_LOGS.SYSTEM.GAME_OVER_HP, 'danger');
   } else if (newState.sanity <= 0) {
     newState.status = GameStatus.GAME_OVER_SANITY;
+    newState.pendingEvent = null; // Clear any pending events on game over
     pushLog(newState, ACTION_LOGS.SYSTEM.GAME_OVER_MADNESS, 'danger');
   }
 

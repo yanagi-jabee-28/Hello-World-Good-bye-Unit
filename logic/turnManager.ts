@@ -104,7 +104,8 @@ export const processTurnEnd = (state: GameState, isResting: boolean = false): Ga
   ];
 
   // 10. ターン終了時ランダムイベント
-  if (chance(EVENT_CONSTANTS.RANDOM_PROBABILITY)) {
+  // ゲーム終了日(DAY 8)に到達した場合はイベントを発生させない
+  if (newState.day <= 7 && chance(EVENT_CONSTANTS.RANDOM_PROBABILITY)) {
     newState = executeEvent(newState, 'turn_end');
   }
 
