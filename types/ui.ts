@@ -17,4 +17,4 @@ export interface ProgressButtonProps {
   onInspect?: (e: React.MouseEvent) => void;
 }
 
-export type ProgressTheme = 'LOW' | 'MEDIUM' | 'HIGH' | 'PROFESSOR' | 'SENIOR' | 'FRIEND';
+export type ProgressTheme = 'LOW' | 'MEDIUM' | 'HIGH' | 'PROFESSOR' | 'SENIOR' | 'FRIEND' | 'FAILING' | 'PASSING' | 'ELITE';

@@ -7,6 +7,7 @@ import { joinMessages } from '../../utils/logFormatter';
 import { pushLog } from '../stateHelpers';
 import { CAFFEINE_THRESHOLDS, BUFF_SOFT_CAP_ASYMPTOTE, SATIETY_CONSTANTS, SATIETY_CONSUMPTION, STUDY_CONSTANTS } from '../../config/gameConstants';
 import { applyEffect } from '../effectProcessor';
+import { KNOWLEDGE_THRESHOLDS } from '../../config/gameBalance';
 
 /**
  * 日数進行による難易度係数を計算
@@ -158,13 +159,18 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
   // --- Apply Soft Cap ---
   const finalEfficiency = applySoftCap(rawEfficiency, BUFF_SOFT_CAP_ASYMPTOTE);
   
-  // Progression Curve (Tougher at high levels)
+  // Progression Curve (Revised for 60-point threshold)
+  // 60点までは比較的容易に上がるが、そこからは過去問やバフがないと厳しい
   let progressionMultiplier = 1.0;
-  if (currentScore < 40) progressionMultiplier = 1.3;
-  else if (currentScore < 70) progressionMultiplier = 1.0;
-  else if (currentScore < 85) progressionMultiplier = 0.6; // Stricter
-  else if (currentScore < 95) progressionMultiplier = 0.3; // Much stricter
-  else progressionMultiplier = 0.1; // Almost impossible to hit 100
+  if (currentScore < KNOWLEDGE_THRESHOLDS.PASSING_LINE) {
+    progressionMultiplier = 1.5; // Bonus for early game / catching up to passing grade
+  } else if (currentScore < 80) {
+    progressionMultiplier = 0.8; // Moderate slowdown after passing
+  } else if (currentScore < 90) {
+    progressionMultiplier = 0.5; // Significant slowdown for high grades
+  } else {
+    progressionMultiplier = 0.2; // Hard cap for perfection
+  }
 
   let knowledgeGain = Math.floor(12 * finalEfficiency * subject.difficulty * progressionMultiplier);
   if (knowledgeGain < 1) knowledgeGain = 1;
@@ -179,8 +185,6 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
   const { newState, messages } = applyEffect(state, effect);
   
   // Update lastStudied timestamp
-  // We use the current turnCount as the timestamp.
-  // Note: turnCount increments at the end of the turn, so this value represents "studied during this turn"
   newState.lastStudied = {
     ...newState.lastStudied,
     [subjectId]: newState.turnCount

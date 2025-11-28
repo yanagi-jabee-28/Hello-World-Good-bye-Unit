@@ -23,10 +23,10 @@ export const ProgressButton = React.memo<ProgressButtonProps>(({
     if (variant === 'senior') return 'SENIOR';
     if (variant === 'friend') return 'FRIEND';
 
-    // Default: Academic logic (Progress based colors)
-    if (percentage < PROGRESS_BREAKPOINTS.LOW_MAX) return 'LOW';
-    if (percentage < PROGRESS_BREAKPOINTS.MEDIUM_MAX) return 'MEDIUM';
-    return 'HIGH';
+    // Default: Academic logic (Pass/Fail threshold)
+    if (percentage < PROGRESS_BREAKPOINTS.PASSING) return 'FAILING';
+    if (percentage >= PROGRESS_BREAKPOINTS.ELITE) return 'ELITE';
+    return 'PASSING';
   }, [percentage, variant]);
 
   const theme = PROGRESS_THEMES[themeType];

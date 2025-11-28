@@ -1,8 +1,11 @@
 
-import { GameState } from "../types";
+import { GameState, SubjectId, ItemId } from "../types";
+import { KNOWLEDGE_THRESHOLDS, USB_SUCCESS_CONFIG } from "../config/gameBalance";
+import { SUBJECTS } from "../data/subjects";
+import { formatSuccessRate } from "../utils/math";
 
 export interface Warning {
-  severity: 'info' | 'caution' | 'danger' | 'critical';
+  severity: 'info' | 'caution' | 'danger' | 'critical' | 'success'; // Added success for green notifications
   icon: string;
   message: string;
   hint?: string;
@@ -100,33 +103,72 @@ export function getExamWarnings(state: GameState): Warning[] {
     });
   }
 
-  // === 6. 人脈活用チェック ===
-  if (daysLeft === 1) {
-    const profRel = Object.values(state.relationships)[0] || 0; // PROFESSOR
-    const hasPastPapers = state.flags.hasPastPapers;
-    
-    if (profRel < 30) {
+  // === 6. 学力チェック (60点基準) ===
+  if (daysLeft <= 3) {
+    const belowPassingSubjects = Object.entries(state.knowledge)
+      .filter(([_, score]) => score < KNOWLEDGE_THRESHOLDS.PASSING_LINE)
+      .map(([id, _]) => SUBJECTS[id as SubjectId].name);
+
+    if (belowPassingSubjects.length > 0) {
       warnings.push({
-        severity: 'info',
-        icon: '👨‍🏫',
-        message: '教授との関係性が低い: 重点範囲が不明',
-        hint: '今からでも質問に行けば情報が得られるかも'
-      });
-    }
-    
-    // Check number instead of boolean
-    if (!hasPastPapers || hasPastPapers === 0) {
-      warnings.push({
-        severity: 'info',
-        icon: '📚',
-        message: '過去問未入手: 出題傾向が分からない',
-        hint: '先輩に頼れば秘伝の資料が手に入るかも'
+        severity: 'danger',
+        icon: '📉',
+        message: `合格ライン(60点)未達: ${belowPassingSubjects.length}科目`,
+        hint: `対象: ${belowPassingSubjects.join(', ')}。最優先で学習せよ。`
       });
     }
   }
 
+  // === 7. 人脈・アイテムチェック ===
+  if (daysLeft <= 2) {
+    const profRel = Object.values(state.relationships)[0] || 0; // PROFESSOR
+    const hasPastPapers = state.flags.hasPastPapers;
+    const usbCount = state.inventory[ItemId.USB_MEMORY] || 0;
+    const algoScore = state.knowledge[SubjectId.ALGO] || 0;
+    
+    // USB Reliability check
+    if (usbCount > 0) {
+      if (algoScore < USB_SUCCESS_CONFIG.GUARANTEED_THRESHOLD) {
+        const rate = Math.min(95, USB_SUCCESS_CONFIG.BASE_RATE + algoScore * USB_SUCCESS_CONFIG.ALGO_SCALAR);
+        warnings.push({
+          severity: 'caution',
+          icon: '💾',
+          message: `USB解析リスクあり: 成功率${rate.toFixed(0)}%`,
+          hint: `アルゴリズム${USB_SUCCESS_CONFIG.GUARANTEED_THRESHOLD}点で確定成功。現在は博打要素あり。`
+        });
+      } else {
+        warnings.push({
+          severity: 'success', // Assuming consumer handles this or maps to info
+          icon: '✅',
+          message: `USB完全解析可能 (アルゴ${USB_SUCCESS_CONFIG.GUARANTEED_THRESHOLD}+)`,
+          hint: `アルゴリズム知識によりUSBを安全に使用可能。`
+        });
+      }
+    }
+
+    if (daysLeft === 1) {
+      if (profRel < 30) {
+        warnings.push({
+          severity: 'info',
+          icon: '👨‍🏫',
+          message: '教授との関係性が低い: 重点範囲が不明',
+          hint: '今からでも質問に行けば情報が得られるかも'
+        });
+      }
+      
+      if (!hasPastPapers || hasPastPapers === 0) {
+        warnings.push({
+          severity: 'info',
+          icon: '📚',
+          message: '過去問未入手: 出題傾向が分からない',
+          hint: '先輩に頼れば秘伝の資料が手に入るかも'
+        });
+      }
+    }
+  }
+
   return warnings.sort((a, b) => {
-    const order = { critical: 0, danger: 1, caution: 2, info: 3 };
+    const order = { critical: 0, danger: 1, caution: 2, info: 3, success: 4 };
     return order[a.severity] - order[b.severity];
   });
 }

@@ -8,6 +8,7 @@ import { ACTION_LOGS, LOG_TEMPLATES } from '../../data/constants/logMessages';
 import { pushLog } from '../stateHelpers';
 import { applyEffect, mergeEffects } from '../effectProcessor';
 import { rng } from '../../utils/rng';
+import { KNOWLEDGE_THRESHOLDS, USB_SUCCESS_CONFIG } from '../../config/gameBalance';
 
 export const handleBuyItem = (state: GameState, itemId: ItemId): GameState => {
   const item = ITEMS[itemId];
@@ -106,12 +107,16 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
     }
     case ItemId.USB_MEMORY: {
        const algoScore = state.knowledge[SubjectId.ALGO] || 0;
-       // Success rate calculation:
-       // Base 30% + 0.6% per Algo Point.
-       // Algo 0: 30%
-       // Algo 50: 60%
-       // Algo 100: 90% (Capped at 95%)
-       const successRate = Math.min(95, 30 + (algoScore * 0.6));
+       
+       // Success rate logic:
+       // If Algo >= 60 (Passing), success is guaranteed (capped at 95% for visual consistency)
+       // If Algo < 60, it's a gamble starting at base rate
+       let successRate = 0;
+       if (algoScore >= USB_SUCCESS_CONFIG.GUARANTEED_THRESHOLD) {
+         successRate = 95;
+       } else {
+         successRate = Math.min(95, USB_SUCCESS_CONFIG.BASE_RATE + (algoScore * USB_SUCCESS_CONFIG.ALGO_SCALAR));
+       }
 
        if (rng.chance(successRate)) {
           const target = rng.pick(Object.values(SubjectId))!;
@@ -119,19 +124,23 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
           
           effect = mergeEffects(effect, { knowledge: { [target]: kDelta } });
           
-          baseLog = `【解析成功】(${formatSuccessRate(successRate)}) アルゴリズムの知識を駆使し、暗号化を解除！${SUBJECTS[target].name}の「神過去問」を発掘！(学習効率UP)`;
+          if (algoScore >= USB_SUCCESS_CONFIG.GUARANTEED_THRESHOLD) {
+             baseLog = `【完全解析】(${formatSuccessRate(successRate)}) アルゴリズムの知識(${algoScore}点)で暗号化を完全に掌握！${SUBJECTS[target].name}の「神過去問」を発掘！(学習効率UP)`;
+          } else {
+             baseLog = `【解析成功】(${formatSuccessRate(successRate)}) アルゴリズムの知識を駆使し、運良く暗号化を解除！${SUBJECTS[target].name}の「神過去問」を発掘！(学習効率UP)`;
+          }
           logType = 'success';
           itemSuccess = true;
        } else {
-          effect = mergeEffects(effect, { sanity: -20 });
-          baseLog = `【解析失敗】(${formatSuccessRate(successRate)}) 解析中にウィルスを踏んだ...。アルゴリズムの理解度が足りなかったか？PCがフリーズし、精神的ダメージを受けた。`;
+          effect = mergeEffects(effect, { sanity: -USB_SUCCESS_CONFIG.PENALTY_SANITY });
+          baseLog = `【解析失敗】(${formatSuccessRate(successRate)}) 解析中にウィルスを踏んだ...。アルゴリズムの理解度(${algoScore}点)が足りなかったか？合格ライン(60点)未達のリスクが露呈した。`;
           logType = 'danger';
        }
        break;
     }
     case ItemId.VERIFIED_PAST_PAPERS: {
         // Very high success rate
-        if (rng.chance(95)) {
+        if (rng.chance(98)) {
             const target = rng.pick(Object.values(SubjectId))!;
             const kDelta = 30;
             

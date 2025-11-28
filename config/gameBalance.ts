@@ -4,6 +4,21 @@
  * 一元管理されたバランス調整用定数定義
  */
 
+// --- KNOWLEDGE THRESHOLDS (学習到達度の壁) ---
+export const KNOWLEDGE_THRESHOLDS = {
+  PASSING_LINE: 60,    // 合格ライン（高専基準）
+  SAFE_ZONE: 80,       // 安全圏（過去問活用推奨）
+  PERFECT_ZONE: 90,    // 完璧域（運命共同体レベル）
+};
+
+// --- USB SUCCESS CONFIG ---
+export const USB_SUCCESS_CONFIG = {
+  BASE_RATE: 30,           // 基礎成功率 30%
+  ALGO_SCALAR: 0.5,        // アルゴ1点あたり +0.5%
+  GUARANTEED_THRESHOLD: 60, // アルゴ60点で確定成功（95%キャップ）
+  PENALTY_SANITY: 20,      // 失敗時のSANペナルティ
+};
+
 // --- RELATIONSHIP THRESHOLDS (友好度階層) ---
 export const REL_TIERS = {
   LOW: 0,     // 初対面 - 顔見知り
