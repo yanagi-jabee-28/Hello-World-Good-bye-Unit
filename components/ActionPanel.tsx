@@ -27,37 +27,43 @@ interface Props {
     openShop: () => void;
   };
   onInspect?: (itemId: ItemId, mode: 'inventory' | 'shop') => void;
+  isMobile?: boolean;
 }
 
-export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect }) => {
-  const { timeSlot, caffeine, status } = state;
-  const isGameOver = status !== 'PLAYING';
-  const warnings = getExamWarnings(state);
-  const hasCriticalWarning = warnings.some(w => w.severity === 'critical' || w.severity === 'danger');
+// --- Sub Components (Defined outside to prevent re-creation) ---
 
-  if (isGameOver) {
-    return (
-      <div className="h-full w-full p-4 border-2 border-red-900 bg-black/90 flex items-center justify-center backdrop-blur-sm">
-        <div className="text-red-600 font-mono text-center animate-pulse space-y-4">
-          <Ban size={64} className="mx-auto" />
-          <div>
-            <h2 className="text-3xl font-bold tracking-[0.5em] glitch-text" data-text="SYSTEM HALTED">SYSTEM HALTED</h2>
-            <p className="text-sm text-red-800 mt-2 uppercase tracking-widest">Fatal Error // User Input Disabled</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+const AcademicSection: React.FC<{ 
+  state: GameState; 
+  onStudy: (id: SubjectId) => void; 
+  isMobile: boolean 
+}> = React.memo(({ state, onStudy, isMobile }) => (
+  <div className="space-y-1.5">
+    {Object.values(SUBJECTS).map((sub) => (
+      <ProgressButton
+        key={sub.id}
+        onClick={() => onStudy(sub.id)}
+        label={sub.name}
+        subLabel={`Difficulty: ${sub.difficulty}x`}
+        icon={<School size={14} />}
+        progress={state.knowledge[sub.id]}
+        maxValue={100}
+        className={isMobile ? "min-h-[52px]" : "min-h-[48px]"}
+        ariaLabel={`${sub.name}を勉強する。現在の理解度 ${state.knowledge[sub.id]}%`}
+        variant="default"
+      />
+    ))}
+  </div>
+));
 
-  // Helpers
-  const ownedItems = Object.entries(state.inventory)
-    .filter(([_, count]) => ((count as number) || 0) > 0)
-    .map(([id]) => id as ItemId);
-
-  const { professor: isProfAvailable, senior: isSeniorAvailable, friend: isFriendAvailable } = getAvailability(timeSlot);
-  const studyHint = getStudyHint(timeSlot, caffeine);
+const LifeSection: React.FC<{
+  timeSlot: TimeSlot;
+  onRest: () => void;
+  onWork: () => void;
+  onOpenShop: () => void;
+  isMobile: boolean;
+}> = React.memo(({ timeSlot, onRest, onWork, onOpenShop, isMobile }) => {
   const workConfig = getWorkConfig(timeSlot);
-
+  
   const getRestConfig = (slot: TimeSlot) => {
     switch (slot) {
       case TimeSlot.LATE_NIGHT: return { label: "就寝 (布団)", desc: "HP大/SAN大", icon: <Bed size={16} /> };
@@ -68,30 +74,10 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect }) => {
   };
   const restConfig = getRestConfig(timeSlot);
 
-  // Render Functions for reusability
-  const renderAcademic = (isMobile: boolean = false) => (
-    <div className="space-y-1.5">
-      {Object.values(SUBJECTS).map((sub) => (
-        <ProgressButton
-          key={sub.id}
-          onClick={() => actions.study(sub.id)}
-          label={sub.name}
-          subLabel={`Difficulty: ${sub.difficulty}x`}
-          icon={<School size={14} />}
-          progress={state.knowledge[sub.id]}
-          maxValue={100}
-          className={isMobile ? "min-h-[52px]" : "min-h-[48px]"}
-          ariaLabel={`${sub.name}を勉強する。現在の理解度 ${state.knowledge[sub.id]}%`}
-          variant="default"
-        />
-      ))}
-    </div>
-  );
-
-  const renderLife = (isMobile: boolean = false) => (
+  return (
     <div className="space-y-1.5">
       <Button
-        onClick={actions.rest}
+        onClick={onRest}
         label={restConfig.label}
         subLabel={restConfig.desc}
         icon={restConfig.icon}
@@ -100,7 +86,7 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect }) => {
         size={isMobile ? "lg" : "sm"}
       />
       <Button
-        onClick={actions.work}
+        onClick={onWork}
         label={workConfig.label}
         subLabel={`EARN: ¥${workConfig.salary.toLocaleString()}`}
         icon={<Briefcase size={14} />}
@@ -110,7 +96,7 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect }) => {
         size={isMobile ? "lg" : "sm"}
       />
       <Button
-        onClick={actions.openShop}
+        onClick={onOpenShop}
         label="生協 NET"
         subLabel="PURCHASE"
         icon={<ShoppingCart size={14} />}
@@ -121,8 +107,16 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect }) => {
       />
     </div>
   );
+});
 
-  const renderSocial = (isMobile: boolean = false) => (
+const SocialSection: React.FC<{
+  state: GameState;
+  actions: Props['actions'];
+  isMobile: boolean;
+}> = React.memo(({ state, actions, isMobile }) => {
+  const { professor: isProfAvailable, senior: isSeniorAvailable, friend: isFriendAvailable } = getAvailability(state.timeSlot);
+
+  return (
     <div className="space-y-1.5">
       <ProgressButton
         onClick={actions.askProfessor}
@@ -160,7 +154,6 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect }) => {
         ariaLabel={`友人と協力する。友好度 ${state.relationships[RelationshipId.FRIEND]}%`}
         variant="friend"
       />
-      {/* Escapism uses standard button as it doesn't track a specific progress bar */}
       <Button
         onClick={actions.escapism}
         label="現実逃避"
@@ -173,8 +166,19 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect }) => {
       />
     </div>
   );
+});
 
-  const renderInventory = (isMobile: boolean = false) => (
+const InventorySection: React.FC<{
+  inventory: GameState['inventory'];
+  onUse: (id: ItemId) => void;
+  onInspect?: (id: ItemId, mode: 'inventory') => void;
+  isMobile: boolean;
+}> = React.memo(({ inventory, onUse, onInspect, isMobile }) => {
+  const ownedItems = Object.entries(inventory)
+    .filter(([_, count]) => ((count as number) || 0) > 0)
+    .map(([id]) => id as ItemId);
+
+  return (
     <div className="space-y-1.5">
       {ownedItems.length === 0 ? (
          <div className="fs-xxs text-gray-600 p-4 border border-gray-800 border-dashed text-center rounded h-full flex items-center justify-center bg-black/30">
@@ -189,9 +193,9 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect }) => {
             return (
               <Button
                 key={itemId}
-                onClick={() => actions.useItem(itemId)}
+                onClick={() => onUse(itemId)}
                 label={`${item.name}`}
-                subLabel={`x${state.inventory[itemId]} | ${shortEffect}`}
+                subLabel={`x${inventory[itemId]} | ${shortEffect}`}
                 icon={<Zap size={12} />}
                 variant="outline"
                 className="border-gray-700 text-gray-300 hover:border-gray-500 bg-gray-900/50"
@@ -205,6 +209,30 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect }) => {
       )}
     </div>
   );
+});
+
+// --- Main Component ---
+
+export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect, isMobile = false }) => {
+  const { timeSlot, caffeine, status } = state;
+  const isGameOver = status !== 'PLAYING';
+  const warnings = getExamWarnings(state);
+  const hasCriticalWarning = warnings.some(w => w.severity === 'critical' || w.severity === 'danger');
+  const studyHint = getStudyHint(timeSlot, caffeine);
+
+  if (isGameOver) {
+    return (
+      <div className="h-full w-full p-4 border-2 border-red-900 bg-black/90 flex items-center justify-center backdrop-blur-sm">
+        <div className="text-red-600 font-mono text-center animate-pulse space-y-4">
+          <Ban size={64} className="mx-auto" />
+          <div>
+            <h2 className="text-3xl font-bold tracking-[0.5em] glitch-text" data-text="SYSTEM HALTED">SYSTEM HALTED</h2>
+            <p className="text-sm text-red-800 mt-2 uppercase tracking-widest">Fatal Error // User Input Disabled</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full bg-black/50 content-start overflow-y-auto custom-scrollbar">
@@ -236,7 +264,7 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect }) => {
                <span className="fs-xxs font-bold text-gray-500 flex items-center gap-1"><BookOpen size={10} /> ACADEMIC</span>
                <Badge variant={caffeine > 100 ? 'warning' : 'outline'} className="scale-75 origin-right">{studyHint.split('(')[0]}</Badge>
             </div>
-            {renderAcademic()}
+            <AcademicSection state={state} onStudy={actions.study} isMobile={false} />
          </div>
 
          {/* LIFE & ECONOMY */}
@@ -244,7 +272,13 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect }) => {
             <div className="fs-xxs font-bold text-gray-500 flex items-center gap-1 px-1">
                <Briefcase size={10} /> LIFE
             </div>
-            {renderLife()}
+            <LifeSection 
+              timeSlot={timeSlot} 
+              onRest={actions.rest} 
+              onWork={actions.work} 
+              onOpenShop={actions.openShop} 
+              isMobile={false} 
+            />
          </div>
 
          {/* SOCIAL */}
@@ -252,7 +286,7 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect }) => {
             <div className="fs-xxs font-bold text-gray-500 flex items-center gap-1 px-1">
                <Users size={10} /> SOCIAL
             </div>
-            {renderSocial()}
+            <SocialSection state={state} actions={actions} isMobile={false} />
          </div>
 
          {/* INVENTORY */}
@@ -260,26 +294,42 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect }) => {
             <div className="fs-xxs font-bold text-gray-500 flex items-center gap-1 px-1">
                <Package size={10} /> STORAGE
             </div>
-            {renderInventory()}
+            <InventorySection 
+              inventory={state.inventory} 
+              onUse={actions.useItem} 
+              onInspect={onInspect} 
+              isMobile={false} 
+            />
          </div>
       </div>
 
       {/* === MOBILE LAYOUT (Visible on Mobile) === */}
       <div className="md:hidden p-2 space-y-1">
          <CollapsibleSection title="ACADEMIC (学習)" defaultOpen={true}>
-            {renderAcademic(true)}
+            <AcademicSection state={state} onStudy={actions.study} isMobile={true} />
          </CollapsibleSection>
          
          <CollapsibleSection title="LIFE SUPPORT (生活)" defaultOpen={true}>
-            {renderLife(true)}
+            <LifeSection 
+              timeSlot={timeSlot} 
+              onRest={actions.rest} 
+              onWork={actions.work} 
+              onOpenShop={actions.openShop} 
+              isMobile={true} 
+            />
          </CollapsibleSection>
          
          <CollapsibleSection title="SOCIAL LINK (人脈)" defaultOpen={true}>
-            {renderSocial(true)}
+            <SocialSection state={state} actions={actions} isMobile={true} />
          </CollapsibleSection>
          
          <CollapsibleSection title="INVENTORY (所持品)" defaultOpen={true}>
-            {renderInventory(true)}
+            <InventorySection 
+              inventory={state.inventory} 
+              onUse={actions.useItem} 
+              onInspect={onInspect} 
+              isMobile={true} 
+            />
          </CollapsibleSection>
       </div>
     </div>

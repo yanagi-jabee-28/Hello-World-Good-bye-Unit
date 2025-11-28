@@ -56,7 +56,7 @@ export const stopAudio = () => {
 
 export const playLogAudio = async (text: string): Promise<void> => {
   if (!process.env.API_KEY) {
-    console.error("API Key is missing");
+    console.warn("API Key is missing. TTS disabled.");
     return;
   }
 
@@ -67,8 +67,15 @@ export const playLogAudio = async (text: string): Promise<void> => {
   stopAudio();
 
   const ctx = getAudioContext();
+  
+  // Handle suspended state (Autoplay policy)
   if (ctx.state === 'suspended') {
-    await ctx.resume();
+    try {
+      await ctx.resume();
+    } catch (e) {
+      console.warn("Could not resume AudioContext (user interaction needed):", e);
+      return;
+    }
   }
 
   try {
@@ -95,7 +102,8 @@ export const playLogAudio = async (text: string): Promise<void> => {
 
       const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
       if (!base64Audio) {
-        throw new Error("No audio data received from API");
+        console.warn("No audio data received from API for TTS.");
+        return;
       }
 
       const audioBytes = decode(base64Audio);
@@ -130,6 +138,6 @@ export const playLogAudio = async (text: string): Promise<void> => {
     if (myId === currentPlayId) {
         console.error("TTS playback failed:", error);
     }
-    throw error;
+    // Don't throw, just log, to prevent game crash on audio failure
   }
 };
