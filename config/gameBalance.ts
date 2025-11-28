@@ -66,6 +66,7 @@ export const SUCCESS_RATES = {
 } as const;
 
 // --- GENERIC COSTS & REWARDS (汎用コスト・報酬) [New] ---
+// Balance Patch v2.1: Rewards decreased
 export const COSTS = {
   HP: {
     TINY: -5,
@@ -91,12 +92,12 @@ export const COSTS = {
     PENALTY_MEDIUM: -3000,
     PENALTY_MID: -3000,
     PENALTY_LARGE: -5000,
-    REWARD_SMALL: 2000,
-    REWARD_MEDIUM: 5000,
-    REWARD_LARGE: 10000,
-    LARGE_REWARD: 10000,
-    REWARD_HUGE: 20000,
-    XL_REWARD: 30000,
+    REWARD_SMALL: 1500, // 2000 -> 1500
+    REWARD_MEDIUM: 4000, // 5000 -> 4000
+    REWARD_LARGE: 8000, // 10000 -> 8000
+    LARGE_REWARD: 8000,
+    REWARD_HUGE: 15000, // 20000 -> 15000
+    XL_REWARD: 22000, // 30000 -> 22000
   },
   SATIETY: {
     TINY: -5,

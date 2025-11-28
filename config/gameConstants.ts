@@ -38,7 +38,10 @@ export const SATIETY_CONSUMPTION = {
 
 // 学習関連定数 [New]
 export const STUDY_CONSTANTS = {
-  PAST_PAPERS_BONUS_PER_STACK: 0.1, // 過去問1つあたりのボーナス
+  // 過去問ボーナス: 累積枚数ごとの加算量 (逓減)
+  // 1枚目: +10%, 2枚目: +5%, 3枚目: +3%, 4枚目以降: +2% (Max +20%付近)
+  PAST_PAPER_BONUS_TABLE: [0, 0.10, 0.05, 0.03, 0.02], 
+  
   MADNESS_THRESHOLD: 30, // 狂気ボーナス発動閾値(SAN)
   MADNESS_EFFICIENCY_BONUS: 1.3, // 狂気時の効率ボーナス
   MADNESS_HP_COST: 10, // 狂気時の追加HP消費

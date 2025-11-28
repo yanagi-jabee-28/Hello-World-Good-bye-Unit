@@ -17,6 +17,23 @@ const getPressureMultiplier = (day: number): number => {
   return 1.25; 
 };
 
+/**
+ * 過去問ボーナスの計算 (逓減方式)
+ */
+const calculatePastPaperBonus = (count: number): number => {
+  if (count <= 0) return 1.0;
+  let bonus = 0;
+  // テーブルに基づいて加算
+  for (let i = 1; i <= count; i++) {
+    // テーブル外（5枚目以降）は一律+1%
+    const add = i < STUDY_CONSTANTS.PAST_PAPER_BONUS_TABLE.length 
+      ? STUDY_CONSTANTS.PAST_PAPER_BONUS_TABLE[i] 
+      : 0.01;
+    bonus += add;
+  }
+  return 1.0 + bonus;
+};
+
 export const handleStudy = (state: GameState, subjectId: SubjectId): GameState => {
   const subject = SUBJECTS[subjectId];
   const currentScore = state.knowledge[subjectId];
@@ -123,11 +140,11 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
     baseLog += ACTION_LOGS.STUDY.MADNESS;
   }
 
-  // --- Past Papers Bonus (Stacking) ---
+  // --- Past Papers Bonus (Stacking with diminishing returns) ---
   if ((state.flags.hasPastPapers || 0) > 0) {
-    const paperBonus = 1.0 + (state.flags.hasPastPapers * STUDY_CONSTANTS.PAST_PAPERS_BONUS_PER_STACK); 
+    const paperBonus = calculatePastPaperBonus(state.flags.hasPastPapers);
     rawEfficiency *= paperBonus;
-    baseLog += ` [過去問効果 x${paperBonus.toFixed(1)}]`;
+    baseLog += ` [過去問効果 x${paperBonus.toFixed(2)}]`;
   }
 
   // Apply Buffs
@@ -141,11 +158,13 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
   // --- Apply Soft Cap ---
   const finalEfficiency = applySoftCap(rawEfficiency, BUFF_SOFT_CAP_ASYMPTOTE);
   
+  // Progression Curve (Tougher at high levels)
   let progressionMultiplier = 1.0;
   if (currentScore < 40) progressionMultiplier = 1.3;
   else if (currentScore < 70) progressionMultiplier = 1.0;
-  else if (currentScore < 90) progressionMultiplier = 0.7;
-  else progressionMultiplier = 0.4;
+  else if (currentScore < 85) progressionMultiplier = 0.6; // Stricter
+  else if (currentScore < 95) progressionMultiplier = 0.3; // Much stricter
+  else progressionMultiplier = 0.1; // Almost impossible to hit 100
 
   let knowledgeGain = Math.floor(12 * finalEfficiency * subject.difficulty * progressionMultiplier);
   if (knowledgeGain < 1) knowledgeGain = 1;

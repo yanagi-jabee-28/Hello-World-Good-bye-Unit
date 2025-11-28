@@ -21,12 +21,12 @@ export const ITEMS: Record<ItemId, Item> = {
     id: ItemId.MINERAL_WATER,
     name: 'ミネラルウォーター',
     description: '口の中をさっぱりさせる。カフェインが少し抜ける。',
-    price: 120, // 110 -> 120
+    price: 120, 
     effects: {
-      caffeine: -15, // -50 -> -15: ガブ飲みしないと抜けないように変更
-      hp: 2, // 5 -> 2
-      sanity: 1, // 2 -> 1
-      satiety: 5 // 8 -> 5
+      caffeine: -15, 
+      hp: 2, 
+      sanity: 1, 
+      satiety: 5 
     }
   },
   [ItemId.BLACK_COFFEE]: {
@@ -38,7 +38,7 @@ export const ITEMS: Record<ItemId, Item> = {
       caffeine: 50,
       hp: 2,
       sanity: 2,
-      satiety: 12 // 液体だが刺激物
+      satiety: 12 
     }
   },
   [ItemId.GUMMY_CANDY]: {
@@ -49,7 +49,7 @@ export const ITEMS: Record<ItemId, Item> = {
     effects: {
       sanity: 15,
       hp: 2,
-      satiety: 18 // よく噛んで食べるので
+      satiety: 18 
     }
   },
   [ItemId.RICE_BALL]: {
@@ -59,7 +59,7 @@ export const ITEMS: Record<ItemId, Item> = {
     price: 150,
     effects: {
       hp: 15,
-      satiety: 50 // 米はずっしり来る
+      satiety: 50 
     }
   },
   // --- Level 2: Moderate & Specific ---
@@ -70,7 +70,7 @@ export const ITEMS: Record<ItemId, Item> = {
     price: 250,
     effects: {
       hp: 35,
-      satiety: 35 // 固形物としてしっかり
+      satiety: 35 
     }
   },
   [ItemId.ENERGY_JELLY]: {
@@ -81,7 +81,7 @@ export const ITEMS: Record<ItemId, Item> = {
     effects: {
       hp: 25,
       caffeine: 20,
-      satiety: 15 // 流動食なので軽い
+      satiety: 15 
     }
   },
   [ItemId.HIGH_CACAO_CHOCO]: {
@@ -93,7 +93,7 @@ export const ITEMS: Record<ItemId, Item> = {
       hp: 5,
       sanity: 18,
       caffeine: 15,
-      satiety: 22 // 脂質
+      satiety: 22 
     }
   },
   [ItemId.CAFE_LATTE]: {
@@ -105,7 +105,7 @@ export const ITEMS: Record<ItemId, Item> = {
       caffeine: 30, 
       hp: 15,
       sanity: 15,
-      satiety: 25 // ミルク分でお腹にたまる
+      satiety: 25 
     }
   },
   [ItemId.DIGESTIVE_ENZYME]: {
@@ -114,8 +114,8 @@ export const ITEMS: Record<ItemId, Item> = {
     description: '胃の中身を急速分解し、満腹度を下げる。食べ過ぎた時や連食したい時に。',
     price: 450,
     effects: {
-      satiety: -60, // 強力にリセット
-      hp: -3 // 副作用緩和
+      satiety: -60, 
+      hp: -3 
     }
   },
   // --- Level 3: High Effect & Risk ---
@@ -123,12 +123,12 @@ export const ITEMS: Record<ItemId, Item> = {
     id: ItemId.ENERGY_DRINK,
     name: 'ZONe (Ver.Infinity)',
     description: 'デジタル没入エナジー。カフェインを大量摂取し、一気に集中モードへ。',
-    price: 550,
+    price: 680, // 550 -> 680 (Price Hike)
     effects: {
       caffeine: 120,
       hp: 10,
       sanity: -5,
-      satiety: 20 // 炭酸でお腹が膨れる
+      satiety: 20 
     }
   },
   [ItemId.HERBAL_TEA]: {
@@ -140,7 +140,7 @@ export const ITEMS: Record<ItemId, Item> = {
       caffeine: -100,
       sanity: 35,
       hp: 5,
-      satiety: 10 // 温かい飲み物
+      satiety: 10 
     }
   },
   [ItemId.CUP_RAMEN]: {
@@ -151,7 +151,7 @@ export const ITEMS: Record<ItemId, Item> = {
     effects: {
       hp: 55,
       sanity: 5,
-      satiety: 75 // かなり重い
+      satiety: 75 
     }
   },
   // --- Level 4: Utilities & Buffs ---
@@ -210,7 +210,7 @@ export const ITEMS: Record<ItemId, Item> = {
           description: '毎ターンSAN-4'
         }
       ],
-      satiety: 5 // カプセル
+      satiety: 5 
     }
   },
   // --- Level 5: Ultimate ---
@@ -219,13 +219,13 @@ export const ITEMS: Record<ItemId, Item> = {
     name: '「わかる」本',
     description: '試験直前の駆け込み寺。専門書は高いが背に腹は代えられない。',
     specialEffectDescription: '最低点数の科目+15 (使い切り)',
-    price: 10800,
+    price: 12800, // 10800 -> 12800
   },
   [ItemId.SMART_DRUG]: {
     id: ItemId.SMART_DRUG,
     name: '怪しいサプリ',
-    description: '脳内物質を強制分泌させる未承認薬。学習効率が劇的に向上するが、反動も大きい。',
-    price: 15800,
+    description: '脳内物質を強制分泌。学習効率が劇的に向上するが、反動も大きい。',
+    price: 24800, // 15800 -> 24800 (Significant hike)
     effects: {
       hp: -40,
       buffs: [
@@ -244,7 +244,7 @@ export const ITEMS: Record<ItemId, Item> = {
           description: '毎ターンSAN-12'
         }
       ],
-      satiety: 5 // 錠剤
+      satiety: 5 
     },
   },
 };

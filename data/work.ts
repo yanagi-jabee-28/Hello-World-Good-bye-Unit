@@ -14,17 +14,17 @@ export interface WorkConfig {
 const MORNING_CONFIG: WorkConfig = {
   label: "早朝・午前シフト",
   description: "軽作業",
-  salary: 2800,
+  salary: 2200, // 2800 -> 2200
   hpCost: 15,
   sanityCost: 5,
-  logText: "【早朝シフト】眠い目をこすりながら搬入作業をこなした。",
+  logText: "【早朝シフト】眠い目をこすりながら搬入作業をこなした。授業に出る体力が...",
   logType: 'info'
 };
 
 const DAY_CONFIG: WorkConfig = {
   label: "日中シフト",
   description: "肉体労働",
-  salary: 3500,
+  salary: 3000, // 3500 -> 3000
   hpCost: 35,
   sanityCost: 15,
   logText: "【日中シフト】忙しいランチタイムを乗り切った。",
@@ -34,7 +34,7 @@ const DAY_CONFIG: WorkConfig = {
 const EVENING_CONFIG: WorkConfig = {
   label: "塾講師バイト",
   description: "精神労働",
-  salary: 5000,
+  salary: 4200, // 5000 -> 4200
   hpCost: 15,
   sanityCost: 30,
   logText: "【塾講師バイト】生徒の質問攻めに耐え抜いた。",
@@ -44,7 +44,7 @@ const EVENING_CONFIG: WorkConfig = {
 const NIGHT_CONFIG: WorkConfig = {
   label: "深夜緊急案件",
   description: "危険手当",
-  salary: 8500,
+  salary: 7500, // 8500 -> 7500
   hpCost: 45,
   sanityCost: 40,
   logText: "【深夜・緊急案件】無心でコードを書き続けた。",
@@ -65,7 +65,7 @@ export const getWorkConfig = (slot: TimeSlot): WorkConfig => {
   return WORK_CONFIGS[slot] || {
     label: "アルバイト",
     description: "資金獲得",
-    salary: 1500,
+    salary: 1200,
     hpCost: 20,
     sanityCost: 10,
     logText: "【労働】単発バイトをこなした。",

@@ -40,10 +40,10 @@ export interface ExamThresholds {
 }
 
 const DEFAULT_THRESHOLDS: ExamThresholds = {
-  pass: 800,   // Lowered: 850 -> 800 (More achievable for casual play)
-  rankB: 1000,
-  rankA: 1250,
-  rankS: 1500  // Increased: 1400 -> 1500 (Harder to perfect)
+  pass: 900,   // Increased: 800 -> 900 (Requires ~75% avg + bonuses)
+  rankB: 1200, // 1000 -> 1200
+  rankA: 1500, // 1250 -> 1500
+  rankS: 1800  // 1500 -> 1800 (Near perfection required)
 };
 
 export function evaluateExam(
