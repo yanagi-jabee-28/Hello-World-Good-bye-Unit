@@ -48,6 +48,7 @@ export const ACTION_LOGS = {
     JITTER: "【カフェイン中毒】心臓が早鐘を打っている。焦燥感ばかりで手が動かない。",
     MADNESS: "\n【狂気】精神の摩耗と引き換えに、異常な集中力を発揮している。",
     STUFFED: "【食べ過ぎ】胃が重くて集中できない。インターバルが必要だ。(効率微減)",
+    FORGETTING: (subject: string, amount: number) => `【忘却】しばらく触れていなかったため、${subject}の知識が薄れている... (理解度-${amount})`,
   },
 
   // Rest

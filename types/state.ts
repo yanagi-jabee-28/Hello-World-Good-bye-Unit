@@ -47,6 +47,7 @@ export interface GameState {
   satiety: number; // 0-100 (Hunger metric)
   maxSatiety: number;
   knowledge: Record<SubjectId, number>; // 0 - 100
+  lastStudied: Record<SubjectId, number>; // 最後に勉強したターン数 (忘却曲線用)
   relationships: Record<RelationshipId, number>; // 0 - 100
   inventory: Partial<Record<ItemId, number>>;
   activeBuffs: Buff[]; // New

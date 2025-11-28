@@ -7,7 +7,8 @@ import { getAvailability, getStudyHint } from '../logic/advisor';
 import { getWorkConfig } from '../data/work';
 import { getShortEffectString } from '../utils/logFormatter';
 import { getExamWarnings } from '../logic/warningSystem';
-import { BookOpen, Users, Gamepad2, Package, School, GraduationCap, UserPlus, AlertTriangle, ShoppingCart, Briefcase, Bed, Sun, Moon, BatteryCharging, Ban, Zap } from 'lucide-react';
+import { FORGETTING_CONSTANTS } from '../config/gameConstants';
+import { BookOpen, Users, Gamepad2, Package, School, GraduationCap, UserPlus, AlertTriangle, ShoppingCart, Briefcase, Bed, Sun, Moon, BatteryCharging, Ban, Zap, Clock } from 'lucide-react';
 import { Button } from './ui/Button';
 import { ProgressButton } from './ui/ProgressButton';
 import { Badge } from './ui/Badge';
@@ -38,20 +39,31 @@ const AcademicSection: React.FC<{
   isMobile: boolean 
 }> = React.memo(({ state, onStudy, isMobile }) => (
   <div className="space-y-1.5">
-    {Object.values(SUBJECTS).map((sub) => (
-      <ProgressButton
-        key={sub.id}
-        onClick={() => onStudy(sub.id)}
-        label={sub.name}
-        subLabel={`Difficulty: ${sub.difficulty}x`}
-        icon={<School size={14} />}
-        progress={state.knowledge[sub.id]}
-        maxValue={100}
-        className={isMobile ? "min-h-[52px]" : "min-h-[48px]"}
-        ariaLabel={`${sub.name}を勉強する。現在の理解度 ${state.knowledge[sub.id]}%`}
-        variant="default"
-      />
-    ))}
+    {Object.values(SUBJECTS).map((sub) => {
+      const lastStudied = state.lastStudied[sub.id] || 0;
+      const turnsSince = state.turnCount - lastStudied;
+      const isForgetRisk = turnsSince >= FORGETTING_CONSTANTS.WARNING_THRESHOLD && state.knowledge[sub.id] > 0;
+      const isCritical = turnsSince >= FORGETTING_CONSTANTS.GRACE_PERIOD_TURNS && state.knowledge[sub.id] > 0;
+
+      return (
+        <ProgressButton
+          key={sub.id}
+          onClick={() => onStudy(sub.id)}
+          label={sub.name}
+          subLabel={
+            isCritical ? `⚠ 忘却中 (放置 ${turnsSince}ターン)` :
+            isForgetRisk ? `⚠ 復習推奨 (放置 ${turnsSince}ターン)` :
+            `Difficulty: ${sub.difficulty}x`
+          }
+          icon={isForgetRisk ? <Clock size={14} className={isCritical ? "text-red-500 animate-pulse" : "text-yellow-500"} /> : <School size={14} />}
+          progress={state.knowledge[sub.id]}
+          maxValue={100}
+          className={`${isMobile ? "min-h-[52px]" : "min-h-[48px]"} ${isCritical ? 'border-red-900/50' : ''}`}
+          ariaLabel={`${sub.name}を勉強する。現在の理解度 ${state.knowledge[sub.id]}%`}
+          variant="default"
+        />
+      );
+    })}
   </div>
 ));
 

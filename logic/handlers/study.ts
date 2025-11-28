@@ -178,6 +178,14 @@ export const handleStudy = (state: GameState, subjectId: SubjectId): GameState =
   // Apply Effect
   const { newState, messages } = applyEffect(state, effect);
   
+  // Update lastStudied timestamp
+  // We use the current turnCount as the timestamp.
+  // Note: turnCount increments at the end of the turn, so this value represents "studied during this turn"
+  newState.lastStudied = {
+    ...newState.lastStudied,
+    [subjectId]: newState.turnCount
+  };
+
   const details = joinMessages(messages, ', ');
   pushLog(newState, `${baseLog}\n(${details})`, logType);
   

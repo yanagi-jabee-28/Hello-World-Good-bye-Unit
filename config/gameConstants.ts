@@ -47,6 +47,14 @@ export const STUDY_CONSTANTS = {
   MADNESS_HP_COST: 10, // 狂気時の追加HP消費
 };
 
+// 忘却曲線 (Forgetting Curve)
+export const FORGETTING_CONSTANTS = {
+  GRACE_PERIOD_TURNS: 8, // 勉強後、知識が減少しない猶予期間 (約1日強)
+  WARNING_THRESHOLD: 6,  // 警告アイコンが出るまでのターン数
+  DECAY_RATE: 0.03,      // 毎ターンの減少率 (現在値の3%)
+  MIN_DECAY: 1,          // 最低減少量
+};
+
 // バフ関連
 export const BUFF_SOFT_CAP_ASYMPTOTE = 1.5; 
 

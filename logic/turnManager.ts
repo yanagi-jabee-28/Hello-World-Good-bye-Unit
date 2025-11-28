@@ -1,11 +1,12 @@
 
-import { GameState, TimeSlot } from '../types';
+import { GameState, TimeSlot, SubjectId } from '../types';
 import { clamp, chance } from '../utils/common';
 import { pushLog } from './stateHelpers';
-import { CAFFEINE_DECAY, CAFFEINE_THRESHOLDS, EVENT_CONSTANTS, SATIETY_CONSTANTS, SATIETY_CONSUMPTION } from '../config/gameConstants';
+import { CAFFEINE_DECAY, CAFFEINE_THRESHOLDS, EVENT_CONSTANTS, SATIETY_CONSTANTS, SATIETY_CONSUMPTION, FORGETTING_CONSTANTS } from '../config/gameConstants';
 import { getNextTimeSlot } from './time';
 import { executeEvent } from './eventManager';
 import { ACTION_LOGS } from '../data/constants/logMessages';
+import { SUBJECTS } from '../data/subjects';
 
 /**
  * ターン経過処理を一括して行う
@@ -74,6 +75,34 @@ export const processTurnEnd = (state: GameState, isResting: boolean = false): Ga
     pushLog(newState, ACTION_LOGS.SOCIAL.ISOLATION(turnsSinceSocial, lonelinessDmg), 'warning');
   }
 
+  // 8. 忘却曲線 (Forgetting Curve)
+  // 猶予期間を超えて放置された科目の知識が減衰する
+  Object.values(SUBJECTS).forEach(subject => {
+    const lastStudied = newState.lastStudied[subject.id] || 0;
+    const turnsSinceStudy = newState.turnCount - lastStudied;
+    const currentScore = newState.knowledge[subject.id];
+
+    // 猶予期間を超え、かつスコアが0より大きい場合のみ減衰
+    if (turnsSinceStudy > FORGETTING_CONSTANTS.GRACE_PERIOD_TURNS && currentScore > 0) {
+      let decay = Math.floor(currentScore * FORGETTING_CONSTANTS.DECAY_RATE);
+      // 最低減少量の適用
+      decay = Math.max(decay, FORGETTING_CONSTANTS.MIN_DECAY);
+      
+      // 0未満にはならない
+      const newScore = Math.max(0, currentScore - decay);
+      const actualDecay = currentScore - newScore;
+
+      if (actualDecay > 0) {
+        newState.knowledge = {
+          ...newState.knowledge,
+          [subject.id]: newScore
+        };
+        // ログ出力（頻繁に出すぎないよう、ある程度減少した時だけ目立たせる等の調整も可能だが、現状は毎回出す）
+        pushLog(newState, ACTION_LOGS.STUDY.FORGETTING(subject.name, actualDecay), 'warning');
+      }
+    }
+  });
+
   // --- CRITICAL CHECK: 生存確認 ---
   // アクションコストや状態異常ダメージで死亡している場合、時間経過やイベント抽選を行わずにリターンする。
   // これにより、死亡後の矛盾したログやイベント発生を防ぐ。
@@ -81,7 +110,7 @@ export const processTurnEnd = (state: GameState, isResting: boolean = false): Ga
     return newState;
   }
 
-  // 8. 時間の進行
+  // 9. 時間の進行
   const { slot, isNextDay } = getNextTimeSlot(state.timeSlot);
   newState.timeSlot = slot;
   if (isNextDay) {
@@ -90,7 +119,7 @@ export const processTurnEnd = (state: GameState, isResting: boolean = false): Ga
   }
   newState.turnCount += 1;
 
-  // 9. 履歴の記録
+  // 10. 履歴の記録
   newState.statsHistory = [
     ...newState.statsHistory,
     {
@@ -103,7 +132,7 @@ export const processTurnEnd = (state: GameState, isResting: boolean = false): Ga
     }
   ];
 
-  // 10. ターン終了時ランダムイベント
+  // 11. ターン終了時ランダムイベント
   // ゲーム終了日(DAY 8)に到達した場合はイベントを発生させない
   if (newState.day <= 7 && chance(EVENT_CONSTANTS.RANDOM_PROBABILITY)) {
     newState = executeEvent(newState, 'turn_end');

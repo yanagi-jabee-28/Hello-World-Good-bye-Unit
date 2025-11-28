@@ -15,6 +15,14 @@ export const INIT_KNOWLEDGE = {
   [SubjectId.HUMANITIES]: 0,
 };
 
+// 初期状態では全科目「勉強したて」扱いとする（開始早々の忘却を防ぐ）
+export const INIT_LAST_STUDIED = {
+  [SubjectId.MATH]: 0,
+  [SubjectId.ALGO]: 0,
+  [SubjectId.CIRCUIT]: 0,
+  [SubjectId.HUMANITIES]: 0,
+};
+
 export const INITIAL_STATE: GameState = {
   day: 1,
   timeSlot: TimeSlot.MORNING,
@@ -27,6 +35,7 @@ export const INITIAL_STATE: GameState = {
   satiety: 20, // Reduced from 50 to 20 (Hungry start)
   maxSatiety: 100,
   knowledge: { ...INIT_KNOWLEDGE },
+  lastStudied: { ...INIT_LAST_STUDIED },
   relationships: { ...INIT_RELATIONSHIPS },
   inventory: {
     [ItemId.BLACK_COFFEE]: 1,
