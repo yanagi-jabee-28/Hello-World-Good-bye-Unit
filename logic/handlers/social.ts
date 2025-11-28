@@ -1,5 +1,5 @@
 
-import { GameState, RelationshipId, SubjectId, ItemId, GameEventEffect } from '../../types';
+import { GameState, RelationshipId, SubjectId, ItemId, GameEventEffect, TimeSlot } from '../../types';
 import { clamp } from '../../utils/common';
 import { joinMessages } from '../../utils/logFormatter';
 import { LOG_TEMPLATES, ACTION_LOGS } from '../../data/constants/logMessages';
@@ -48,8 +48,9 @@ export const handleAskProfessor = (state: GameState): GameState => {
     return newState;
   }
 
-  // Menu Event Trigger
-  if (currentState.relationships[RelationshipId.PROFESSOR] >= 60) {
+  // Menu Event Trigger (Daytime only)
+  const isNight = currentState.timeSlot === TimeSlot.NIGHT || currentState.timeSlot === TimeSlot.LATE_NIGHT;
+  if (!isNight && currentState.relationships[RelationshipId.PROFESSOR] >= 60) {
     const menuEvent = ALL_EVENTS.find(e => e.id === 'prof_interaction_menu');
     if (menuEvent) {
       const recordedState = recordEventOccurrence(currentState, menuEvent.id);

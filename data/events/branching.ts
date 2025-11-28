@@ -24,7 +24,10 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         successEffect: {
           // AUTO_SELECT: Reducer will replace this with weakest subject
           knowledge: { [SubjectId.ALGO]: KNOWLEDGE_GAINS.LARGE },
-          relationships: { [RelationshipId.PROFESSOR]: REL_GAINS.SMALL }
+          relationships: { [RelationshipId.PROFESSOR]: REL_GAINS.SMALL },
+          hp: -12,
+          sanity: -8,
+          satiety: -15
         },
         successLog: "「そこは君の弱点だね」鋭い指摘を受け、苦手分野の理解が深まった。",
         failureEffect: { relationships: { [RelationshipId.PROFESSOR]: -2 } },
@@ -38,7 +41,9 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         successRate: 40,
         successEffect: {
           inventory: { [ItemId.USB_MEMORY]: 1 },
-          relationships: { [RelationshipId.PROFESSOR]: REL_GAINS.MEDIUM }
+          relationships: { [RelationshipId.PROFESSOR]: REL_GAINS.MEDIUM },
+          hp: -15,
+          sanity: -15
         },
         successLog: "「君の熱意に免じて特別だ」...なんと、教授自らデータをくれた！",
         failureEffect: {
@@ -55,7 +60,8 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         successRate: 60,
         successEffect: {
           inventory: { [ItemId.REFERENCE_BOOK]: 1 },
-          relationships: { [RelationshipId.PROFESSOR]: REL_GAINS.Qm }
+          relationships: { [RelationshipId.PROFESSOR]: REL_GAINS.Qm },
+          hp: -5
         },
         successLog: "「これを持っていくといい」教授の著書を貸してもらった。",
         failureEffect: { relationships: { [RelationshipId.PROFESSOR]: -5 } },
@@ -176,18 +182,18 @@ export const BRANCHING_EVENTS: GameEvent[] = [
       {
         id: 'opt_friend_study',
         label: '一緒に勉強する',
-        risk: 'low',
-        description: '互いの苦手分野を教え合う。',
-        successRate: 90,
+        risk: 'safe',
+        description: '教え合うことで理解が深まる。ただし雑談で時間を取られる。',
+        successRate: 100,
         successEffect: {
           // AUTO_SELECT: Reducer will replace this with weakest subject
-          knowledge: { [SubjectId.HUMANITIES]: KNOWLEDGE_GAINS.MEDIUM },
-          satiety: -SATIETY_CONSUMPTION.STUDY,
-          relationships: { [RelationshipId.FRIEND]: REL_GAINS.MEDIUM }
+          knowledge: { [SubjectId.HUMANITIES]: 10 }, // 効率微減
+          satiety: -18,
+          relationships: { [RelationshipId.FRIEND]: REL_GAINS.SMALL },
+          hp: -8,      // 外出の疲労
+          sanity: -5   // 「自分のペースで勉強できない」ストレス
         },
-        successLog: "一人では詰まっていた箇所も、教え合うことで理解できた。",
-        failureEffect: { sanity: -5 },
-        failureLog: "結局お喋りして終わってしまった..."
+        successLog: "一人では詰まっていた箇所も、教え合うことで理解できた。ただし、雑談で1時間は無駄にした。",
       },
       // New Option: Ask for materials
       {
@@ -198,11 +204,13 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         successRate: 50,
         successEffect: {
             inventory: { [ItemId.VERIFIED_PAST_PAPERS]: 1 },
-            relationships: { [RelationshipId.FRIEND]: REL_GAINS.SMALL }
+            relationships: { [RelationshipId.FRIEND]: REL_GAINS.SMALL },
+            hp: -5 // Cost
         },
         successLog: "「しょうがないなー」友人が入手した『検証済み過去問』を分けてくれた！神！",
         failureEffect: {
-            relationships: { [RelationshipId.FRIEND]: -5 }
+            relationships: { [RelationshipId.FRIEND]: -5 },
+            hp: -5 // Cost
         },
         failureLog: "「そんな都合のいいものないよ」と呆れられた。"
       },
@@ -497,15 +505,15 @@ export const BRANCHING_EVENTS: GameEvent[] = [
         id: 'opt_data_entry_work',
         label: '引き受ける',
         risk: 'safe',
-        description: '確実に稼げるが、時間と体力を消費。',
+        description: '5時間拘束。脳死作業で確実な報酬。',
         successRate: 100,
         successEffect: {
-          money: 3000, // Balance Update: 5000 -> 3000 (Unskilled labor nerf)
-          hp: -20,
-          sanity: -10,
-          satiety: -SATIETY_CONSUMPTION.WORK
+          money: 2000,
+          hp: -28,
+          sanity: -15,
+          satiety: -35
         },
-        successLog: "延々とExcelに数字を打ち込んだ。脳死作業だったが、確実に報酬を得た。"
+        successLog: "延々とExcelに数字を打ち込んだ。時給換算すると虚しくなる額だが、背に腹は代えられない。"
       },
       {
         id: 'opt_data_entry_automate',
