@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { ItemId } from '../types';
 import { ITEMS } from '../data/items';
 import { getShortEffectString } from '../utils/logFormatter';
-import { ShoppingCart, X, DollarSign, Info } from 'lucide-react';
+import { sortItems, SortKey, SORT_LABELS } from '../utils/itemSorting';
+import { ShoppingCart, X, DollarSign, Info, ArrowDownWideNarrow } from 'lucide-react';
 import { Sound } from '../utils/sound';
 
 interface Props {
@@ -14,8 +15,16 @@ interface Props {
 }
 
 export const ShopModal: React.FC<Props> = ({ money, onClose, onBuy, onInspect }) => {
+  const [sortKey, setSortKey] = useState<SortKey>('DEFAULT');
+
   // Sellable items (exclude USB which is special)
-  const shopItems = Object.values(ITEMS).filter(item => item.price > 0 && item.price < 90000);
+  const shopItems = useMemo(() => {
+    const ids = Object.values(ITEMS)
+      .filter(item => item.price > 0 && item.price < 90000)
+      .map(item => item.id);
+    
+    return sortItems(ids, sortKey).map(id => ITEMS[id]);
+  }, [sortKey]);
 
   const handleClose = () => {
     Sound.play('button_click');
@@ -35,10 +44,26 @@ export const ShopModal: React.FC<Props> = ({ money, onClose, onBuy, onInspect })
           </button>
         </div>
 
-        {/* Balance */}
-        <div className="flex-none p-4 bg-gray-900 border-b border-cyan-900 flex justify-end items-center">
-           <span className="text-gray-400 fs-xs mr-2">CURRENT BALANCE:</span>
-           <span className="text-xl font-mono font-bold text-yellow-400">¥{money.toLocaleString()}</span>
+        {/* Balance & Controls */}
+        <div className="flex-none p-3 bg-gray-900 border-b border-cyan-900 flex flex-wrap justify-between items-center gap-3">
+           {/* Sorting Control */}
+           <div className="flex items-center gap-2">
+             <ArrowDownWideNarrow size={16} className="text-cyan-600" />
+             <select 
+               value={sortKey}
+               onChange={(e) => setSortKey(e.target.value as SortKey)}
+               className="bg-black border border-cyan-800 text-cyan-400 fs-xs py-1 px-2 rounded focus:outline-none focus:border-cyan-500"
+             >
+               {Object.entries(SORT_LABELS).map(([key, label]) => (
+                 <option key={key} value={key}>{label}</option>
+               ))}
+             </select>
+           </div>
+
+           <div className="flex items-center">
+             <span className="text-gray-400 fs-xs mr-2">CURRENT BALANCE:</span>
+             <span className="text-xl font-mono font-bold text-yellow-400">¥{money.toLocaleString()}</span>
+           </div>
         </div>
 
         {/* Item Grid */}

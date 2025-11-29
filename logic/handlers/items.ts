@@ -98,7 +98,7 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
       
     case ItemId.REFERENCE_BOOK: {
       const lowestSub = Object.values(SubjectId).reduce((a, b) => state.knowledge[a] < state.knowledge[b] ? a : b);
-      const kDelta = 15;
+      const kDelta = 20; // 15 -> 20 (Balance Patch v2.3)
       
       effect = mergeEffects(effect, { knowledge: { [lowestSub]: kDelta } });
       baseLog = `【攻略】${item.name}を熟読。高いだけあって要点がまとまっている。苦手な${SUBJECTS[lowestSub].name}の理解が一気に深まった。`;

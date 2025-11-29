@@ -1,4 +1,4 @@
-# Hello World Good-bye Unit - 設計思想書 (Design Philosophy) v2.2
+# Hello World Good-bye Unit - 設計思想書 (Design Philosophy) v2.3
 
 > **Architect**: Grandmaster Game Designer  
 > **Last Updated**: 2025-11-28  
@@ -122,7 +122,10 @@ src/
 数値を変更する際は、以下のルールに従ってください。
 
 1.  **ハードコード禁止**: 全て `config/gameBalance.ts` または `config/gameConstants.ts` に定義する。
-2.  **バタフライエフェクト考慮**: 「学習効率」を上げると、「カフェインの価値」が下がる可能性がある。アイテム価格と効果の相関を常に意識する。
+2.  **ROI (投資対効果) の適正化**:
+    *   高額アイテムは、その価格に見合う劇的な効果（時短、危機回避）を持たせること。
+    *   「高いのに効果が薄い」アイテムは罠であり、プレイヤーの意欲を削ぐため徹底的に排除・修正する。
+    *   目安: `価格 ÷ 100 ≒ スコア期待値`。リスクがある場合は価格を割引く。
 3.  **テストプレイ**: 変更後は必ず `scripts/balance-report.ts` (概念的ツール) または手動プレイで「60点到達ターン数」を確認する。
 
 ---

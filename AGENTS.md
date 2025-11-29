@@ -74,7 +74,9 @@
 
 1.  **Context**: 変更の意図と影響範囲の簡潔な説明。
 2.  **File Updates**: XMLフォーマットに従ったコード差分。
-3.  **Design Doc Sync**: もし仕様変更があれば、必ず `DESIGN_PHILOSOPHY.md` 等のドキュメント更新も含めること。
+3.  **Design Doc Sync**: もし仕様変更があれば、必ず関連ドキュメントの更新も含めること。
+    - **設計思想に触れる変更（アーキテクチャ原則・バランス指針・FSD構造・副作用管理方針など）を行う場合**は、明示的な指示がなくても必ず `DESIGN_PHILOSOPHY.md` と `ITEMS_DESIGN.md` の更新指示を含めること。
+    - アイテムやゲームバランスに関わる変更では、`ITEMS_DESIGN.md` に意図・数式根拠・影響範囲を追記し、`config/gameBalance.ts` と `data/items.ts` の整合性を確保すること。
 
 ---
 **Mode**: Grandmaster Game Architect

@@ -88,7 +88,7 @@ export const ITEMS: Record<ItemId, Item> = {
     id: ItemId.HIGH_CACAO_CHOCO,
     name: '高カカオチョコ',
     description: '脳のエネルギー源。苦味が意識を繋ぎ止める。',
-    price: 320,
+    price: 280, // 320 -> 280
     effects: {
       hp: 5,
       sanity: 18,
@@ -123,7 +123,7 @@ export const ITEMS: Record<ItemId, Item> = {
     id: ItemId.ENERGY_DRINK,
     name: 'ZONe (Ver.Infinity)',
     description: 'デジタル没入エナジー。カフェインを大量摂取し、一気に集中モードへ。',
-    price: 680, // 550 -> 680 (Price Hike)
+    price: 680, 
     effects: {
       caffeine: 120,
       hp: 10,
@@ -135,7 +135,7 @@ export const ITEMS: Record<ItemId, Item> = {
     id: ItemId.HERBAL_TEA,
     name: '高級ハーブティー',
     description: 'カモミールとラベンダーの香り。カフェインを強力に排出(-100mg)。',
-    price: 600,
+    price: 550, // 600 -> 550
     effects: {
       caffeine: -100,
       sanity: 35,
@@ -158,8 +158,8 @@ export const ITEMS: Record<ItemId, Item> = {
   [ItemId.HOT_EYE_MASK]: {
     id: ItemId.HOT_EYE_MASK,
     name: 'ホットアイマスク',
-    description: '目の疲れを癒やし、休息の質を高める。',
-    price: 1500,
+    description: '目の疲れを癒やし、休息の質を高める。コスパ良し。',
+    price: 850, // 1500 -> 850 (大幅値下げ)
     effects: {
       buffs: [
         {
@@ -175,10 +175,10 @@ export const ITEMS: Record<ItemId, Item> = {
   [ItemId.EARPLUGS]: {
     id: ItemId.EARPLUGS,
     name: '高性能耳栓',
-    description: '世界のノイズを遮断し、内なる宇宙と対話する。',
-    price: 2200,
+    description: '世界のノイズを遮断。圧倒的な静寂がSAN値を大幅に回復させる。',
+    price: 980, // 2200 -> 980 (大幅値下げ)
     effects: {
-      sanity: 45
+      sanity: 50 // 45 -> 50
     }
   },
   [ItemId.GIFT_SWEETS]: {
@@ -186,27 +186,27 @@ export const ITEMS: Record<ItemId, Item> = {
     name: '手土産スイーツ',
     description: 'デパ地下で買った高級菓子。目上の人への貢ぎ物として最強。',
     specialEffectDescription: '「先輩」または「教授」コマンドで使用。友好度大幅UP&成功確定',
-    price: 3500,
+    price: 2800, // 3500 -> 2800
   },
   [ItemId.GAMING_SUPPLEMENT]: {
     id: ItemId.GAMING_SUPPLEMENT,
     name: 'ゲーミングサプリ',
-    description: '集中力ブースト。副作用で精神が少しずつ削れる。',
-    price: 4500,
+    description: '集中力ブースト。副作用で精神が少しずつ削れるが、効果は長い。',
+    price: 2980, // 4500 -> 2980 (適正化)
     effects: {
       buffs: [
         {
           name: '集中モード',
           type: 'STUDY_EFFICIENCY',
-          value: 1.2,
-          duration: 4,
-          description: '学習効率1.2倍'
+          value: 1.25, // 1.2 -> 1.25
+          duration: 5, // 4 -> 5 turns
+          description: '学習効率1.25倍'
         },
         {
           name: '反動',
           type: 'SANITY_DRAIN',
           value: 4,
-          duration: 4,
+          duration: 5,
           description: '毎ターンSAN-4'
         }
       ],
@@ -217,24 +217,24 @@ export const ITEMS: Record<ItemId, Item> = {
   [ItemId.REFERENCE_BOOK]: {
     id: ItemId.REFERENCE_BOOK,
     name: '「わかる」本',
-    description: '試験直前の駆け込み寺。専門書は高いが背に腹は代えられない。',
-    specialEffectDescription: '最低点数の科目+15 (使い切り)',
-    price: 12800, // 10800 -> 12800
+    description: '試験直前の駆け込み寺。金で買える点数があるなら安いものだ。',
+    specialEffectDescription: '最低点数の科目+20 (使い切り)',
+    price: 5800, // 12800 -> 5800 (半額以下。救済措置として機能するように)
   },
   [ItemId.SMART_DRUG]: {
     id: ItemId.SMART_DRUG,
     name: '怪しいサプリ',
     description: '脳内物質を強制分泌。学習効率が劇的に向上するが、反動も大きい。',
-    price: 24800, // 15800 -> 24800 (Significant hike)
+    price: 14800, // 24800 -> 14800 (大幅値下げ)
     effects: {
       hp: -40,
       buffs: [
         {
           name: '限界突破',
           type: 'STUDY_EFFICIENCY',
-          value: 2.0,
+          value: 2.5, // 2.0 -> 2.5 (強化)
           duration: 3,
-          description: '学習効率2倍'
+          description: '学習効率2.5倍'
         },
         {
           name: '精神崩壊',
