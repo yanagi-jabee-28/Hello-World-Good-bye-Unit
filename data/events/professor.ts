@@ -212,5 +212,22 @@ export const PROFESSOR_EVENTS: GameEvent[] = [
       } 
     },
     maxOccurrences: 1
+  },
+
+  // --- FALLBACK (Always Available if time matches) ---
+  {
+    id: 'prof_generic_chat',
+    trigger: 'action_professor',
+    persona: 'PROFESSOR',
+    text: "【雑談】研究室で少し話をした。「君の顔を見ると研究が進むよ」と冗談を言われた。",
+    type: 'flavor',
+    weight: 1, // Low weight but no strict conditions
+    conditions: {
+      timeSlots: [TimeSlot.MORNING, TimeSlot.AM, TimeSlot.NOON, TimeSlot.AFTERNOON, TimeSlot.AFTER_SCHOOL]
+    },
+    effect: {
+      relationships: { [RelationshipId.PROFESSOR]: 2 },
+      sanity: 2
+    }
   }
 ];

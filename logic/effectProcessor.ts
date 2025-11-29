@@ -47,6 +47,10 @@ export const mergeEffects = (base: GameEventEffect, ...others: (GameEventEffect 
     if (other.buffs) {
       result.buffs = [...(result.buffs || []), ...other.buffs];
     }
+
+    if (other.flags) {
+      result.flags = { ...(result.flags || {}), ...other.flags };
+    }
   });
 
   return result;
@@ -129,6 +133,19 @@ export const applyEffect = (
         id: `BUFF_${state.turnCount}_${Math.random().toString(36).substr(2, 5)}`
       });
       messages.push(LOG_TEMPLATES.BUFF.DURATION(buffData.description, buffData.duration));
+    });
+  }
+
+  // --- フラグの更新 ---
+  if (effect.flags) {
+    Object.entries(effect.flags).forEach(([key, val]) => {
+      const k = key as keyof typeof newState.flags;
+      // 数値なら加算、Booleanなら上書き (as anyで型をごまかすが、ロジックは安全に)
+      if (typeof val === 'number' && typeof newState.flags[k] === 'number') {
+        (newState.flags[k] as number) += val;
+      } else {
+        (newState.flags[k] as any) = val;
+      }
     });
   }
 

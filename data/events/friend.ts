@@ -121,5 +121,20 @@ export const FRIEND_EVENTS: GameEvent[] = [
       ...Effect.Social.Boost(RelationshipId.FRIEND, 'MEDIUM')
     },
     maxOccurrences: 1
+  },
+
+  // --- FALLBACK ---
+  {
+    id: 'friend_generic_chat',
+    trigger: 'action_friend',
+    persona: 'FRIEND',
+    text: "【通信】友人とLINEでスタンプを送り合った。言葉はいらない。",
+    type: 'flavor',
+    weight: 1,
+    conditions: {},
+    effect: {
+      relationships: { [RelationshipId.FRIEND]: 2 },
+      sanity: 2
+    }
   }
 ];

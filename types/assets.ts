@@ -1,5 +1,6 @@
 
 import { SubjectId, ItemId, RelationshipId } from './enums';
+import { GameFlags } from './state';
 
 export interface Subject {
   id: SubjectId;
@@ -31,6 +32,7 @@ export interface GameEventEffect {
   inventory?: Partial<Record<ItemId, number>>;
   money?: number;
   buffs?: Omit<Buff, 'id'>[]; // バフ効果
+  flags?: Partial<GameFlags>; // フラグ更新 (数値は加算、Boolは上書き)
 }
 
 export interface Item {

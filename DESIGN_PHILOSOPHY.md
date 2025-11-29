@@ -1,4 +1,5 @@
-# Hello World Good-bye Unit - 設計思想書 (Design Philosophy) v2.4
+
+# Hello World Good-bye Unit - 設計思想書 (Design Philosophy) v2.5
 
 > **Architect**: Grandmaster Game Designer  
 > **Last Updated**: 2025-11-29  
@@ -82,6 +83,8 @@ src/
 │   └── effectProcessor.ts # 副作用適用の一元管理
 ├── data/             # データ層 (Data)
 │   ├── events/       # イベント定義 (JSON-like TS)
+│   │   ├── branching_details/ # 分割されたシナリオ定義
+│   │   └── ...
 │   └── items.ts      # アイテム定義
 ├── config/           # 設定層 (Config)
 │   └── gameBalance.ts # 全バランス定数
@@ -91,6 +94,8 @@ src/
 ### 3.2 Effect Processor Pattern
 ゲーム内のあらゆる状態変化（アイテム使用、イベント結果、学習成果）は、統一された `GameEventEffect` オブジェクトとして表現し、単一の `applyEffect` 関数で処理します。
 これにより、**「何が起きたか」のログ生成を自動化・統一化**しています。
+
+**v2.5 Update**: `GameEventEffect` に `flags` プロパティを追加し、`hasPastPapers` などのフラグ操作も一元管理するように変更しました。
 
 ### 3.3 データ駆動設計
 イベントやアイテムはTypeScriptファイルとして定義されていますが、構造はJSONに近く、ロジックから分離されています。これにより、将来的なDLC追加やMOD対応（外部JSON読み込み等）への拡張性を担保しています。
@@ -103,7 +108,8 @@ src/
 - [x] Tauriによるデスクトップアプリ化
 - [x] PWA対応（オフラインプレイ）
 - [x] カフェイン・満腹度システムの刷新
-- [ ] 60点ラインの視覚的マーカー実装
+- [x] 60点ラインの視覚的マーカー実装
+- [x] イベントデータの大規模リファクタリング (FSD分割)
 
 ### Phase 2: 演出強化 (v3.0)
 - [ ] Framer MotionによるリッチなUIアニメーション

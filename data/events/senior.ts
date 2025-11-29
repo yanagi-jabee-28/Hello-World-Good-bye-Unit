@@ -105,5 +105,21 @@ export const SENIOR_EVENTS: GameEvent[] = [
       ...Effect.Social.Boost(RelationshipId.SENIOR, 'MEDIUM')
     },
     maxOccurrences: 1
+  },
+
+  // --- FALLBACK ---
+  {
+    id: 'senior_generic_chat',
+    trigger: 'action_senior',
+    persona: 'SENIOR',
+    text: "【ダベり】先輩のスマホゲームのガチャ結果を延々と見せられた。まあ、いい息抜きにはなった。",
+    type: 'flavor',
+    weight: 1,
+    // Senior is available almost anytime except morning in advisor logic, but here we keep flexible
+    conditions: {},
+    effect: {
+      relationships: { [RelationshipId.SENIOR]: 2 },
+      sanity: 3
+    }
   }
 ];

@@ -180,7 +180,19 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
           pushLog(newState, `${event.text}\n\n▶ 選択: ${option.label}\n${option.successLog}\n(${details.join(', ')})`, 'success');
 
           if (option.chainTrigger) {
+             const prevHistoryLen = newState.eventHistory.length;
              newState = executeEvent(newState, option.chainTrigger, "特に何も起きなかった...");
+             
+             // Chain Triggerが不発だった場合のフィードバック
+             if (newState.eventHistory.length === prevHistoryLen) {
+                // Fallback text if executeEvent didn't add anything substantial
+                // executeEvent might add a "fallbackText" log, but if selectEvent returned null and no fallback text was passed...
+                // The third arg to executeEvent IS the fallback text.
+                // However, for "Random" actions, we want to ensure *something* happens.
+                // With the new "fallback events" in data/events/*.ts, this should rarely happen.
+                // But as a safety net:
+                // console.warn("Chain trigger fired but no event was selected/executed.");
+             }
           }
 
         } else {

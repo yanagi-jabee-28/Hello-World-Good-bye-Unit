@@ -42,7 +42,6 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
 
   let logType: LogEntry['type'] = 'info';
   let baseLog = ACTION_LOGS.ITEM.USE_DEFAULT(item.name);
-  let itemSuccess = false;
   
   // --- 特殊効果 & フレーバーテキスト (Custom Logic) ---
   switch (itemId) {
@@ -98,7 +97,7 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
       
     case ItemId.REFERENCE_BOOK: {
       const lowestSub = Object.values(SubjectId).reduce((a, b) => state.knowledge[a] < state.knowledge[b] ? a : b);
-      const kDelta = 20; // 15 -> 20 (Balance Patch v2.3)
+      const kDelta = 20; 
       
       effect = mergeEffects(effect, { knowledge: { [lowestSub]: kDelta } });
       baseLog = `【攻略】${item.name}を熟読。高いだけあって要点がまとまっている。苦手な${SUBJECTS[lowestSub].name}の理解が一気に深まった。`;
@@ -108,9 +107,6 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
     case ItemId.USB_MEMORY: {
        const algoScore = state.knowledge[SubjectId.ALGO] || 0;
        
-       // Success rate logic:
-       // If Algo >= 60 (Passing), success is guaranteed (capped at 95% for visual consistency)
-       // If Algo < 60, it's a gamble starting at base rate
        let successRate = 0;
        if (algoScore >= USB_SUCCESS_CONFIG.GUARANTEED_THRESHOLD) {
          successRate = 95;
@@ -122,7 +118,10 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
           const target = rng.pick(Object.values(SubjectId))!;
           const kDelta = 20;
           
-          effect = mergeEffects(effect, { knowledge: { [target]: kDelta } });
+          effect = mergeEffects(effect, { 
+            knowledge: { [target]: kDelta },
+            flags: { hasPastPapers: 1 } // フラグ更新をEffectに統合
+          });
           
           if (algoScore >= USB_SUCCESS_CONFIG.GUARANTEED_THRESHOLD) {
              baseLog = `【完全解析】(${formatSuccessRate(successRate)}) アルゴリズムの知識(${algoScore}点)で暗号化を完全に掌握！${SUBJECTS[target].name}の「神過去問」を発掘！(学習効率UP)`;
@@ -130,7 +129,6 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
              baseLog = `【解析成功】(${formatSuccessRate(successRate)}) アルゴリズムの知識を駆使し、運良く暗号化を解除！${SUBJECTS[target].name}の「神過去問」を発掘！(学習効率UP)`;
           }
           logType = 'success';
-          itemSuccess = true;
        } else {
           effect = mergeEffects(effect, { sanity: -USB_SUCCESS_CONFIG.PENALTY_SANITY });
           baseLog = `【解析失敗】(${formatSuccessRate(successRate)}) 解析中にウィルスを踏んだ...。アルゴリズムの理解度(${algoScore}点)が足りなかったか？合格ライン(60点)未達のリスクが露呈した。`;
@@ -139,17 +137,17 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
        break;
     }
     case ItemId.VERIFIED_PAST_PAPERS: {
-        // Very high success rate
         if (rng.chance(98)) {
             const target = rng.pick(Object.values(SubjectId))!;
             const kDelta = 30;
             
-            effect = mergeEffects(effect, { knowledge: { [target]: kDelta } });
+            effect = mergeEffects(effect, { 
+              knowledge: { [target]: kDelta },
+              flags: { hasPastPapers: 1 }
+            });
             baseLog = `【検証済み】${item.name}を活用した。${SUBJECTS[target].name}の出題傾向が完全に理解できた！(学習効率UP)`;
             logType = 'success';
-            itemSuccess = true;
         } else {
-            // Rare failure
             effect = mergeEffects(effect, { sanity: -10 });
             baseLog = `【破損】${item.name}を開こうとしたが、ファイルが破損していたようだ... 期待が裏切られた。`;
             logType = 'warning';
@@ -159,11 +157,6 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
   }
 
   const { newState, messages } = applyEffect(state, effect);
-
-  // Special State Updates: Increment Past Papers Counter
-  if (itemSuccess) {
-    newState.flags.hasPastPapers = (newState.flags.hasPastPapers || 0) + 1;
-  }
 
   const details = joinMessages(messages, ', ');
   pushLog(newState, `${baseLog}\n(${details})`, logType);

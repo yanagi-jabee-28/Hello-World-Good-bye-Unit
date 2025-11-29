@@ -4,46 +4,54 @@ import { GameState, GameStatus, SubjectId, RelationshipId } from "../types";
 import { SUBJECTS } from "../data/subjects";
 import { average, maxOrDefault, minOrDefault, floor } from "./math";
 
+export interface AnalysisSummary {
+  statusText: string;
+  scores: string;
+  profRel: number;
+  avgHp: number;
+  avgSanity: number;
+  avgCaffeine: number;
+  maxCaffeine: number;
+  minSanity: number;
+}
+
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-export const generateGameEvaluation = async (state: GameState): Promise<string> => {
-  if (!process.env.API_KEY) {
-    return "ERROR: API_KEY_NOT_FOUND. Manual evaluation required.";
-  }
-
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-  // 状態を読みやすいテキストに整形
+/**
+ * ゲーム状態からAI分析用のサマリーデータを生成する（純粋関数）
+ */
+export const summarizeState = (state: GameState): AnalysisSummary => {
   const statusText = {
     [GameStatus.VICTORY]: "試験合格 (生存)",
     [GameStatus.FAILURE]: "留年確定 (単位不足)",
     [GameStatus.GAME_OVER_HP]: "入院 (HP枯渇)",
     [GameStatus.GAME_OVER_SANITY]: "発狂 (SAN枯渇)",
-  }[state.status];
+    [GameStatus.PLAYING]: "プレイ中", // Should not happen in ending
+  }[state.status] || "不明";
 
   const scores = Object.entries(state.knowledge)
     .map(([id, score]) => `${SUBJECTS[id as SubjectId].name}: ${score}`)
     .join(", ");
 
-  // 履歴データの分析
   const history = state.statsHistory;
   
-  // ユーティリティを使用して計算を集約・簡略化
-  const avgHp = floor(average(history.map(h => h.hp)));
-  const avgSanity = floor(average(history.map(h => h.sanity)));
-  const avgCaffeine = floor(average(history.map(h => h.caffeine)));
-  const maxCaffeine = maxOrDefault(history.map(h => h.caffeine), 0);
-  const minSanity = minOrDefault(history.map(h => h.sanity), 100);
+  return {
+    statusText,
+    scores,
+    profRel: state.relationships[RelationshipId.PROFESSOR],
+    avgHp: floor(average(history.map(h => h.hp))),
+    avgSanity: floor(average(history.map(h => h.sanity))),
+    avgCaffeine: floor(average(history.map(h => h.caffeine))),
+    maxCaffeine: maxOrDefault(history.map(h => h.caffeine), 0),
+    minSanity: minOrDefault(history.map(h => h.sanity), 100),
+  };
+};
 
-  const analysisData = `
-    平均HP: ${avgHp} (100点満点中)
-    平均SAN値: ${avgSanity} (100点満点中)
-    最低SAN値: ${minSanity}
-    平均血中カフェイン: ${avgCaffeine}mg
-    最大血中カフェイン: ${maxCaffeine}mg (100mgで警告ライン)
-  `;
-  
-  const prompt = `
+/**
+ * サマリーデータからプロンプトを構築する
+ */
+const buildPrompt = (summary: AnalysisSummary): string => {
+  return `
     あなたは「地獄の工学部」を管理する冷徹で皮肉屋なAIシステムです。
     以下の学生の「7日間の生存記録データ」を分析し、120文字以内で評価レポート(日本語)を出力してください。
     
@@ -55,12 +63,16 @@ export const generateGameEvaluation = async (state: GameState): Promise<string> 
     - HPが低い -> 「よくその体調で生き残れたものだ」
     
     [リザルト]
-    結末: ${statusText}
-    科目スコア: ${scores}
-    教授友好度: ${state.relationships[RelationshipId.PROFESSOR]}
+    結末: ${summary.statusText}
+    科目スコア: ${summary.scores}
+    教授友好度: ${summary.profRel}
     
     [生体ログ分析]
-    ${analysisData}
+    平均HP: ${summary.avgHp} (100点満点中)
+    平均SAN値: ${summary.avgSanity} (100点満点中)
+    最低SAN値: ${summary.minSanity}
+    平均血中カフェイン: ${summary.avgCaffeine}mg
+    最大血中カフェイン: ${summary.maxCaffeine}mg (100mgで警告ライン)
     
     [指示]
     - 文体は「ハッカー」「マッドサイエンティスト」「システムログ」を混ぜたようなトーンで。
@@ -68,6 +80,16 @@ export const generateGameEvaluation = async (state: GameState): Promise<string> 
     - 結末がFAILUREでも、特定のステータスが異常に高ければ（例：カフェイン中毒）そこを指摘すること。
     - 改行は含めず、プレーンテキストで出力すること。
   `;
+};
+
+export const generateGameEvaluation = async (state: GameState): Promise<string> => {
+  if (!process.env.API_KEY) {
+    return "ERROR: API_KEY_NOT_FOUND. Manual evaluation required.";
+  }
+
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const summary = summarizeState(state);
+  const prompt = buildPrompt(summary);
 
   // Retry logic with exponential backoff
   const maxRetries = 3;
