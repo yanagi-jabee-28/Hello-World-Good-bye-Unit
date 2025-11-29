@@ -65,6 +65,7 @@ export const applyEffect = (
   const newState = {
     ...state,
     knowledge: { ...state.knowledge },
+    lastStudied: { ...state.lastStudied }, // 忘却曲線管理用にコピー
     relationships: { ...state.relationships },
     inventory: { ...state.inventory },
     activeBuffs: [...state.activeBuffs],
@@ -85,6 +86,11 @@ export const applyEffect = (
       if (val) {
         const sId = key as SubjectId;
         newState.knowledge[sId] = clamp(newState.knowledge[sId] + val, 0, 100);
+        
+        // Fix: 知識が増加した場合、最終学習ターンを更新して忘却を阻止する
+        if (val > 0) {
+          newState.lastStudied[sId] = newState.turnCount;
+        }
       }
     });
   }
