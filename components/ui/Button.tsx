@@ -1,6 +1,6 @@
 
 import React, { ReactNode } from 'react';
-import { Info } from 'lucide-react';
+import { Info, Skull } from 'lucide-react';
 
 interface Props extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline';
@@ -10,6 +10,7 @@ interface Props extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   subLabel?: string;
   fullWidth?: boolean;
   onInspect?: (e: React.MouseEvent) => void;
+  isLethal?: boolean;
 }
 
 export const Button: React.FC<Props> = ({ 
@@ -22,6 +23,7 @@ export const Button: React.FC<Props> = ({
   className = '',
   disabled,
   onInspect,
+  isLethal = false,
   ...props 
 }) => {
   // Sci-fi corner cut using clip-path
@@ -34,7 +36,7 @@ export const Button: React.FC<Props> = ({
     group overflow-hidden transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]
   `;
   
-  const variants = {
+  let variants = {
     primary: `
       bg-green-900/30 border border-green-600/50 text-green-400 
       hover:bg-green-800/50 hover:border-green-400 hover:text-green-100 
@@ -69,13 +71,21 @@ export const Button: React.FC<Props> = ({
     lg: "fs-sm py-3.5 px-4 min-h-[56px]"
   };
 
+  // Lethal Override
+  const lethalStyle = isLethal ? `
+    border-red-500 bg-red-950/50 text-red-500 
+    animate-pulse shadow-[0_0_10px_rgba(220,38,38,0.5)]
+    hover:bg-red-900 hover:text-red-400
+  ` : '';
+
+  const activeVariantClass = isLethal ? lethalStyle : variants[variant];
   const widthClass = fullWidth ? 'w-full' : '';
   const alignClass = subLabel ? 'items-start text-left' : 'items-center';
   const inspectPadding = onInspect ? 'pr-8' : '';
 
   return (
     <button 
-      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${widthClass} ${alignClass} ${inspectPadding} ${className}`}
+      className={`${baseStyles} ${activeVariantClass} ${sizes[size]} ${widthClass} ${alignClass} ${inspectPadding} ${className}`}
       disabled={disabled}
       style={variant !== 'ghost' ? { clipPath } : {}}
       {...props}
@@ -86,10 +96,15 @@ export const Button: React.FC<Props> = ({
       {icon && <span className={`shrink-0 z-10 ${subLabel ? 'mt-0.5' : ''} group-hover:scale-110 transition-transform duration-200`}>{icon}</span>}
       
       <div className="flex flex-col overflow-hidden z-10 w-full">
-        <span className="truncate leading-tight w-full group-hover:text-shadow-glow transition-all">{label}</span>
+        <div className="flex items-center gap-1">
+          {isLethal && <Skull size={14} className="shrink-0 animate-bounce" />}
+          <span className="truncate leading-tight w-full group-hover:text-shadow-glow transition-all">
+            {isLethal ? `WARNING: ${label}` : label}
+          </span>
+        </div>
         {subLabel && (
           <span className="fs-xxs font-normal opacity-60 truncate font-mono mt-0.5 w-full group-hover:opacity-90 transition-opacity">
-            {subLabel}
+            {isLethal ? "FATAL RISK DETECTED" : subLabel}
           </span>
         )}
       </div>

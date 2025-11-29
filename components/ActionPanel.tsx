@@ -7,6 +7,7 @@ import { getAvailability, getStudyHint } from '../logic/advisor';
 import { getWorkConfig } from '../data/work';
 import { getShortEffectString } from '../utils/logFormatter';
 import { getExamWarnings } from '../logic/warningSystem';
+import { predictStudyRisk, predictWorkRisk, predictItemRisk } from '../logic/riskSystem';
 import { FORGETTING_CONSTANTS } from '../config/gameConstants';
 import { BookOpen, Users, Gamepad2, Package, School, GraduationCap, UserPlus, AlertTriangle, ShoppingCart, Briefcase, Bed, Sun, Moon, BatteryCharging, Ban, Zap, Clock } from 'lucide-react';
 import { Button } from './ui/Button';
@@ -37,44 +38,51 @@ const AcademicSection: React.FC<{
   state: GameState; 
   onStudy: (id: SubjectId) => void; 
   isMobile: boolean 
-}> = React.memo(({ state, onStudy, isMobile }) => (
-  <div className="space-y-1.5">
-    {Object.values(SUBJECTS).map((sub) => {
-      const lastStudied = state.lastStudied[sub.id] || 0;
-      const turnsSince = state.turnCount - lastStudied;
-      const isForgetRisk = turnsSince >= FORGETTING_CONSTANTS.WARNING_THRESHOLD && state.knowledge[sub.id] > 0;
-      const isCritical = turnsSince >= FORGETTING_CONSTANTS.GRACE_PERIOD_TURNS && state.knowledge[sub.id] > 0;
+}> = React.memo(({ state, onStudy, isMobile }) => {
+  const isStudyLethal = predictStudyRisk(state);
 
-      return (
-        <ProgressButton
-          key={sub.id}
-          onClick={() => onStudy(sub.id)}
-          label={sub.name}
-          subLabel={
-            isCritical ? `⚠ 忘却中 (放置 ${turnsSince}ターン)` :
-            isForgetRisk ? `⚠ 復習推奨 (放置 ${turnsSince}ターン)` :
-            `Difficulty: ${sub.difficulty}x`
-          }
-          icon={isForgetRisk ? <Clock size={14} className={isCritical ? "text-red-500 animate-pulse" : "text-yellow-500"} /> : <School size={14} />}
-          progress={state.knowledge[sub.id]}
-          maxValue={100}
-          className={`${isMobile ? "min-h-[52px]" : "min-h-[48px]"} ${isCritical ? 'border-red-900/50' : ''}`}
-          ariaLabel={`${sub.name}を勉強する。現在の理解度 ${state.knowledge[sub.id]}%`}
-          variant="default"
-        />
-      );
-    })}
-  </div>
-));
+  return (
+    <div className="space-y-1.5">
+      {Object.values(SUBJECTS).map((sub) => {
+        const lastStudied = state.lastStudied[sub.id] || 0;
+        const turnsSince = state.turnCount - lastStudied;
+        const isForgetRisk = turnsSince >= FORGETTING_CONSTANTS.WARNING_THRESHOLD && state.knowledge[sub.id] > 0;
+        const isCritical = turnsSince >= FORGETTING_CONSTANTS.GRACE_PERIOD_TURNS && state.knowledge[sub.id] > 0;
+
+        return (
+          <ProgressButton
+            key={sub.id}
+            onClick={() => onStudy(sub.id)}
+            label={sub.name}
+            subLabel={
+              isCritical ? `⚠ 忘却中 (放置 ${turnsSince}ターン)` :
+              isForgetRisk ? `⚠ 復習推奨 (放置 ${turnsSince}ターン)` :
+              `Difficulty: ${sub.difficulty}x`
+            }
+            icon={isForgetRisk ? <Clock size={14} className={isCritical ? "text-red-500 animate-pulse" : "text-yellow-500"} /> : <School size={14} />}
+            progress={state.knowledge[sub.id]}
+            maxValue={100}
+            className={`${isMobile ? "min-h-[52px]" : "min-h-[48px]"} ${isCritical ? 'border-red-900/50' : ''}`}
+            ariaLabel={`${sub.name}を勉強する。現在の理解度 ${state.knowledge[sub.id]}%`}
+            variant="default"
+            isLethal={isStudyLethal}
+          />
+        );
+      })}
+    </div>
+  );
+});
 
 const LifeSection: React.FC<{
-  timeSlot: TimeSlot;
+  state: GameState;
   onRest: () => void;
   onWork: () => void;
   onOpenShop: () => void;
   isMobile: boolean;
-}> = React.memo(({ timeSlot, onRest, onWork, onOpenShop, isMobile }) => {
+}> = React.memo(({ state, onRest, onWork, onOpenShop, isMobile }) => {
+  const timeSlot = state.timeSlot;
   const workConfig = getWorkConfig(timeSlot);
+  const isWorkLethal = predictWorkRisk(state);
   
   const getRestConfig = (slot: TimeSlot) => {
     switch (slot) {
@@ -106,6 +114,7 @@ const LifeSection: React.FC<{
         className="border-orange-800 text-orange-400 hover:border-orange-600"
         fullWidth
         size={isMobile ? "lg" : "sm"}
+        isLethal={isWorkLethal}
       />
       <Button
         onClick={onOpenShop}
@@ -181,11 +190,12 @@ const SocialSection: React.FC<{
 });
 
 const InventorySection: React.FC<{
-  inventory: GameState['inventory'];
+  state: GameState;
   onUse: (id: ItemId) => void;
   onInspect?: (id: ItemId, mode: 'inventory') => void;
   isMobile: boolean;
-}> = React.memo(({ inventory, onUse, onInspect, isMobile }) => {
+}> = React.memo(({ state, onUse, onInspect, isMobile }) => {
+  const { inventory } = state;
   const ownedItems = Object.entries(inventory)
     .filter(([_, count]) => ((count as number) || 0) > 0)
     .map(([id]) => id as ItemId);
@@ -201,6 +211,7 @@ const InventorySection: React.FC<{
           {ownedItems.map((itemId) => {
             const item = ITEMS[itemId];
             const shortEffect = getShortEffectString(item);
+            const isLethal = predictItemRisk(state, itemId);
             
             return (
               <Button
@@ -214,6 +225,7 @@ const InventorySection: React.FC<{
                 fullWidth
                 size={isMobile ? "lg" : "sm"}
                 onInspect={onInspect ? () => onInspect(itemId, 'inventory') : undefined}
+                isLethal={isLethal}
               />
             );
           })}
@@ -285,7 +297,7 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect, isMobi
                <Briefcase size={10} /> LIFE
             </div>
             <LifeSection 
-              timeSlot={timeSlot} 
+              state={state}
               onRest={actions.rest} 
               onWork={actions.work} 
               onOpenShop={actions.openShop} 
@@ -307,7 +319,7 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect, isMobi
                <Package size={10} /> STORAGE
             </div>
             <InventorySection 
-              inventory={state.inventory} 
+              state={state} 
               onUse={actions.useItem} 
               onInspect={onInspect} 
               isMobile={false} 
@@ -323,7 +335,7 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect, isMobi
          
          <CollapsibleSection title="LIFE SUPPORT (生活)" defaultOpen={true}>
             <LifeSection 
-              timeSlot={timeSlot} 
+              state={state}
               onRest={actions.rest} 
               onWork={actions.work} 
               onOpenShop={actions.openShop} 
@@ -337,7 +349,7 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect, isMobi
          
          <CollapsibleSection title="INVENTORY (所持品)" defaultOpen={true}>
             <InventorySection 
-              inventory={state.inventory} 
+              state={state}
               onUse={actions.useItem} 
               onInspect={onInspect} 
               isMobile={true} 
