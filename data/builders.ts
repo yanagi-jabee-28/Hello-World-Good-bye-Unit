@@ -1,10 +1,38 @@
 
-import { GameEventOption } from '../types';
-import { SUCCESS_RATES } from '../config/gameBalance';
+import { GameEvent, GameEventOption, EventTriggerType, Persona } from '../types';
+import { SUCCESS_RATES, WEIGHTS } from '../config/gameBalance';
 
 type OptionParams = Omit<GameEventOption, 'successRate' | 'risk'> & {
   successRate?: number;
   risk?: GameEventOption['risk'];
+};
+
+type EventParams = Omit<GameEvent, 'id' | 'trigger' | 'text' | 'type' | 'weight'> & {
+  type?: GameEvent['type'];
+  weight?: number;
+};
+
+/**
+ * イベント生成ビルダー
+ * デフォルト値を補完し、記述量を削減する
+ */
+export const createEvent = (
+  id: string,
+  base: { trigger: EventTriggerType; text: string; persona?: Persona },
+  params: EventParams = {}
+): GameEvent => {
+  return {
+    id,
+    trigger: base.trigger,
+    text: base.text,
+    persona: base.persona || 'SYSTEM',
+    type: params.type || 'flavor',
+    weight: params.weight ?? WEIGHTS.COMMON,
+    options: params.options || [],
+    effect: params.effect || {},
+    conditions: params.conditions || {},
+    ...params,
+  };
 };
 
 /**

@@ -1,4 +1,5 @@
 
+import { Draft } from 'immer';
 import { GameState, GameEventEffect, SubjectId, RelationshipId, ItemId, Buff } from '../types';
 import { clamp } from '../utils/common';
 import { LOG_TEMPLATES, RELATIONSHIP_NAMES } from '../data/constants/logMessages';
@@ -6,7 +7,7 @@ import { SUBJECTS } from '../data/subjects';
 import { ITEMS } from '../data/items';
 
 /**
- * 複数の効果オブジェクトを合成する
+ * 複数の効果オブジェクトを合成する（データ作成用ユーティリティとして維持）
  */
 export const mergeEffects = (base: GameEventEffect, ...others: (GameEventEffect | undefined)[]): GameEventEffect => {
   const result: GameEventEffect = JSON.parse(JSON.stringify(base));
@@ -56,68 +57,68 @@ export const mergeEffects = (base: GameEventEffect, ...others: (GameEventEffect 
   return result;
 };
 
-// --- Sub-processors for modularity ---
+// --- Sub-processors (Draft Mutators) ---
 
-const processBasicStats = (state: GameState, effect: GameEventEffect, messages: string[]) => {
+const processBasicStats = (draft: Draft<GameState>, effect: GameEventEffect, messages: string[]) => {
   if (effect.hp !== undefined) {
-    state.hp = clamp(state.hp + effect.hp, 0, state.maxHp);
+    draft.hp = clamp(draft.hp + effect.hp, 0, draft.maxHp);
     messages.push(LOG_TEMPLATES.PARAM.HP(effect.hp));
   }
   if (effect.sanity !== undefined) {
-    state.sanity = clamp(state.sanity + effect.sanity, 0, state.maxSanity);
+    draft.sanity = clamp(draft.sanity + effect.sanity, 0, draft.maxSanity);
     messages.push(LOG_TEMPLATES.PARAM.SAN(effect.sanity));
   }
   if (effect.caffeine !== undefined) {
-    state.caffeine = clamp(state.caffeine + effect.caffeine, 0, 200);
+    draft.caffeine = clamp(draft.caffeine + effect.caffeine, 0, 200);
     messages.push(LOG_TEMPLATES.PARAM.CAFFEINE(effect.caffeine));
   }
   if (effect.satiety !== undefined) {
-    state.satiety = clamp(state.satiety + effect.satiety, 0, state.maxSatiety);
+    draft.satiety = clamp(draft.satiety + effect.satiety, 0, draft.maxSatiety);
     messages.push(LOG_TEMPLATES.PARAM.SATIETY(effect.satiety));
   }
   if (effect.money !== undefined) {
-    state.money += effect.money;
+    draft.money += effect.money;
     messages.push(LOG_TEMPLATES.PARAM.MONEY(effect.money));
   }
 };
 
-const processKnowledge = (state: GameState, effect: GameEventEffect, messages: string[]) => {
+const processKnowledge = (draft: Draft<GameState>, effect: GameEventEffect, messages: string[]) => {
   if (!effect.knowledge) return;
   
   Object.entries(effect.knowledge).forEach(([key, val]) => {
     if (val) {
       const sId = key as SubjectId;
-      state.knowledge[sId] = clamp(state.knowledge[sId] + val, 0, 100);
+      draft.knowledge[sId] = clamp(draft.knowledge[sId] + val, 0, 100);
       
       // 知識が増加した場合、最終学習ターンを更新して忘却を阻止
       if (val > 0) {
-        state.lastStudied[sId] = state.turnCount;
+        draft.lastStudied[sId] = draft.turnCount;
       }
       messages.push(LOG_TEMPLATES.PARAM.KNOWLEDGE(SUBJECTS[sId].name, val));
     }
   });
 };
 
-const processRelationships = (state: GameState, effect: GameEventEffect, messages: string[]) => {
+const processRelationships = (draft: Draft<GameState>, effect: GameEventEffect, messages: string[]) => {
   if (!effect.relationships) return;
 
   Object.entries(effect.relationships).forEach(([key, val]) => {
     if (val) {
       const rId = key as RelationshipId;
-      state.relationships[rId] = clamp(state.relationships[rId] + val, 0, 100);
+      draft.relationships[rId] = clamp(draft.relationships[rId] + val, 0, 100);
       messages.push(LOG_TEMPLATES.PARAM.RELATIONSHIP(RELATIONSHIP_NAMES[rId], val));
     }
   });
 };
 
-const processInventory = (state: GameState, effect: GameEventEffect, messages: string[]) => {
+const processInventory = (draft: Draft<GameState>, effect: GameEventEffect, messages: string[]) => {
   if (!effect.inventory) return;
 
   Object.entries(effect.inventory).forEach(([key, val]) => {
     if (val) {
       const iId = key as ItemId;
-      const current = state.inventory[iId] || 0;
-      state.inventory[iId] = Math.max(0, current + val);
+      const current = draft.inventory[iId] || 0;
+      draft.inventory[iId] = Math.max(0, current + val);
       
       const itemName = ITEMS[iId]?.name || iId;
       if (val > 0) {
@@ -129,70 +130,54 @@ const processInventory = (state: GameState, effect: GameEventEffect, messages: s
   });
 };
 
-const processBuffs = (state: GameState, effect: GameEventEffect, messages: string[]) => {
+const processBuffs = (draft: Draft<GameState>, effect: GameEventEffect, messages: string[]) => {
   if (!effect.buffs || effect.buffs.length === 0) return;
 
   effect.buffs.forEach(buffData => {
     // Generate unique ID for buff
-    const buffId = `BUFF_${state.turnCount}_${Math.random().toString(36).substr(2, 5)}`;
-    const newBuff: Buff = { ...buffData, id: buffId };
+    const buffId = `BUFF_${draft.turnCount}_${Math.random().toString(36).substr(2, 5)}`;
+    // Cast to Buff to satisfy type system (id is added here)
+    const newBuff = { ...buffData, id: buffId } as Buff;
     
-    state.activeBuffs.push(newBuff);
+    draft.activeBuffs.push(newBuff);
     messages.push(LOG_TEMPLATES.BUFF.DURATION(buffData.description, buffData.duration));
   });
 };
 
-const processFlags = (state: GameState, effect: GameEventEffect) => {
+const processFlags = (draft: Draft<GameState>, effect: GameEventEffect) => {
   if (!effect.flags) return;
 
   Object.entries(effect.flags).forEach(([key, val]) => {
-    const k = key as keyof typeof state.flags;
+    const k = key as keyof typeof draft.flags;
     // 数値なら加算、それ以外（boolean等）なら上書き
-    if (typeof val === 'number' && typeof state.flags[k] === 'number') {
-      (state.flags[k] as number) += val;
+    if (typeof val === 'number' && typeof draft.flags[k] === 'number') {
+      (draft.flags[k] as number) += val;
     } else {
-      (state.flags[k] as any) = val;
+      (draft.flags[k] as any) = val;
     }
   });
 };
 
 /**
- * State Deep Clone Helper
- */
-const cloneState = (state: GameState): GameState => ({
-  ...state,
-  knowledge: { ...state.knowledge },
-  lastStudied: { ...state.lastStudied },
-  relationships: { ...state.relationships },
-  inventory: { ...state.inventory },
-  activeBuffs: [...state.activeBuffs],
-  flags: { ...state.flags },
-  logs: [...state.logs],
-  eventHistory: [...state.eventHistory],
-  eventStats: { ...state.eventStats },
-  statsHistory: [...state.statsHistory]
-});
-
-/**
- * GameEventEffectをGameStateに適用する。
- * 更新されたStateと、フォーマット済みのログメッセージを返す。
- * Stateはディープコピーされ、Immutabilityが保たれる。
+ * Applies a GameEventEffect to the state draft.
+ * Mutates the draft directly and returns formatted log messages.
+ * 
+ * @param draft Immer draft of GameState
+ * @param effect The effect to apply
+ * @returns Array of log messages generated by the effect
  */
 export const applyEffect = (
-  state: GameState,
+  draft: Draft<GameState>,
   effect: GameEventEffect
-): { newState: GameState; messages: string[] } => {
-  // 1. Create a deep copy of the state to mutate
-  const newState = cloneState(state);
+): string[] => {
   const messages: string[] = [];
 
-  // 2. Apply effects in order using specialized processors
-  processBasicStats(newState, effect, messages);
-  processKnowledge(newState, effect, messages);
-  processRelationships(newState, effect, messages);
-  processInventory(newState, effect, messages);
-  processBuffs(newState, effect, messages);
-  processFlags(newState, effect);
+  processBasicStats(draft, effect, messages);
+  processKnowledge(draft, effect, messages);
+  processRelationships(draft, effect, messages);
+  processInventory(draft, effect, messages);
+  processBuffs(draft, effect, messages);
+  processFlags(draft, effect);
 
-  return { newState, messages };
+  return messages;
 };

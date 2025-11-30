@@ -1,13 +1,14 @@
 
+import { Draft } from 'immer';
 import { GameState, TimeSlot, LogEntry, GameEventEffect } from '../../types';
 import { ACTION_LOGS } from '../../data/constants/logMessages';
-import { applySoftCap, clamp } from '../../utils/common';
+import { applySoftCap } from '../../utils/common';
 import { joinMessages } from '../../utils/logFormatter';
 import { pushLog } from '../stateHelpers';
 import { CAFFEINE_THRESHOLDS, BUFF_SOFT_CAP_ASYMPTOTE, SATIETY_CONSUMPTION } from '../../config/gameConstants';
 import { applyEffect } from '../effectProcessor';
 
-export const handleRest = (state: GameState): GameState => {
+export const handleRest = (draft: Draft<GameState>): void => {
   let hpRecov = 0;
   let sanityRecov = 0;
   let caffeineDrop = -25;
@@ -18,9 +19,9 @@ export const handleRest = (state: GameState): GameState => {
   let debtReduction = 0;
   let quality = 0.8;
 
-  const anxietyFactor = Math.max(0.6, 1.0 - ((state.day - 1) * 0.06));
+  const anxietyFactor = Math.max(0.6, 1.0 - ((draft.day - 1) * 0.06));
 
-  switch (state.timeSlot) {
+  switch (draft.timeSlot) {
     case TimeSlot.LATE_NIGHT:
       hpRecov = 80;
       sanityRecov = 30; 
@@ -56,14 +57,13 @@ export const handleRest = (state: GameState): GameState => {
       break;
   }
 
-  // Caffeine Interference
-  if (state.caffeine >= CAFFEINE_THRESHOLDS.TOXICITY) {
+  if (draft.caffeine >= CAFFEINE_THRESHOLDS.TOXICITY) {
     hpRecov = Math.floor(hpRecov * 0.3);
     sanityRecov = -10;
     baseLog = ACTION_LOGS.REST.CAFFEINE_FAIL;
     logType = 'danger';
     quality = 0.5;
-  } else if (state.caffeine >= CAFFEINE_THRESHOLDS.ZONE) {
+  } else if (draft.caffeine >= CAFFEINE_THRESHOLDS.ZONE) {
     hpRecov = Math.floor(hpRecov * 0.6);
     sanityRecov = Math.floor(sanityRecov * 0.5);
     baseLog = ACTION_LOGS.REST.SHALLOW;
@@ -71,9 +71,8 @@ export const handleRest = (state: GameState): GameState => {
     quality = 0.7;
   }
 
-  // Apply Buffs with Soft Cap
   let rawMultiplier = 1.0;
-  const restBuffs = state.activeBuffs.filter(b => b.type === 'REST_EFFICIENCY');
+  const restBuffs = draft.activeBuffs.filter(b => b.type === 'REST_EFFICIENCY');
   if (restBuffs.length > 0) {
     rawMultiplier = restBuffs.reduce((acc, b) => acc * b.value, 1.0);
     baseLog += ` [アイテム効果 x${rawMultiplier.toFixed(1)}]`;
@@ -84,7 +83,6 @@ export const handleRest = (state: GameState): GameState => {
   hpRecov = Math.floor(hpRecov * finalMultiplier);
   sanityRecov = Math.floor(sanityRecov * finalMultiplier);
 
-  // Apply Anxiety
   hpRecov = Math.floor(hpRecov * anxietyFactor);
   sanityRecov = Math.floor(sanityRecov * anxietyFactor);
 
@@ -92,7 +90,6 @@ export const handleRest = (state: GameState): GameState => {
     baseLog += ACTION_LOGS.REST.ANXIETY;
   }
 
-  // Build Effect
   const effect: GameEventEffect = {
     hp: hpRecov,
     sanity: sanityRecov,
@@ -100,21 +97,18 @@ export const handleRest = (state: GameState): GameState => {
     satiety: -satietyCost
   };
 
-  // Apply
-  const { newState, messages } = applyEffect(state, effect);
+  const messages = applyEffect(draft, effect);
 
-  // Update flags (manual update as they are not in GameEventEffect yet)
-  newState.flags.sleepDebt = Math.max(0, newState.flags.sleepDebt - debtReduction);
-  newState.flags.lastSleepQuality = quality;
+  draft.flags.sleepDebt = Math.max(0, draft.flags.sleepDebt - debtReduction);
+  draft.flags.lastSleepQuality = quality;
 
   const details = joinMessages(messages, ', ');
-  pushLog(newState, `${baseLog}\n(${details})`, logType);
-  return newState;
+  pushLog(draft, `${baseLog}\n(${details})`, logType);
 };
 
-export const handleEscapism = (state: GameState): GameState => {
+export const handleEscapism = (draft: Draft<GameState>): void => {
   let satietyCost = SATIETY_CONSUMPTION.ESCAPISM;
-  if (state.timeSlot === TimeSlot.LATE_NIGHT) {
+  if (draft.timeSlot === TimeSlot.LATE_NIGHT) {
     satietyCost = Math.floor(satietyCost * SATIETY_CONSUMPTION.LATE_NIGHT_MULT);
   }
 
@@ -128,7 +122,7 @@ export const handleEscapism = (state: GameState): GameState => {
   let baseLog = "";
   let logType: LogEntry['type'] = 'info';
 
-  if (state.timeSlot === TimeSlot.AM || state.timeSlot === TimeSlot.AFTERNOON) {
+  if (draft.timeSlot === TimeSlot.AM || draft.timeSlot === TimeSlot.AFTERNOON) {
     effect.relationships!.PROFESSOR = -8;
     baseLog = ACTION_LOGS.ESCAPISM.SKIP_CLASS;
     logType = 'warning';
@@ -136,9 +130,8 @@ export const handleEscapism = (state: GameState): GameState => {
     baseLog = ACTION_LOGS.ESCAPISM.NORMAL;
   }
 
-  const { newState, messages } = applyEffect(state, effect);
+  const messages = applyEffect(draft, effect);
   
   const details = joinMessages(messages, ', ');
-  pushLog(newState, `${baseLog}\n(${details})`, logType);
-  return newState;
+  pushLog(draft, `${baseLog}\n(${details})`, logType);
 };

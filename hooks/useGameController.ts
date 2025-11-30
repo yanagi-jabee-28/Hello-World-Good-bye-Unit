@@ -1,99 +1,28 @@
 
 import { useState } from 'react';
-import { useGameEngine } from './useGameEngine';
+import { useGameStore } from '../logic/store';
 import { useGameSound } from './useGameSound';
-import { ActionType, ItemId, GameState, SubjectId, UiScale, DebugFlags } from '../types';
 import { Sound } from '../utils/sound';
 
 export const useGameController = () => {
-  const { state, dispatch } = useGameEngine();
-  useGameSound(state); // Initialize sound system
+  // Select state and actions separately to avoid unnecessary re-renders in this hook
+  // (though this hook is mostly used by App which needs everything)
+  const state = useGameStore((s) => s);
+  const actions = useGameStore((s) => s.actions);
+  
+  // Initialize sound system subscription
+  useGameSound(); 
 
-  // UI State
+  // UI State (Local)
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState<'terminal' | 'status'>('terminal');
 
-  // Helpers
   const playClick = () => Sound.play('button_click');
 
-  // Action Handlers
-  const actions = {
-    // Core Actions
-    study: (subjectId: SubjectId) => {
-      playClick();
-      dispatch({ type: ActionType.STUDY, payload: subjectId });
-    },
-    studyAll: () => {
-      playClick();
-      dispatch({ type: ActionType.STUDY_ALL });
-    },
-    rest: () => {
-      playClick();
-      dispatch({ type: ActionType.REST });
-    },
-    work: () => {
-      playClick();
-      dispatch({ type: ActionType.WORK });
-    },
-    escapism: () => {
-      playClick();
-      dispatch({ type: ActionType.ESCAPISM });
-    },
-    
-    // Social Actions
-    askProfessor: () => {
-      playClick();
-      dispatch({ type: ActionType.ASK_PROFESSOR });
-    },
-    askSenior: () => {
-      playClick();
-      dispatch({ type: ActionType.ASK_SENIOR });
-    },
-    relyFriend: () => {
-      playClick();
-      dispatch({ type: ActionType.RELY_FRIEND });
-    },
-
-    // Item Actions
-    useItem: (itemId: ItemId) => {
-      playClick();
-      dispatch({ type: ActionType.USE_ITEM, payload: itemId });
-    },
-    buyItem: (itemId: ItemId) => {
-      playClick();
-      dispatch({ type: ActionType.BUY_ITEM, payload: itemId });
-    },
-
-    // System/Event Actions
-    resolveEvent: (optionId: string) => {
-      playClick();
-      dispatch({ type: ActionType.RESOLVE_EVENT, payload: { optionId } });
-    },
-    loadState: (loadedState: GameState) => {
-      Sound.play('event_trigger');
-      dispatch({ type: ActionType.LOAD_STATE, payload: loadedState });
-    },
-    
-    // Reset Actions
-    restart: () => {
-      playClick();
-      dispatch({ type: ActionType.RESTART });
-    },
-    fullReset: () => {
-      Sound.play('game_over');
-      dispatch({ type: ActionType.FULL_RESET });
-    },
-    softReset: () => {
-      Sound.play('event_trigger');
-      dispatch({ type: ActionType.SOFT_RESET });
-    },
-    hardRestart: () => {
-      Sound.play('event_trigger');
-      dispatch({ type: ActionType.HARD_RESTART });
-    },
-
-    // UI Controls
+  // Wrap actions with sound
+  const wrappedActions = {
+    ...actions,
     openShop: () => { playClick(); setIsShopOpen(true); },
     closeShop: () => { playClick(); setIsShopOpen(false); },
     openMenu: () => { playClick(); setIsMenuOpen(true); },
@@ -102,19 +31,30 @@ export const useGameController = () => {
       playClick();
       setMobileTab(tab);
     },
-    setUiScale: (scale: UiScale) => {
-      playClick();
-      dispatch({ type: ActionType.SET_UI_SCALE, payload: scale });
-    },
-    toggleDebugFlag: (flag: keyof DebugFlags) => {
-      playClick();
-      dispatch({ type: ActionType.TOGGLE_DEBUG_FLAG, payload: flag });
-    }
+    // Wrap generic actions to play click sound
+    study: (id) => { playClick(); actions.study(id); },
+    studyAll: () => { playClick(); actions.studyAll(); },
+    rest: () => { playClick(); actions.rest(); },
+    work: () => { playClick(); actions.work(); },
+    escapism: () => { playClick(); actions.escapism(); },
+    askProfessor: () => { playClick(); actions.askProfessor(); },
+    askSenior: () => { playClick(); actions.askSenior(); },
+    relyFriend: () => { playClick(); actions.relyFriend(); },
+    useItem: (id) => { playClick(); actions.useItem(id); },
+    buyItem: (id) => { playClick(); actions.buyItem(id); },
+    resolveEvent: (id) => { playClick(); actions.resolveEvent(id); },
+    loadState: (s) => { Sound.play('event_trigger'); actions.loadState(s); },
+    restart: () => { playClick(); actions.restart(); },
+    fullReset: () => { Sound.play('game_over'); actions.fullReset(); },
+    softReset: () => { Sound.play('event_trigger'); actions.softReset(); },
+    hardRestart: () => { Sound.play('event_trigger'); actions.hardRestart(); },
+    setUiScale: (s) => { playClick(); actions.setUiScale(s); },
+    toggleDebugFlag: (f) => { playClick(); actions.toggleDebugFlag(f); },
   };
 
   return {
     state,
     ui: { isShopOpen, isMenuOpen, mobileTab, uiScale: state.uiScale },
-    actions
+    actions: wrappedActions
   };
 };

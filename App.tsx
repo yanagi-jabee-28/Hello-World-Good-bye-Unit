@@ -40,6 +40,7 @@ const MiniBar = ({
 );
 
 const App: React.FC = () => {
+  // useGameController now wraps the Zustand store
   const { state, ui, actions } = useGameController();
   const [showDeathSequence, setShowDeathSequence] = useState(false);
   const [showEndingScreen, setShowEndingScreen] = useState(false);
@@ -61,7 +62,7 @@ const App: React.FC = () => {
       setShowDeathSequence(false);
       setShowEndingScreen(false);
     }
-  }, [state.status]);
+  }, [state.status, showEndingScreen]);
 
   const handleSequenceComplete = () => {
     setShowDeathSequence(false);
@@ -114,6 +115,8 @@ const App: React.FC = () => {
       <div className="hidden lg:grid flex-1 grid-cols-12 gap-4 h-full min-h-0 p-4 pt-0">
         {/* Left: Status */}
         <div className="col-span-3 h-full min-h-0 overflow-hidden">
+          {/* Note: Components are now 'Smart' but we pass state for compatibility with existing internal props if needed, or to avoid heavy refactor inside them immediately. 
+              Ideally, StatusDisplay would internally use useGameStore. */}
           <StatusDisplay state={state} />
         </div>
 

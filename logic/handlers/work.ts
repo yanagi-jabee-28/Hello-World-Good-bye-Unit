@@ -1,4 +1,4 @@
-
+import { Draft } from 'immer';
 import { GameState, LogEntry, GameEventEffect, TimeSlot, SubjectId } from '../../types';
 import { joinMessages } from '../../utils/logFormatter';
 import { pushLog } from '../stateHelpers';
@@ -10,26 +10,27 @@ import { applyEffect, mergeEffects } from '../effectProcessor';
 import { rng } from '../../utils/rng';
 import { SUBJECTS } from '../../data/subjects';
 
-export const handleWork = (state: GameState): GameState => {
+export const handleWork = (draft: Draft<GameState>): void => {
   // 1. 分岐イベント（トラブル等）の抽選
   const branchingEvents = ALL_EVENTS.filter(e => e.category === 'work_branching');
-  const troubleEvent = selectEvent(state, branchingEvents, 'action_work');
+  // Cast draft to GameState for read-only access where needed by selectEvent
+  const troubleEvent = selectEvent(draft as GameState, branchingEvents, 'action_work');
 
   if (troubleEvent && troubleEvent.options) {
-    const recordedState = recordEventOccurrence(state, troubleEvent.id);
-    recordedState.pendingEvent = troubleEvent;
-    return recordedState;
+    recordEventOccurrence(draft, troubleEvent.id);
+    draft.pendingEvent = troubleEvent;
+    return;
   }
 
   // 2. 通常結果イベントの抽選
   const resultEvents = ALL_EVENTS.filter(e => e.category === 'work_result');
-  const resultEvent = selectEvent(state, resultEvents, 'action_work');
+  const resultEvent = selectEvent(draft as GameState, resultEvents, 'action_work');
 
   // 3. 基本パラメータの計算
-  const config = getWorkConfig(state.timeSlot);
+  const config = getWorkConfig(draft.timeSlot);
   
   let satietyCost = SATIETY_CONSUMPTION.WORK;
-  if (state.timeSlot === TimeSlot.LATE_NIGHT) {
+  if (draft.timeSlot === TimeSlot.LATE_NIGHT) {
     satietyCost = Math.floor(satietyCost * SATIETY_CONSUMPTION.LATE_NIGHT_MULT);
   }
 
@@ -43,12 +44,12 @@ export const handleWork = (state: GameState): GameState => {
 
   // Opportunity Cost: Morning Work reduces knowledge (Brain is fresh but wasted)
   let opportunityCostMsg: string | null = null;
-  if (state.timeSlot === TimeSlot.MORNING || state.timeSlot === TimeSlot.AM) {
+  if (draft.timeSlot === TimeSlot.MORNING || draft.timeSlot === TimeSlot.AM) {
     // Randomly pick a subject to decay
     const subIds = Object.values(SubjectId);
     const targetSub = rng.pick(subIds)!;
     // Reduce by small amount (simulating forgetting or missing class)
-    if (state.knowledge[targetSub] > 0) {
+    if (draft.knowledge[targetSub] > 0) {
        baseEffect.knowledge = { [targetSub]: -2 };
        opportunityCostMsg = `授業欠席(${SUBJECTS[targetSub].name}-2)`;
     }
@@ -56,18 +57,18 @@ export const handleWork = (state: GameState): GameState => {
 
   // カフェイン補正
   let caffeineMsg: string | null = null;
-  if (state.caffeine >= CAFFEINE_THRESHOLDS.TOXICITY) {
+  if (draft.caffeine >= CAFFEINE_THRESHOLDS.TOXICITY) {
     baseEffect.money = Math.floor((baseEffect.money || 0) * 1.5);
     baseEffect.hp = Math.floor((baseEffect.hp || 0) * 1.5);
     baseEffect.sanity = Math.floor((baseEffect.sanity || 0) * 1.5);
     if (baseEffect.satiety) baseEffect.satiety = Math.floor(baseEffect.satiety * SATIETY_CONSUMPTION.CAFFEINE_TOXIC_MULT);
     caffeineMsg = "中毒稼働(報酬UP/消耗大)";
-  } else if (state.caffeine >= CAFFEINE_THRESHOLDS.ZONE) {
+  } else if (draft.caffeine >= CAFFEINE_THRESHOLDS.ZONE) {
     baseEffect.money = Math.floor((baseEffect.money || 0) * 1.3);
     baseEffect.hp = Math.floor((baseEffect.hp || 0) * 1.2);
     if (baseEffect.satiety) baseEffect.satiety = Math.floor(baseEffect.satiety * SATIETY_CONSUMPTION.CAFFEINE_ZONE_MULT);
     caffeineMsg = "ZONE稼働(報酬UP)";
-  } else if (state.caffeine >= CAFFEINE_THRESHOLDS.AWAKE) {
+  } else if (draft.caffeine >= CAFFEINE_THRESHOLDS.AWAKE) {
     baseEffect.money = Math.floor((baseEffect.money || 0) * 1.1);
     baseEffect.hp = Math.floor((baseEffect.hp || 0) * 1.1);
     caffeineMsg = "覚醒稼働";
@@ -96,20 +97,17 @@ export const handleWork = (state: GameState): GameState => {
   if (finalEffect.money && finalEffect.money < -5000) finalEffect.money = -5000;
 
   // 5. 適用とログ生成
-  let newState = state;
   if (eventIdToRecord) {
-    newState = recordEventOccurrence(newState, eventIdToRecord);
+    recordEventOccurrence(draft, eventIdToRecord);
   }
 
-  const result = applyEffect(newState, finalEffect);
-  newState = result.newState;
+  const messages = applyEffect(draft, finalEffect);
 
   const details = joinMessages([
-    ...result.messages,
+    ...messages,
     caffeineMsg,
     opportunityCostMsg
   ], ', ');
 
-  pushLog(newState, `${eventLogText}\n(${details})`, logType);
-  return newState;
+  pushLog(draft, `${eventLogText}\n(${details})`, logType);
 };

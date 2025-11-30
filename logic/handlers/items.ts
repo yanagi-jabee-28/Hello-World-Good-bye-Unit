@@ -1,4 +1,4 @@
-
+import { Draft } from 'immer';
 import { GameState, ItemId, SubjectId, LogEntry, GameEventEffect } from '../../types';
 import { ITEMS } from '../../data/items';
 import { SUBJECTS } from '../../data/subjects';
@@ -10,24 +10,22 @@ import { applyEffect, mergeEffects } from '../effectProcessor';
 import { rng } from '../../utils/rng';
 import { KNOWLEDGE_THRESHOLDS, USB_SUCCESS_CONFIG, LEARNING_EFFICIENCY } from '../../config/gameBalance';
 
-export const handleBuyItem = (state: GameState, itemId: ItemId): GameState => {
+export const handleBuyItem = (draft: Draft<GameState>, itemId: ItemId): void => {
   const item = ITEMS[itemId];
-  if (state.money >= item.price) {
+  if (draft.money >= item.price) {
     const effect: GameEventEffect = {
       money: -item.price,
       inventory: { [itemId]: 1 }
     };
-    const { newState } = applyEffect(state, effect);
-    pushLog(newState, ACTION_LOGS.ITEM.BUY_SUCCESS(item.name, newState.money), 'success');
-    return newState;
+    applyEffect(draft, effect);
+    pushLog(draft, ACTION_LOGS.ITEM.BUY_SUCCESS(item.name, draft.money), 'success');
   } else {
-    pushLog(state, ACTION_LOGS.ITEM.BUY_FAIL(item.name), 'danger');
-    return state;
+    pushLog(draft, ACTION_LOGS.ITEM.BUY_FAIL(item.name), 'danger');
   }
 };
 
-export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
-  if ((state.inventory[itemId] || 0) <= 0) return state;
+export const handleUseItem = (draft: Draft<GameState>, itemId: ItemId): void => {
+  if ((draft.inventory[itemId] || 0) <= 0) return;
   
   const item = ITEMS[itemId];
   
@@ -96,7 +94,9 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
       break;
       
     case ItemId.REFERENCE_BOOK: {
-      const lowestSub = Object.values(SubjectId).reduce((a, b) => state.knowledge[a] < state.knowledge[b] ? a : b);
+      const subIds = Object.values(SubjectId);
+      // draft.knowledge can be accessed directly
+      const lowestSub = subIds.reduce((a, b) => draft.knowledge[a] < draft.knowledge[b] ? a : b);
       const kDelta = 20; 
       
       effect = mergeEffects(effect, { knowledge: { [lowestSub]: kDelta } });
@@ -105,7 +105,7 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
       break;
     }
     case ItemId.USB_MEMORY: {
-       const algoScore = state.knowledge[SubjectId.ALGO] || 0;
+       const algoScore = draft.knowledge[SubjectId.ALGO] || 0;
        
        let successRate = 0;
        if (algoScore >= USB_SUCCESS_CONFIG.GUARANTEED_THRESHOLD) {
@@ -162,9 +162,8 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
     }
   }
 
-  const { newState, messages } = applyEffect(state, effect);
+  const messages = applyEffect(draft, effect);
 
   const details = joinMessages(messages, ', ');
-  pushLog(newState, `${baseLog}\n(${details})`, logType);
-  return newState;
+  pushLog(draft, `${baseLog}\n(${details})`, logType);
 };

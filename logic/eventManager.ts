@@ -1,153 +1,120 @@
 
-import { GameState, GameEvent, EventTriggerType, SubjectId, RelationshipId, ItemId } from '../types';
-import { clamp } from '../utils/common';
+import { Draft } from 'immer';
+import { GameState, GameEvent, EventTriggerType, SubjectId, RelationshipId, GameEventCondition } from '../types';
 import { joinMessages } from '../utils/logFormatter';
 import { pushLog } from './stateHelpers';
 import { ALL_EVENTS } from '../data/events';
-import { SUBJECTS } from '../data/subjects';
-import { ITEMS } from '../data/items';
 import { applyEffect, mergeEffects } from './effectProcessor';
 
-/**
- * Checks if event conditions are met.
- */
-const checkConditions = (state: GameState, event: GameEvent, trigger: EventTriggerType): boolean => {
-  if (event.trigger !== trigger) return false;
+// --- Condition Validators ---
 
-  const { conditions } = event;
-  if (!conditions) return true;
+type Validator = (state: GameState, conditions: GameEventCondition, trigger: EventTriggerType) => boolean;
 
-  if (conditions.timeSlots && !conditions.timeSlots.includes(state.timeSlot)) return false;
-
-  if (conditions.minHp !== undefined && state.hp < conditions.minHp) return false;
-  if (conditions.maxHp !== undefined && state.hp > conditions.maxHp) return false;
-
-  if (conditions.minSanity !== undefined && state.sanity < conditions.minSanity) return false;
-  if (conditions.maxSanity !== undefined && state.sanity > conditions.maxSanity) return false;
-
-  if (conditions.caffeineMin !== undefined && state.caffeine < conditions.caffeineMin) return false;
-  if (conditions.caffeineMax !== undefined && state.caffeine > conditions.caffeineMax) return false;
-
-  const avgScore = Object.values(state.knowledge).reduce((a, b) => a + b, 0) / 4;
-  if (conditions.minAvgScore !== undefined && avgScore < conditions.minAvgScore) return false;
-  if (conditions.maxAvgScore !== undefined && avgScore > conditions.maxAvgScore) return false;
-
-  if (conditions.minKnowledge) {
-    for (const [subjectId, minScore] of Object.entries(conditions.minKnowledge)) {
-      if ((state.knowledge[subjectId as SubjectId] || 0) < (minScore as number)) {
-        return false;
+const validators: Validator[] = [
+  (state, c) => !c.timeSlots || c.timeSlots.includes(state.timeSlot),
+  (state, c) => c.minHp === undefined || state.hp >= c.minHp,
+  (state, c) => c.maxHp === undefined || state.hp <= c.maxHp,
+  (state, c) => c.minSanity === undefined || state.sanity >= c.minSanity,
+  (state, c) => c.maxSanity === undefined || state.sanity <= c.maxSanity,
+  (state, c) => c.caffeineMin === undefined || state.caffeine >= c.caffeineMin,
+  (state, c) => c.caffeineMax === undefined || state.caffeine <= c.caffeineMax,
+  (state, c) => c.minMoney === undefined || state.money >= c.minMoney,
+  (state, c) => {
+    if (c.minAvgScore !== undefined) {
+      const avgScore = Object.values(state.knowledge).reduce((a, b) => a + b, 0) / 4;
+      if (avgScore < c.minAvgScore) return false;
+    }
+    if (c.maxAvgScore !== undefined) {
+      const avgScore = Object.values(state.knowledge).reduce((a, b) => a + b, 0) / 4;
+      if (avgScore > c.maxAvgScore) return false;
+    }
+    if (c.minKnowledge) {
+      for (const [subjectId, minScore] of Object.entries(c.minKnowledge)) {
+        if ((state.knowledge[subjectId as SubjectId] || 0) < (minScore as number)) return false;
       }
     }
-  }
+    return true;
+  },
+  (state, c, trigger) => {
+    if (trigger === 'turn_end') return true; 
+    let targetRelValue = 0;
+    if (trigger === 'action_professor') targetRelValue = state.relationships[RelationshipId.PROFESSOR];
+    if (trigger === 'action_senior') targetRelValue = state.relationships[RelationshipId.SENIOR];
+    if (trigger === 'action_friend') targetRelValue = state.relationships[RelationshipId.FRIEND];
 
-  let targetRelValue = 0;
-  if (trigger === 'action_professor') targetRelValue = state.relationships[RelationshipId.PROFESSOR];
-  if (trigger === 'action_senior') targetRelValue = state.relationships[RelationshipId.SENIOR];
-  if (trigger === 'action_friend') targetRelValue = state.relationships[RelationshipId.FRIEND];
-
-  if (trigger !== 'turn_end') {
-    if (conditions.minRelationship !== undefined && targetRelValue < conditions.minRelationship) return false;
-    if (conditions.maxRelationship !== undefined && targetRelValue > conditions.maxRelationship) return false;
-  }
-
-  if (conditions.itemRequired) {
-    for (const itemId of conditions.itemRequired) {
+    if (c.minRelationship !== undefined && targetRelValue < c.minRelationship) return false;
+    if (c.maxRelationship !== undefined && targetRelValue > c.maxRelationship) return false;
+    return true;
+  },
+  (state, c) => {
+    if (!c.itemRequired) return true;
+    for (const itemId of c.itemRequired) {
       if ((state.inventory[itemId] || 0) <= 0) return false;
     }
+    return true;
   }
+];
 
-  if (conditions.minMoney !== undefined && state.money < conditions.minMoney) return false;
-
-  return true;
+const checkConditions = (state: GameState, event: GameEvent, trigger: EventTriggerType): boolean => {
+  if (event.trigger !== trigger) return false;
+  const { conditions } = event;
+  if (!conditions) return true;
+  return validators.every(v => v(state, conditions, trigger));
 };
 
 const calculateDynamicWeight = (state: GameState, event: GameEvent): number => {
   const stats = state.eventStats[event.id];
-  
   if (!stats) return event.weight;
-
-  if (event.maxOccurrences !== undefined && stats.count >= event.maxOccurrences) {
-    return 0;
-  }
-
+  if (event.maxOccurrences !== undefined && stats.count >= event.maxOccurrences) return 0;
   if (event.coolDownTurns !== undefined) {
     const turnsSinceLast = state.turnCount - stats.lastTurn;
-    if (turnsSinceLast < event.coolDownTurns) {
-      return 0;
-    }
+    if (turnsSinceLast < event.coolDownTurns) return 0;
   }
-
   let weight = event.weight;
-  if (event.decay && stats.count > 0) {
-    weight = weight * Math.pow(event.decay, stats.count);
-  }
-
-  if (state.eventHistory.includes(event.id)) {
-    weight *= 0.1;
-  }
-
+  if (event.decay && stats.count > 0) weight = weight * Math.pow(event.decay, stats.count);
+  if (state.eventHistory.includes(event.id)) weight *= 0.1;
   return Math.max(0, weight);
 };
 
-export const selectEvent = (
-  state: GameState, 
-  events: GameEvent[], 
-  trigger: EventTriggerType
-): GameEvent | null => {
+export const selectEvent = (state: GameState, events: GameEvent[], trigger: EventTriggerType): GameEvent | null => {
   const candidates = events
     .filter(evt => checkConditions(state, evt, trigger))
-    .map(evt => ({
-      evt,
-      weight: calculateDynamicWeight(state, evt)
-    }))
+    .map(evt => ({ evt, weight: calculateDynamicWeight(state, evt) }))
     .filter(item => item.weight > 0);
 
-  if (state.debugFlags.logEventFlow) {
-    console.debug(`[EventManager] Trigger: ${trigger}, Candidates: ${candidates.length}`);
-  }
-
+  if (state.debugFlags.logEventFlow) console.debug(`[EventManager] Trigger: ${trigger}, Candidates: ${candidates.length}`);
   if (candidates.length === 0) return null;
 
   const totalWeight = candidates.reduce((sum, item) => sum + item.weight, 0);
   let randomVal = Math.random() * totalWeight;
-  
   for (const item of candidates) {
     randomVal -= item.weight;
-    if (randomVal <= 0) {
-      return item.evt;
-    }
+    if (randomVal <= 0) return item.evt;
   }
-
   return candidates[candidates.length - 1].evt;
 };
 
-export const recordEventOccurrence = (state: GameState, eventId: string): GameState => {
-  const currentStats = state.eventStats[eventId] || { count: 0, lastTurn: -1 };
+export const recordEventOccurrence = (draft: Draft<GameState>, eventId: string): void => {
+  const currentStats = draft.eventStats[eventId] || { count: 0, lastTurn: -1 };
   
-  return {
-    ...state,
-    eventHistory: [eventId, ...state.eventHistory].slice(0, 5),
-    eventStats: {
-      ...state.eventStats,
-      [eventId]: {
-        count: currentStats.count + 1,
-        lastTurn: state.turnCount
-      }
-    }
+  if (draft.eventHistory.length >= 5) {
+      draft.eventHistory.pop();
+  }
+  draft.eventHistory.unshift(eventId);
+  
+  draft.eventStats[eventId] = {
+    count: currentStats.count + 1,
+    lastTurn: draft.turnCount
   };
 };
 
-/**
- * Applies event effects to the state and generates logs using effectProcessor.
- */
-export const applyEventEffect = (state: GameState, event: GameEvent): { newState: GameState; messages: string[] } => {
-  let newState = recordEventOccurrence(state, event.id);
+// Returns messages instead of { newState, messages }
+export const applyEventEffect = (draft: Draft<GameState>, event: GameEvent): string[] => {
+  recordEventOccurrence(draft, event.id);
 
   let effect = event.effect;
-
-  // SAFETY: ソーシャルイベント等で効果が空の場合、最低保証効果（友好度+1）を付与する
-  // これにより「イベントが起きたのに何も変わらなかった（無駄打ち）」感を防ぐ
   const isSocial = ['action_professor', 'action_senior', 'action_friend'].includes(event.trigger);
+  
   if (isSocial) {
     const hasMeaningfulEffect = effect && (
       (effect.hp && effect.hp !== 0) ||
@@ -159,30 +126,17 @@ export const applyEventEffect = (state: GameState, event: GameEvent): { newState
     );
 
     if (!hasMeaningfulEffect) {
-      if (state.debugFlags.logEventFlow) console.debug(`[EventManager] Applying safe default effect for ${event.id}`);
       let targetRel: RelationshipId = RelationshipId.FRIEND;
       if (event.trigger === 'action_professor') targetRel = RelationshipId.PROFESSOR;
       if (event.trigger === 'action_senior') targetRel = RelationshipId.SENIOR;
-      
-      // Merge safe default
       effect = mergeEffects(effect || {}, { relationships: { [targetRel]: 1 } });
     }
   }
 
-  if (!effect) return { newState, messages: [] };
-
-  // Use centralized processor
-  const result = applyEffect(newState, effect);
-  
-  return {
-    newState: result.newState,
-    messages: result.messages
-  };
+  if (!effect) return [];
+  return applyEffect(draft, effect);
 };
 
-/**
- * Creates a fallback event on the fly if no event matches
- */
 const createFallbackEvent = (trigger: EventTriggerType, text: string): GameEvent => {
   return {
     id: `fallback_${trigger}_${Date.now()}`,
@@ -190,33 +144,28 @@ const createFallbackEvent = (trigger: EventTriggerType, text: string): GameEvent
     text,
     type: 'flavor',
     weight: 1,
-    // Add default effect to ensure feedback
     effect: { sanity: 1 } 
   };
 };
 
-export const executeEvent = (state: GameState, trigger: EventTriggerType, fallbackText?: string): GameState => {
-  let event = selectEvent(state, ALL_EVENTS, trigger);
+export const executeEvent = (draft: Draft<GameState>, trigger: EventTriggerType, fallbackText?: string): void => {
+  // selectEvent is read-only so we can cast draft to GameState
+  let event = selectEvent(draft as GameState, ALL_EVENTS, trigger);
   
-  // FALLBACK LOGIC: If no event selected but we expect one (fallbackText provided), force a fallback
   if (!event && fallbackText) {
-    if (state.debugFlags.logEventFlow) console.warn(`[EventManager] No event selected for ${trigger}. Using fallback.`);
     event = createFallbackEvent(trigger, fallbackText);
   }
 
   if (event) {
      if (event.options && event.options.length > 0) {
-       const newState = recordEventOccurrence(state, event.id);
-       newState.pendingEvent = event;
-       return newState;
+       recordEventOccurrence(draft, event.id);
+       draft.pendingEvent = event;
+       return;
      }
 
-     const { newState: appliedState, messages } = applyEventEffect(state, event);
+     const messages = applyEventEffect(draft, event);
      const details = joinMessages(messages, ', ');
      const logType = event.type === 'good' ? 'success' : event.type === 'bad' ? 'danger' : 'info';
-     pushLog(appliedState, details ? `${event.text}\n(${details})` : event.text, logType);
-     return appliedState;
+     pushLog(draft, details ? `${event.text}\n(${details})` : event.text, logType);
   } 
-  
-  return state;
 };
