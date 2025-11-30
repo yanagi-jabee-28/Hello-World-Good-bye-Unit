@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { GameState, ItemId, SubjectId } from '../types';
 import { getStudyHint } from '../logic/advisor';
@@ -52,12 +51,17 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect, isMobi
     );
   }
 
+  // Common wrapper styling: Mobile scrolls everything, Desktop disables root scroll
+  const containerClass = isMobile 
+    ? "h-full bg-black/50 overflow-y-auto custom-scrollbar content-start" 
+    : "h-full bg-black/50 overflow-hidden flex flex-col";
+
   return (
-    <div className="h-full bg-black/50 content-start overflow-y-auto custom-scrollbar">
+    <div className={containerClass}>
       
       {/* Warnings Banner (Common) */}
       {warnings.length > 0 && (
-        <div className="p-3 pb-1">
+        <div className="p-3 pb-1 shrink-0">
           <div className={`p-2 border-l-4 flex items-start gap-3 ${hasCriticalWarning ? 'bg-red-950/30 border-red-600' : 'bg-yellow-950/30 border-yellow-600'}`}>
             <AlertTriangle className={hasCriticalWarning ? 'text-red-500 animate-pulse' : 'text-yellow-500'} size={18} />
             <div className="flex-1">
@@ -74,84 +78,88 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect, isMobi
         </div>
       )}
 
-      {/* === DESKTOP LAYOUT (Hidden on Mobile) === */}
-      <div className="hidden md:grid grid-cols-4 gap-3 p-3 h-full">
-         {/* ACADEMIC */}
-         <div className="col-span-1 space-y-2">
-            <div className="flex justify-between items-center px-1">
-               <span className="fs-xxs font-bold text-gray-500 flex items-center gap-1"><BookOpen size={10} /> ACADEMIC</span>
-               <Badge variant={caffeine > 100 ? 'warning' : 'outline'} className="scale-75 origin-right">{studyHint.split('(')[0]}</Badge>
-            </div>
-            <AcademicSection state={state} onStudy={actions.study} onStudyAll={actions.studyAll} isMobile={false} />
-         </div>
+      {/* === DESKTOP LAYOUT === */}
+      {!isMobile && (
+        <div className="grid grid-cols-4 gap-3 p-3 pt-2 h-full min-h-0">
+           {/* ACADEMIC */}
+           <div className="col-span-1 space-y-2 overflow-y-auto custom-scrollbar pr-1">
+              <div className="flex justify-between items-center px-1 shrink-0 sticky top-0 bg-black/80 z-10 py-1">
+                 <span className="fs-xxs font-bold text-gray-500 flex items-center gap-1"><BookOpen size={10} /> ACADEMIC</span>
+                 <Badge variant={caffeine > 100 ? 'warning' : 'outline'} className="scale-75 origin-right">{studyHint.split('(')[0]}</Badge>
+              </div>
+              <AcademicSection state={state} onStudy={actions.study} onStudyAll={actions.studyAll} isMobile={false} />
+           </div>
 
-         {/* LIFE & ECONOMY */}
-         <div className="col-span-1 space-y-2">
-            <div className="fs-xxs font-bold text-gray-500 flex items-center gap-1 px-1">
-               <Briefcase size={10} /> LIFE
-            </div>
-            <LifeSection 
-              state={state}
-              onRest={actions.rest} 
-              onWork={actions.work} 
-              onOpenShop={actions.openShop} 
-              isMobile={false} 
-            />
-         </div>
-
-         {/* SOCIAL */}
-         <div className="col-span-1 space-y-2">
-            <div className="fs-xxs font-bold text-gray-500 flex items-center gap-1 px-1">
-               <Users size={10} /> SOCIAL
-            </div>
-            <SocialSection state={state} actions={actions} isMobile={false} />
-         </div>
-
-         {/* INVENTORY */}
-         <div className="col-span-1 space-y-2 flex flex-col h-full min-h-0">
-            <div className="fs-xxs font-bold text-gray-500 flex items-center gap-1 px-1 shrink-0">
-               <Package size={10} /> STORAGE
-            </div>
-            <div className="flex-1 min-h-0">
-              <InventorySection 
-                state={state} 
-                onUse={actions.useItem} 
-                onInspect={onInspect} 
+           {/* LIFE & ECONOMY */}
+           <div className="col-span-1 space-y-2 overflow-y-auto custom-scrollbar pr-1">
+              <div className="fs-xxs font-bold text-gray-500 flex items-center gap-1 px-1 shrink-0 sticky top-0 bg-black/80 z-10 py-1">
+                 <Briefcase size={10} /> LIFE
+              </div>
+              <LifeSection 
+                state={state}
+                onRest={actions.rest} 
+                onWork={actions.work} 
+                onOpenShop={actions.openShop} 
                 isMobile={false} 
               />
-            </div>
-         </div>
-      </div>
+           </div>
 
-      {/* === MOBILE LAYOUT (Visible on Mobile) === */}
-      <div className="md:hidden p-2 space-y-1">
-         <CollapsibleSection title="ACADEMIC (学習)" defaultOpen={true}>
-            <AcademicSection state={state} onStudy={actions.study} onStudyAll={actions.studyAll} isMobile={true} />
-         </CollapsibleSection>
-         
-         <CollapsibleSection title="LIFE SUPPORT (生活)" defaultOpen={true}>
-            <LifeSection 
-              state={state}
-              onRest={actions.rest} 
-              onWork={actions.work} 
-              onOpenShop={actions.openShop} 
-              isMobile={true} 
-            />
-         </CollapsibleSection>
-         
-         <CollapsibleSection title="SOCIAL LINK (人脈)" defaultOpen={true}>
-            <SocialSection state={state} actions={actions} isMobile={true} />
-         </CollapsibleSection>
-         
-         <CollapsibleSection title="INVENTORY (所持品)" defaultOpen={true}>
-            <InventorySection 
-              state={state}
-              onUse={actions.useItem} 
-              onInspect={onInspect} 
-              isMobile={true} 
-            />
-         </CollapsibleSection>
-      </div>
+           {/* SOCIAL */}
+           <div className="col-span-1 space-y-2 overflow-y-auto custom-scrollbar pr-1">
+              <div className="fs-xxs font-bold text-gray-500 flex items-center gap-1 px-1 shrink-0 sticky top-0 bg-black/80 z-10 py-1">
+                 <Users size={10} /> SOCIAL
+              </div>
+              <SocialSection state={state} actions={actions} isMobile={false} />
+           </div>
+
+           {/* INVENTORY (Scrollable independently) */}
+           <div className="col-span-1 space-y-2 flex flex-col h-full min-h-0">
+              <div className="fs-xxs font-bold text-gray-500 flex items-center gap-1 px-1 shrink-0">
+                 <Package size={10} /> STORAGE
+              </div>
+              <div className="flex-1 min-h-0">
+                <InventorySection 
+                  state={state} 
+                  onUse={actions.useItem} 
+                  onInspect={onInspect} 
+                  isMobile={false} 
+                />
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* === MOBILE LAYOUT === */}
+      {isMobile && (
+        <div className="p-2 space-y-1">
+           <CollapsibleSection title="ACADEMIC (学習)" defaultOpen={true}>
+              <AcademicSection state={state} onStudy={actions.study} onStudyAll={actions.studyAll} isMobile={true} />
+           </CollapsibleSection>
+           
+           <CollapsibleSection title="LIFE SUPPORT (生活)" defaultOpen={true}>
+              <LifeSection 
+                state={state}
+                onRest={actions.rest} 
+                onWork={actions.work} 
+                onOpenShop={actions.openShop} 
+                isMobile={true} 
+              />
+           </CollapsibleSection>
+           
+           <CollapsibleSection title="SOCIAL LINK (人脈)" defaultOpen={true}>
+              <SocialSection state={state} actions={actions} isMobile={true} />
+           </CollapsibleSection>
+           
+           <CollapsibleSection title="INVENTORY (所持品)" defaultOpen={true}>
+              <InventorySection 
+                state={state}
+                onUse={actions.useItem} 
+                onInspect={onInspect} 
+                isMobile={true} 
+              />
+           </CollapsibleSection>
+        </div>
+      )}
     </div>
   );
 };

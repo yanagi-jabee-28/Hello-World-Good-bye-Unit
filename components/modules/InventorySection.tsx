@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { GameState, ItemId } from '../../types';
 import { ITEMS } from '../../data/items';
@@ -32,7 +31,7 @@ export const InventorySection: React.FC<Props> = React.memo(({ state, onUse, onI
     <div className="space-y-1.5 flex flex-col h-full">
       {/* Header Controls (Only show if items exist) */}
       {ownedItems.length > 0 && (
-        <div className="flex justify-between items-center px-1 pb-1 border-b border-gray-800 mb-1">
+        <div className="flex justify-between items-center px-1 pb-1 border-b border-gray-800 mb-1 shrink-0">
            <div className="flex items-center gap-1">
              {viewMode === 'list' && (
                 <div className="flex items-center gap-1 bg-gray-900 rounded px-1">
@@ -75,10 +74,10 @@ export const InventorySection: React.FC<Props> = React.memo(({ state, onUse, onI
          </div>
       ) : (
         <div className={`
-           overflow-y-auto custom-scrollbar pr-1 
+           overflow-y-auto custom-scrollbar pr-1 flex-1
            ${isMobile 
               ? (viewMode === 'grid' ? 'grid grid-cols-1 gap-1.5' : 'space-y-2 max-h-[400px]') 
-              : (viewMode === 'grid' ? 'grid grid-cols-2 gap-1.5 md:flex md:flex-col max-h-[180px]' : 'space-y-2 max-h-[180px]')
+              : (viewMode === 'grid' ? 'flex flex-col gap-1.5' : 'space-y-2')
            }
         `}>
           {ownedItems.map((itemId) => {

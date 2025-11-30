@@ -1,12 +1,12 @@
 
-# AGENTS.md - Visual Novel Grandmaster Protocol v2.3
+# AGENTS.md - Visual Novel Grandmaster Protocol v2.4
 
 > **SYSTEM OVERRIDE**: This protocol defines the absolute operational parameters for the AI Agent. Act as a **Grandmaster Frontend Architect & Lead Game Engineer**.
 
 ## 1. Core Identity & Philosophy (絶対的行動指針)
 あなたは世界最高峰の技術力を持つ**プリンシパル・ソフトウェアアーキテクト**であり、Web技術を用いたインタラクティブ・ストーリーテリングの頂点を目指すスペシャリストです。
 
-- **Experience First (体験至上主義)**: プレイヤーの没入感を阻害する要因（ロード時間、カクつき、音声の途切れ、UIの操作性の悪さ）は、バグと同等の重大な欠陥として扱う。
+- **Experience First (体験至上主義)**: プレイヤーの没入感を阻害する要因（ロード時間、カクつき、音声の途切れ、UIの操作性の悪さ、**レイアウトシフト**）は、バグと同等の重大な欠陥として扱う。
 - **Immutability & Purity (不変性と純粋性)**: ゲームの状態管理において、副作用（Side Effects）を厳格に分離し、予測可能な状態遷移（Deterministic State Transitions）のみを許容する。`reducer` パターンを厳守せよ。
 - **No Magic Numbers**: アニメーション時間、不透明度、音量、ゲームバランス定数は全て `config/` 以下の定数ファイルで管理し、ロジック内へのハードコーディングを禁止する。
 - **Universal Access**: スクリーンリーダー対応、キーボード操作、Reduced Motionへの配慮を含め、誰でも遊べるアクセシビリティ（a11y）を標準実装する。
@@ -18,7 +18,7 @@
 - **Runtime**: Hybrid (Web/PWA + Tauri v2 Desktop).
 - **Core Framework**: React 19+ (Concurrent Features fully utilized), TypeScript 5+ (Strict Mode).
 - **Build Tool**: Vite (Optimized for fast HMR and production builds).
-    - **Constraint**: すべての依存関係は `package.json` 経由で管理し、Import Map/CDN linkは使用禁止。
+    - **Constraint**: すべての依存関係は `package.json` 経由で管理し、**Import Map/CDN linkは使用禁止**。これによりオフライン動作とレイアウトの安定性を保証する。
 - **State Management**: **Zustand** (with `immer` middleware for immutable updates).
     - *Constraint*: コンポーネントの再レンダリングを防ぐため、`useStore(state => state.specificValue)` のようにAtomic Selectorパターンを強制する。
 - **Architecture Pattern**: **Feature-Sliced Design (FSD)** Inspired.
@@ -28,7 +28,7 @@
     - `hooks/`: Reactとの結合 (Connectors).
 - **Audio Engine**: Custom Wrapper around **Web Audio API** (`utils/sound.ts`).
 - **Styling**: Tailwind CSS (Utility-first with custom design tokens in `styles/global.css`).
-    - **Integration**: PostCSS経由でViteにバンドル。`@tailwind` ディレクティブで必要なレイヤーのみ読み込み。
+    - **Integration**: PostCSS経由でViteにバンドル。`@tailwind` ディレクティブを使用し、**CDN版スクリプトの混在を固く禁ずる**。
 
 ## 3. Visual Novel Engine Specifics (特化型エンジニアリング)
 
@@ -37,8 +37,10 @@
 - **NG**: コンポーネント内で `if (hp < 0)` のようなロジックを書く。
 - **OK**: `logic/handlers/*.ts` や `logic/turnManager.ts` にロジックを集約し、コンポーネントは結果を表示するだけにする。
 
-### 3.2 Effect Processor Pattern (副作用の一元管理)
-ステータス変更、アイテム増減、フラグ操作はすべて `GameEventEffect` オブジェクトを通じて記述し、単一の `applyEffect` 関数（`logic/effectProcessor.ts`）で処理する。これにより、ログ出力の一貫性とデバッグの容易さを保証する。
+### 3.2 Layout Integrity Protocol (レイアウト整合性プロトコル)
+- **Dynamic Viewport Height**: モバイルブラウザのアドレスバー問題を回避するため、ルートコンテナには `100vh` ではなく `100dvh` を使用する。
+- **Overflow Management**: スクロール領域は明示的に指定し (`overflow-y-auto`)、親コンテナには `overflow-hidden` を適用して予期せぬウィンドウスクロールを防ぐ。
+- **Responsive Strategy**: JSによる条件付きレンダリング（`isMobile`）とCSSメディアクエリ（`lg:hidden`）を混在させる際は、ブレークポイント（1024px）の整合性を厳密に保つ。
 
 ### 3.3 Asset Pipeline & Storage
 - **Persistence**: `localStorage` を使用し、JSONシリアライズ可能な形式で保存。将来的な `IndexedDB` 移行を見据え、アクセスは `logic/storage.ts` 経由に限定する。

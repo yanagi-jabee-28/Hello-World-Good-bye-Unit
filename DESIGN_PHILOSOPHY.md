@@ -1,5 +1,5 @@
 
-# Hello World Good-bye Unit - 設計思想書 (Design Philosophy) v2.7
+# Hello World Good-bye Unit - 設計思想書 (Design Philosophy) v2.8
 
 > **Architect**: Grandmaster Game Designer  
 > **Last Updated**: 2025-11-29  
@@ -91,9 +91,10 @@ src/
 └── types/            # 型定義 (Types)
 ```
 
-### 3.2 依存関係管理の原則 (新規追加)
-- **Single Source of Truth**: 全依存関係は `package.json` で一元管理。CDN Import Mapは使用禁止（オフライン対応・型安全性・再現性の観点から）。
+### 3.2 依存関係管理の原則 (Build-First Policy)
+- **Single Source of Truth**: 全依存関係は `package.json` で一元管理。**CDN Import Mapは使用禁止**。
 - **Vite Build Pipeline**: Tailwind CSS含む全アセットはViteのビルドプロセスに統合し、最適化（Purge/Minify/Split）を自動化。
+- **Layout Stability**: `index.html` にスタイルタグやスクリプトを直書きせず、エントリポイント (`index.tsx`, `global.css`) に集約することで、読み込み順序による表示崩れを防止する。
 
 ### 3.3 Effect Processor Pattern
 ゲーム内のあらゆる状態変化（アイテム使用、イベント結果、学習成果）は、統一された `GameEventEffect` オブジェクトとして表現し、単一の `applyEffect` 関数で処理します。
@@ -115,6 +116,7 @@ src/
 - [x] 60点ラインの視覚的マーカー実装
 - [x] イベントデータの大規模リファクタリング (FSD分割)
 - [x] **総合演習バランス調整 (v2.7)**: 学習方法の差別化、教材バフ減衰。
+- [x] **レイアウト基盤の恒久安定化 (v2.8)**: CDN依存の完全排除。
 
 ### Phase 2: 演出強化 (v3.0)
 - [ ] Framer MotionによるリッチなUIアニメーション

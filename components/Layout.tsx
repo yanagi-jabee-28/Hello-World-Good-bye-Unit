@@ -1,4 +1,3 @@
-
 import React, { ReactNode, useEffect } from 'react';
 import { GameState, UiScale } from '../types';
 import { Clock, Calendar, Save, Menu, Zap } from 'lucide-react';
@@ -88,7 +87,7 @@ export const Layout: React.FC<Props> = ({ state, children, overlays, onMenuOpen,
       </header>
 
       {/* Main Content Layer */}
-      <main className="flex-1 relative overflow-hidden z-10">
+      <main className="flex-1 relative overflow-hidden z-10 flex flex-col min-h-0">
         {/* Background Grid Animation */}
         <div className="absolute inset-0 pointer-events-none opacity-20 z-0">
           <div className="w-full h-full bg-[linear-gradient(rgba(0,255,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,0,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [transform-origin:center] animate-[pulse_4s_ease-in-out_infinite]" />

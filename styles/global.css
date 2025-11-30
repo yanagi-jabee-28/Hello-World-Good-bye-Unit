@@ -1,9 +1,7 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 /* Import Fonts */
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap');
+
+/* @tailwind directives removed to support CDN usage without build step */
 
 :root {
   --color-bg: #050505;
@@ -11,8 +9,10 @@
 }
 
 html, body {
-  height: 100%;
+  /* Use 100dvh to handle mobile browser address bars correctly */
+  height: 100dvh;
   width: 100%;
+  overflow: hidden; /* Prevent body scroll */
   overscroll-behavior: none; /* Prevent pull-to-refresh / elastic scrolling */
 }
 
@@ -21,7 +21,6 @@ body {
   background-color: var(--color-bg);
   color: var(--color-primary);
   margin: 0;
-  overflow: hidden;
   /* Tech Grid Background */
   background-image: 
     linear-gradient(rgba(20, 83, 45, 0.07) 1px, transparent 1px),
@@ -96,15 +95,7 @@ body {
   opacity: 0.2;
 }
 
-/* Animations */
-@keyframes pulse-fast {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-.animate-pulse-fast {
-  animation: pulse-fast 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
+/* Animations defined here work alongside CDN config */
 @keyframes scanline {
   0% { transform: translateY(-100%); }
   100% { transform: translateY(100%); }
@@ -123,35 +114,10 @@ body {
   animation: glitch-skew 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
 }
 
-/* Standard Animations */
+/* Standard Animations that might be used outside Tailwind utilities */
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideInLeft { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-
-/* Death Sequence specific */
-.animate-shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both infinite; }
-.animate-rgb-shift { animation: rgbShift 0.1s infinite; }
-.animate-crt-off { animation: crtOff 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards; }
-
-@keyframes shake {
-  10%, 90% { transform: translate3d(-1px, 0, 0); }
-  20%, 80% { transform: translate3d(2px, 0, 0); }
-  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-  40%, 60% { transform: translate3d(4px, 0, 0); }
-}
-@keyframes rgbShift {
-  0% { text-shadow: 2px 0 #f00, -2px 0 #0ff; }
-  25% { text-shadow: -2px 0 #f00, 2px 0 #0ff; }
-  50% { text-shadow: 2px 2px #f00, -2px -2px #0ff; }
-  75% { text-shadow: -2px -2px #f00, 2px 2px #0ff; }
-  100% { text-shadow: 1px -1px #f00, -1px 1px #0ff; }
-}
-@keyframes crtOff {
-  0% { transform: scale(1, 1); filter: brightness(1); opacity: 1; }
-  40% { transform: scale(1, 0.002); filter: brightness(3); opacity: 1; }
-  80% { transform: scale(0, 0.002); opacity: 1; }
-  100% { transform: scale(0, 0); opacity: 0; }
-}
 
 /* Safe Area for Mobile Notch/Home Indicator - Enhanced */
 .pb-safe {
