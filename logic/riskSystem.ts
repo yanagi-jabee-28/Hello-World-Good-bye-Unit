@@ -3,21 +3,17 @@ import { GameState, SubjectId, TimeSlot, GameEventOption, GameEventEffect, ItemI
 import { WORK_CONFIGS } from '../data/work';
 import { ITEMS } from '../data/items';
 import { CAFFEINE_THRESHOLDS, STUDY_CONSTANTS, SATIETY_CONSUMPTION } from '../config/gameConstants';
+import { RISK_PREDICTION } from '../config/gameBalance';
 
-// Helper to calculate potential new value
-const predictValue = (current: number, change: number, max: number): number => {
-  return Math.min(Math.max(current + change, -999), max);
-};
+/**
+ * リスク予測ロジック v2.0
+ * Directモード: 確定コストのみで死亡判定
+ * Predictiveモード: 確率的失敗やイベントによる追加ダメージを含めて判定（「運が悪ければ死ぬ」を検知）
+ */
 
-// Check if a change results in death
-const isFatal = (state: GameState, effect: GameEventEffect): boolean => {
-  if (effect.hp !== undefined) {
-    if (state.hp + effect.hp <= 0) return true;
-  }
-  if (effect.sanity !== undefined) {
-    if (state.sanity + effect.sanity <= 0) return true;
-  }
-  return false;
+// Helper to check if a change results in death
+const checkFatal = (current: number, cost: number): boolean => {
+  return current + cost <= 0;
 };
 
 // --- STUDY RISK ---
@@ -60,7 +56,13 @@ export const predictStudyRisk = (state: GameState): boolean => {
     hpCost += STUDY_CONSTANTS.MADNESS_HP_COST;
   }
 
-  return (state.hp - hpCost <= 0) || (state.sanity - sanityCost <= 0);
+  // Predictive Buffer (Study events rarely damage, but randomness exists)
+  if (state.debugFlags.riskPredictionMode === 'predictive') {
+    hpCost += RISK_PREDICTION.STUDY_VARIANCE.HP;
+    sanityCost += RISK_PREDICTION.STUDY_VARIANCE.SANITY;
+  }
+
+  return checkFatal(state.hp, -hpCost) || checkFatal(state.sanity, -sanityCost);
 };
 
 // --- WORK RISK ---
@@ -80,25 +82,67 @@ export const predictWorkRisk = (state: GameState): boolean => {
     hpCost = Math.floor(hpCost * 1.1);
   }
 
-  return (state.hp - hpCost <= 0) || (state.sanity - sanityCost <= 0);
+  // Predictive Buffer (Work often has failure events)
+  if (state.debugFlags.riskPredictionMode === 'predictive') {
+    hpCost += RISK_PREDICTION.WORK_FAILURE_BUFFER.HP;
+    sanityCost += RISK_PREDICTION.WORK_FAILURE_BUFFER.SANITY;
+  }
+
+  return checkFatal(state.hp, -hpCost) || checkFatal(state.sanity, -sanityCost);
 };
 
 // --- ITEM RISK ---
 export const predictItemRisk = (state: GameState, itemId: ItemId): boolean => {
   const item = ITEMS[itemId];
   if (!item || !item.effects) return false;
-  return isFatal(state, item.effects);
+
+  // Base effect check
+  let hpCost = 0;
+  let sanityCost = 0;
+
+  // Apply direct costs if they are damage
+  if (item.effects.hp && item.effects.hp < 0) {
+     hpCost += Math.abs(item.effects.hp);
+  }
+  if (item.effects.sanity && item.effects.sanity < 0) {
+     sanityCost += Math.abs(item.effects.sanity);
+  }
+
+  // Predictive check for failure probability items
+  if (state.debugFlags.riskPredictionMode === 'predictive') {
+     // USB Memory etc. have failure chance
+     if (itemId === ItemId.USB_MEMORY || itemId === ItemId.VERIFIED_PAST_PAPERS) {
+        hpCost += RISK_PREDICTION.ITEM_FAILURE_BUFFER.HP;
+        sanityCost += RISK_PREDICTION.ITEM_FAILURE_BUFFER.SANITY;
+     }
+  }
+
+  return checkFatal(state.hp, -hpCost) || checkFatal(state.sanity, -sanityCost);
 };
 
 // --- EVENT OPTION RISK ---
 export const predictOptionRisk = (state: GameState, option: GameEventOption): boolean => {
-  // Check success effect
-  if (option.successEffect && isFatal(state, option.successEffect)) {
-    return true;
+  const mode = state.debugFlags.riskPredictionMode;
+
+  // Check success effect (Always check, as some successes have costs)
+  if (option.successEffect) {
+    if (option.successEffect.hp && checkFatal(state.hp, option.successEffect.hp)) return true;
+    if (option.successEffect.sanity && checkFatal(state.sanity, option.successEffect.sanity)) return true;
   }
-  // Check failure effect
-  if (option.failureEffect && isFatal(state, option.failureEffect)) {
-    return true;
+
+  // Check failure effect (Usually only relevant in Predictive mode, or if success rate is very low?)
+  // For safety, Direct mode also checks failure if it's guaranteed (successRate 0), but predictive checks possibilities.
+  
+  if (mode === 'predictive' && option.failureEffect) {
+    if (option.failureEffect.hp && checkFatal(state.hp, option.failureEffect.hp)) return true;
+    if (option.failureEffect.sanity && checkFatal(state.sanity, option.failureEffect.sanity)) return true;
   }
+
+  // Special case: Risk level 'high' options often imply danger beyond immediate effect
+  if (mode === 'predictive' && option.risk === 'high') {
+     // Heuristic: if low stats, flag high risk options as lethal
+     if (state.hp < 20 || state.sanity < 20) return true;
+  }
+
   return false;
 };

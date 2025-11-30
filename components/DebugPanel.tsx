@@ -54,6 +54,24 @@ export const DebugPanel: React.FC<Props> = ({ state, onToggleFlag }) => {
         <h3 className="text-cyan-500 font-bold mb-2">DEBUG SETTINGS</h3>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
+            <span className="text-gray-400">リスクメーター表示:</span>
+            <button
+              onClick={() => onToggleFlag('riskOverlay')}
+              className={`flex items-center gap-2 px-2 py-1 rounded text-[10px] font-bold ${state.debugFlags.riskOverlay ? 'bg-green-900/50 text-green-400 border border-green-700' : 'bg-gray-800 text-gray-500 border border-gray-700'}`}
+            >
+              {state.debugFlags.riskOverlay ? 'ON' : 'OFF'}
+            </button>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-gray-400">リスク詳細分解:</span>
+            <button
+              onClick={() => onToggleFlag('riskDetail')}
+              className={`flex items-center gap-2 px-2 py-1 rounded text-[10px] font-bold ${state.debugFlags.riskDetail ? 'bg-green-900/50 text-green-400 border border-green-700' : 'bg-gray-800 text-gray-500 border border-gray-700'}`}
+            >
+              {state.debugFlags.riskDetail ? 'ON' : 'OFF'}
+            </button>
+          </div>
+          <div className="flex items-center justify-between">
             <span className="text-gray-400">リスク/成功率表示:</span>
             <button
               onClick={() => onToggleFlag('showRisks')}
@@ -71,6 +89,17 @@ export const DebugPanel: React.FC<Props> = ({ state, onToggleFlag }) => {
               {state.debugFlags.showDeathHints ? 'ON' : 'OFF'}
             </button>
           </div>
+          
+          <div className="flex items-center justify-between">
+            <span className="text-gray-400">リスク予測モード:</span>
+            <button
+              onClick={() => onToggleFlag('riskPredictionMode')}
+              className={`flex items-center gap-2 px-2 py-1 rounded text-[10px] font-bold border ${state.debugFlags.riskPredictionMode === 'predictive' ? 'bg-purple-900/50 text-purple-400 border-purple-700' : 'bg-blue-900/50 text-blue-400 border-blue-700'}`}
+            >
+              {state.debugFlags.riskPredictionMode === 'predictive' ? 'PREDICTIVE (慎重)' : 'DIRECT (直接)'}
+            </button>
+          </div>
+
           <div className="flex items-center justify-between">
             <span className="text-gray-400">イベントログ出力:</span>
             <button
@@ -80,6 +109,10 @@ export const DebugPanel: React.FC<Props> = ({ state, onToggleFlag }) => {
               {state.debugFlags.logEventFlow ? 'ON' : 'OFF'}
             </button>
           </div>
+        </div>
+        <div className="mt-2 text-[10px] text-gray-500 leading-tight">
+           Predictive: ランダムイベントの最大ダメージを含めてリスク判定します。<br/>
+           Direct: 現在のアクションの確定コストのみで判定します。
         </div>
       </div>
 
@@ -116,6 +149,10 @@ export const DebugPanel: React.FC<Props> = ({ state, onToggleFlag }) => {
           <div className="flex justify-between">
             <span className="text-gray-400">睡眠負債:</span>
             <span className="text-cyan-300">{state.flags.sleepDebt?.toFixed(1) || 0}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">連続行動:</span>
+            <span className="text-orange-300">{state.flags.actionStreak || 0}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-400">前夜睡眠品質:</span>

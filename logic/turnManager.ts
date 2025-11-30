@@ -1,3 +1,4 @@
+
 import { Draft } from 'immer';
 import { GameState, TimeSlot, SubjectId } from '../types';
 import { clamp, chance } from '../utils/common';
@@ -7,12 +8,20 @@ import { getNextTimeSlot } from './time';
 import { executeEvent } from './eventManager';
 import { ACTION_LOGS } from '../data/constants/logMessages';
 import { SUBJECTS } from '../data/subjects';
+import { computeRisk } from './riskCalculator';
 
 /**
  * ターン経過処理を一括して行う
  * 時間経過、ステータス自然変動、バフ処理、ランダムイベントなど
  */
 export const processTurnEnd = (draft: Draft<GameState>, isResting: boolean = false): void => {
+  // 0. Action Streak Management
+  if (isResting) {
+    draft.flags.actionStreak = 0;
+  } else {
+    draft.flags.actionStreak = (draft.flags.actionStreak || 0) + 1;
+  }
+
   // 1. 睡眠負債の更新
   if (!isResting) {
     let debtIncrease = 0.2;
@@ -98,6 +107,18 @@ export const processTurnEnd = (draft: Draft<GameState>, isResting: boolean = fal
       }
     }
   });
+
+  // Recalculate Risk after turn processing (stats might have changed)
+  const risk = computeRisk({
+    hp: draft.hp,
+    maxHp: draft.maxHp,
+    sanity: draft.sanity,
+    maxSanity: draft.maxSanity,
+    sleepDebt: draft.flags.sleepDebt || 0,
+    actionStreak: draft.flags.actionStreak || 0,
+  });
+  draft.risk = risk.total;
+  draft.riskBreakdown = risk;
 
   // --- CRITICAL CHECK: 生存確認 ---
   // アクションコストや状態異常ダメージで死亡している場合、時間経過やイベント抽選を行わずにリターンする。

@@ -246,7 +246,12 @@ export const useGameStore = create<GameStore>()(
         setUiScale: (scale) => set((state) => { state.uiScale = scale; }),
         
         toggleDebugFlag: (flag) => set((state) => { 
-          state.debugFlags[flag] = !state.debugFlags[flag]; 
+          if (flag === 'riskPredictionMode') {
+             state.debugFlags.riskPredictionMode = state.debugFlags.riskPredictionMode === 'direct' ? 'predictive' : 'direct';
+          } else {
+             // @ts-ignore - Boolean toggling safe here due to strict key checking above
+             state.debugFlags[flag] = !state.debugFlags[flag]; 
+          }
         }),
       }
     })),

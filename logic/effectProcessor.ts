@@ -5,6 +5,7 @@ import { clamp } from '../utils/common';
 import { LOG_TEMPLATES, RELATIONSHIP_NAMES } from '../data/constants/logMessages';
 import { SUBJECTS } from '../data/subjects';
 import { ITEMS } from '../data/items';
+import { computeRisk } from './riskCalculator';
 
 /**
  * 複数の効果オブジェクトを合成する（データ作成用ユーティリティとして維持）
@@ -161,6 +162,7 @@ const processFlags = (draft: Draft<GameState>, effect: GameEventEffect) => {
 /**
  * Applies a GameEventEffect to the state draft.
  * Mutates the draft directly and returns formatted log messages.
+ * Automatically recalculates global risk.
  * 
  * @param draft Immer draft of GameState
  * @param effect The effect to apply
@@ -178,6 +180,19 @@ export const applyEffect = (
   processInventory(draft, effect, messages);
   processBuffs(draft, effect, messages);
   processFlags(draft, effect);
+
+  // Recalculate Risk after changes
+  const risk = computeRisk({
+    hp: draft.hp,
+    maxHp: draft.maxHp,
+    sanity: draft.sanity,
+    maxSanity: draft.maxSanity,
+    sleepDebt: draft.flags.sleepDebt || 0,
+    actionStreak: draft.flags.actionStreak || 0,
+  });
+  
+  draft.risk = risk.total;
+  draft.riskBreakdown = risk;
 
   return messages;
 };

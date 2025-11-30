@@ -2,6 +2,7 @@
 import { TimeSlot, GameStatus, SubjectId, RelationshipId, ItemId } from './enums';
 import { Buff } from './assets';
 import { GameEvent } from './event';
+import { RiskBreakdown } from '../logic/riskCalculator';
 
 export interface LogEntry {
   id: string;
@@ -32,12 +33,16 @@ export interface GameFlags {
   madnessStack: number;    // 狂気スタック (0-4)
   examRisk: boolean;       // 最終日無理をしたか
   studyAllUsedDay: number; // 総合学習の使用回数 (日次リセット)
+  actionStreak: number;    // 休息なし連続行動数 (New)
 }
 
 export interface DebugFlags {
   showRisks: boolean;      // 選択肢のリスク/成功率を表示するか
   showDeathHints: boolean; // 死亡確定選択肢の警告を表示するか
   logEventFlow: boolean;   // イベント抽選ログを出力するか
+  riskOverlay: boolean;    // リスクメーターを表示 (New)
+  riskDetail: boolean;     // リスク詳細を表示 (New)
+  riskPredictionMode: 'direct' | 'predictive'; // New: リスク予測の厳格さ
 }
 
 export type UiScale = 'compact' | 'normal' | 'large';
@@ -57,7 +62,7 @@ export interface GameState {
   lastStudied: Record<SubjectId, number>; // 最後に勉強したターン数 (忘却曲線用)
   relationships: Record<RelationshipId, number>; // 0 - 100
   inventory: Partial<Record<ItemId, number>>;
-  activeBuffs: Buff[]; // New
+  activeBuffs: Buff[]; 
   logs: LogEntry[];
   status: GameStatus;
   turnCount: number;
@@ -69,4 +74,6 @@ export interface GameState {
   debugFlags: DebugFlags; // Debug settings
   pendingEvent: GameEvent | null; // 選択待ちのイベント
   uiScale: UiScale; // UIサイズ設定
+  risk: number; // Calculated Risk (0-1)
+  riskBreakdown?: RiskBreakdown; // Detail
 }

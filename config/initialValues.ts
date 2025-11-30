@@ -65,12 +65,17 @@ export const INITIAL_STATE: GameState = {
     madnessStack: 0,
     examRisk: false,
     studyAllUsedDay: 0,
+    actionStreak: 0, // New
   },
   debugFlags: {
     showRisks: true,
     showDeathHints: true,
     logEventFlow: false,
+    riskOverlay: false, // New: Default off
+    riskDetail: false, // New: Default off
+    riskPredictionMode: 'predictive', // Default to safer mode
   },
   pendingEvent: null,
   uiScale: 'normal', // Default UI scale
+  risk: 0,
 };

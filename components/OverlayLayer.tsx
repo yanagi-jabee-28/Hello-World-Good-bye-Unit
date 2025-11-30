@@ -9,6 +9,7 @@ import { ItemDetailModal } from './ItemDetailModal';
 import { DeathSequence } from './DeathSequence';
 import { EndingScreen } from './EndingScreen';
 import { DebugPanel } from './DebugPanel';
+import { RiskMeter } from './RiskMeter';
 
 interface OverlayLayerProps {
   state: GameState;
@@ -54,6 +55,8 @@ export const OverlayLayer: React.FC<OverlayLayerProps> = ({
 }) => {
   return (
     <>
+      <RiskMeter state={state} />
+      
       {ui.isShopOpen && (
         <ShopModal 
           money={state.money} 

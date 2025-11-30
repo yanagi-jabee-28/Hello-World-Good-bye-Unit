@@ -61,6 +61,26 @@ export const RELATIONSHIP_BENEFITS = {
   }
 };
 
+// --- RISK PREDICTION BUFFERS (予測用バッファ) ---
+// Predictiveモード時に「最悪のケース」として加算されるダメージ予測値
+export const RISK_PREDICTION = {
+  // 労働トラブルなどによる最大追加ダメージ
+  WORK_FAILURE_BUFFER: {
+    HP: 30, 
+    SANITY: 30
+  },
+  // アイテム（USB等）の失敗時最大ダメージ
+  ITEM_FAILURE_BUFFER: {
+    HP: 15,
+    SANITY: 25
+  },
+  // 総合演習などのランダム変動幅
+  STUDY_VARIANCE: {
+    HP: 5,
+    SANITY: 5
+  }
+};
+
 // --- REWARD VALUES (報酬量) ---
 export const KNOWLEDGE_GAINS = {
   TINY: 4,
