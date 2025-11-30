@@ -57,7 +57,7 @@ export const workBranching: GameEvent[] = [
           hp: COSTS.HP.HUGE,
           sanity: -25,
           satiety: COSTS.SATIETY.XL,
-          money: COSTS.MONEY.PENALTY_MID
+          money: COSTS.MONEY.PENALTY_MEDIUM
         },
         failureLog: "作り込みすぎて納期に間に合わず。仕様変更トラブルにも発展し、評価は最悪だ..."
       }),

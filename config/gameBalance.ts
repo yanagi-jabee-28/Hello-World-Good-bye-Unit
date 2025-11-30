@@ -103,7 +103,7 @@ export const COOLDOWNS = {
   LONG: 10,
 };
 
-// --- SUCCESS RATES (成功確率) [New] ---
+// --- SUCCESS RATES (成功確率) ---
 export const SUCCESS_RATES = {
   GUARANTEED: 100,
   VERY_HIGH: 90,
@@ -112,10 +112,10 @@ export const SUCCESS_RATES = {
   LOW: 60,
   VERY_LOW: 40,
   RISKY: 30,
+  DESPERATE: 20,
 } as const;
 
-// --- GENERIC COSTS & REWARDS (汎用コスト・報酬) [New] ---
-// Balance Patch v2.1: Rewards decreased
+// --- GENERIC COSTS (汎用コスト) ---
 export const COSTS = {
   HP: {
     TINY: -5,
@@ -139,14 +139,12 @@ export const COSTS = {
   MONEY: {
     PENALTY_SMALL: -1000,
     PENALTY_MEDIUM: -3000,
-    PENALTY_MID: -3000,
     PENALTY_LARGE: -5000,
-    REWARD_SMALL: 1500, // 2000 -> 1500
-    REWARD_MEDIUM: 4000, // 5000 -> 4000
-    REWARD_LARGE: 8000, // 10000 -> 8000
-    LARGE_REWARD: 8000,
-    REWARD_HUGE: 15000, // 20000 -> 15000
-    XL_REWARD: 22000, // 30000 -> 22000
+    REWARD_SMALL: 1500,
+    REWARD_MEDIUM: 4000,
+    REWARD_LARGE: 8000,
+    REWARD_HUGE: 15000,
+    XL_REWARD: 22000,
   },
   SATIETY: {
     TINY: -5,

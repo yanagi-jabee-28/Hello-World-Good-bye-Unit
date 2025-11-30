@@ -192,7 +192,7 @@ export const friendBranching: GameEvent[] = [
         description: '応用問題まで完璧に仕上げる。成功すれば高額報酬＋人脈拡大。',
         successRate: SUCCESS_RATES.LOW, // 50%
         successEffect: {
-          money: COSTS.MONEY.LARGE_REWARD,
+          money: COSTS.MONEY.REWARD_LARGE,
           hp: COSTS.HP.LARGE,
           sanity: 5,
           satiety: COSTS.SATIETY.MEDIUM,

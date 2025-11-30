@@ -35,20 +35,21 @@ export const safeOption = (params: Omit<OptionParams, 'risk' | 'successRate'>): 
  */
 export const lowRiskOption = (params: Omit<OptionParams, 'risk'>): GameEventOption => {
   return {
-    successRate: SUCCESS_RATES.HIGH,
+    successRate: params.successRate ?? SUCCESS_RATES.HIGH,
     ...params,
     risk: 'low',
   };
 };
 
 /**
- * 中リスクな選択肢 (成功率中程度, risk: low or high)
+ * 中リスクな選択肢 (成功率中程度, risk: high)
+ * MID成功率は失敗確率30%あるのでリスク高め表示とする
  */
 export const midRiskOption = (params: Omit<OptionParams, 'risk'>): GameEventOption => {
   return {
-    successRate: SUCCESS_RATES.MID,
+    successRate: params.successRate ?? SUCCESS_RATES.MID,
     ...params,
-    risk: 'high', // MID成功率は失敗確率30%あるのでリスク高め表示とする
+    risk: 'high', 
   };
 };
 
@@ -57,7 +58,7 @@ export const midRiskOption = (params: Omit<OptionParams, 'risk'>): GameEventOpti
  */
 export const highRiskOption = (params: Omit<OptionParams, 'risk'>): GameEventOption => {
   return {
-    successRate: SUCCESS_RATES.RISKY, // 30%
+    successRate: params.successRate ?? SUCCESS_RATES.RISKY,
     ...params,
     risk: 'high',
   };
