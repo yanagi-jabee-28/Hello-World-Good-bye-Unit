@@ -97,7 +97,7 @@ const App: React.FC = () => {
                </div>
             </div>
             {/* Action Panel Container */}
-            <div className="shrink-0 h-[340px]">
+            <div className="shrink-0 h-[420px]">
               <ActionPanel 
                 state={state} 
                 actions={actions} 

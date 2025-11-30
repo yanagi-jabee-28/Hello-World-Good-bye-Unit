@@ -1,5 +1,5 @@
 import { Draft } from 'immer';
-import { GameState, LogEntry, GameEventEffect, TimeSlot, SubjectId } from '../../types';
+import { GameState, LogEntry, GameEventEffect, TimeSlot } from '../../types';
 import { joinMessages } from '../../utils/logFormatter';
 import { pushLog } from '../stateHelpers';
 import { getWorkConfig } from '../../data/work';
@@ -7,8 +7,6 @@ import { CAFFEINE_THRESHOLDS, SATIETY_CONSUMPTION } from '../../config/gameConst
 import { selectEvent, recordEventOccurrence } from '../eventManager';
 import { ALL_EVENTS } from '../../data/events';
 import { applyEffect, mergeEffects } from '../effectProcessor';
-import { rng } from '../../utils/rng';
-import { SUBJECTS } from '../../data/subjects';
 
 export const handleWork = (draft: Draft<GameState>): void => {
   // 1. 分岐イベント（トラブル等）の抽選
@@ -41,19 +39,6 @@ export const handleWork = (draft: Draft<GameState>): void => {
     sanity: -config.sanityCost,
     satiety: -satietyCost
   };
-
-  // Opportunity Cost: Morning Work reduces knowledge (Brain is fresh but wasted)
-  let opportunityCostMsg: string | null = null;
-  if (draft.timeSlot === TimeSlot.MORNING || draft.timeSlot === TimeSlot.AM) {
-    // Randomly pick a subject to decay
-    const subIds = Object.values(SubjectId);
-    const targetSub = rng.pick(subIds)!;
-    // Reduce by small amount (simulating forgetting or missing class)
-    if (draft.knowledge[targetSub] > 0) {
-       baseEffect.knowledge = { [targetSub]: -2 };
-       opportunityCostMsg = `授業欠席(${SUBJECTS[targetSub].name}-2)`;
-    }
-  }
 
   // カフェイン補正
   let caffeineMsg: string | null = null;
@@ -105,8 +90,7 @@ export const handleWork = (draft: Draft<GameState>): void => {
 
   const details = joinMessages([
     ...messages,
-    caffeineMsg,
-    opportunityCostMsg
+    caffeineMsg
   ], ', ');
 
   pushLog(draft, `${eventLogText}\n(${details})`, logType);
