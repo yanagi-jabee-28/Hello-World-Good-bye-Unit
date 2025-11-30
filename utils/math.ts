@@ -1,4 +1,3 @@
-
 /**
  * 数値計算ユーティリティ
  * 防御的プログラミングを行い、null/undefined/空配列に対して安全な値を返す
@@ -28,6 +27,3 @@ export const round = (n: number): number => Math.round(n);
 
 /** 切り捨て */
 export const floor = (n: number): number => Math.floor(n);
-
-/** 確率表示用フォーマッタ (例: "成功率: 50%") */
-export const formatSuccessRate = (rate: number): string => `成功率: ${Math.round(rate)}%`;

@@ -134,3 +134,6 @@ export const getShortEffectString = (item: Item): string => {
 export const joinMessages = (messages: (string | null)[], delimiter: string = ', '): string => {
   return messages.filter(msg => msg !== null && msg !== '').join(delimiter);
 };
+
+/** 確率表示用フォーマッタ (例: "成功率: 50%") */
+export const formatSuccessRate = (rate: number): string => `成功率: ${Math.round(rate)}%`;

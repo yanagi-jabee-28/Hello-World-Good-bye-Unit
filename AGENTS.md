@@ -18,6 +18,7 @@
 - **Runtime**: Hybrid (Web/PWA + Tauri v2 Desktop).
 - **Core Framework**: React 19+ (Concurrent Features fully utilized), TypeScript 5+ (Strict Mode).
 - **Build Tool**: Vite (Optimized for fast HMR and production builds).
+    - **Constraint**: すべての依存関係は `package.json` 経由で管理し、Import Map/CDN linkは使用禁止。
 - **State Management**: **Zustand** (with `immer` middleware for immutable updates).
     - *Constraint*: コンポーネントの再レンダリングを防ぐため、`useStore(state => state.specificValue)` のようにAtomic Selectorパターンを強制する。
 - **Architecture Pattern**: **Feature-Sliced Design (FSD)** Inspired.
@@ -27,6 +28,7 @@
     - `hooks/`: Reactとの結合 (Connectors).
 - **Audio Engine**: Custom Wrapper around **Web Audio API** (`utils/sound.ts`).
 - **Styling**: Tailwind CSS (Utility-first with custom design tokens in `styles/global.css`).
+    - **Integration**: PostCSS経由でViteにバンドル。`@tailwind` ディレクティブで必要なレイヤーのみ読み込み。
 
 ## 3. Visual Novel Engine Specifics (特化型エンジニアリング)
 

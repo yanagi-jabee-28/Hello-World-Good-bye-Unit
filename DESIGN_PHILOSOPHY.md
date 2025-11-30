@@ -91,13 +91,17 @@ src/
 └── types/            # 型定義 (Types)
 ```
 
-### 3.2 Effect Processor Pattern
+### 3.2 依存関係管理の原則 (新規追加)
+- **Single Source of Truth**: 全依存関係は `package.json` で一元管理。CDN Import Mapは使用禁止（オフライン対応・型安全性・再現性の観点から）。
+- **Vite Build Pipeline**: Tailwind CSS含む全アセットはViteのビルドプロセスに統合し、最適化（Purge/Minify/Split）を自動化。
+
+### 3.3 Effect Processor Pattern
 ゲーム内のあらゆる状態変化（アイテム使用、イベント結果、学習成果）は、統一された `GameEventEffect` オブジェクトとして表現し、単一の `applyEffect` 関数で処理します。
 これにより、**「何が起きたか」のログ生成を自動化・統一化**しています。
 
 **v2.5 Update**: `GameEventEffect` に `flags` プロパティを追加し、`hasPastPapers` などのフラグ操作も一元管理するように変更しました。
 
-### 3.3 データ駆動設計
+### 3.4 データ駆動設計
 イベントやアイテムはTypeScriptファイルとして定義されていますが、構造はJSONに近く、ロジックから分離されています。これにより、将来的なDLC追加やMOD対応（外部JSON読み込み等）への拡張性を担保しています。
 
 ---

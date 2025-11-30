@@ -2,7 +2,7 @@
 import { GameState, SubjectId, ItemId } from "../types";
 import { KNOWLEDGE_THRESHOLDS, USB_SUCCESS_CONFIG } from "../config/gameBalance";
 import { SUBJECTS } from "../data/subjects";
-import { formatSuccessRate } from "../utils/math";
+import { formatSuccessRate } from "../utils/logFormatter";
 
 export interface Warning {
   severity: 'info' | 'caution' | 'danger' | 'critical' | 'success'; // Added success for green notifications
