@@ -11,12 +11,25 @@ export const KNOWLEDGE_THRESHOLDS = {
   PERFECT_ZONE: 90,    // 完璧域（運命共同体レベル）
 };
 
+// --- LEARNING EFFICIENCY MATRIX (学習効率) ---
+export const LEARNING_EFFICIENCY = {
+  INDIVIDUAL: {
+    BUFF_EFFECTIVENESS: 1.0, // 個別学習はバフ効果100%
+  },
+  COMPREHENSIVE: {
+    BUFF_EFFECTIVENESS: 0.5, // 総合演習はバフ効果50% (広く浅く)
+  },
+  ITEM_BASED: {
+    USB_FAILURE_HP_COST: 10, // USB解析失敗時のHPダメージ
+  }
+};
+
 // --- USB SUCCESS CONFIG ---
 export const USB_SUCCESS_CONFIG = {
   BASE_RATE: 30,           // 基礎成功率 30%
   ALGO_SCALAR: 0.5,        // アルゴ1点あたり +0.5%
   GUARANTEED_THRESHOLD: 60, // アルゴ60点で確定成功（95%キャップ）
-  PENALTY_SANITY: 20,      // 失敗時のSANペナルティ
+  PENALTY_SANITY: 15,      // 失敗時のSANペナルティ (以前の20から調整、HPダメ追加のため)
 };
 
 // --- RELATIONSHIP THRESHOLDS (友好度階層) ---
@@ -25,6 +38,27 @@ export const REL_TIERS = {
   MID: 30,    // 信頼関係の始まり (アイテム交換など)
   HIGH: 60,   // 親密 (重要な情報の共有)
   ELITE: 80,  // 運命共同体 (核心的リーク、最強アイテム)
+};
+
+// --- RELATIONSHIP EXAM BONUSES (試験時の人脈ボーナス) ---
+export const RELATIONSHIP_BENEFITS = {
+  PROFESSOR: {
+    TIER1_THRESHOLD: 40,
+    TIER1_BONUS: 1.05, // +5%
+    TIER2_THRESHOLD: 60,
+    TIER2_BONUS: 1.10, // +10%
+    TIER3_THRESHOLD: 80,
+    TIER3_BONUS: 1.15, // +15% (出題範囲リーク)
+  },
+  SENIOR: {
+    // Senior bonuses are mostly via Items/PastPapers, but adding small direct bonus
+    TIER1_THRESHOLD: 40,
+    TIER1_BONUS: 1.02,
+    TIER2_THRESHOLD: 60,
+    TIER2_BONUS: 1.05,
+    TIER3_THRESHOLD: 80,
+    TIER3_BONUS: 1.08,
+  }
 };
 
 // --- REWARD VALUES (報酬量) ---

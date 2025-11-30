@@ -19,8 +19,10 @@ import { handleRest, handleEscapism } from './handlers/rest';
 import { handleWork } from './handlers/work';
 import { handleAskProfessor, handleAskSenior, handleRelyFriend } from './handlers/social';
 import { handleBuyItem, handleUseItem } from './handlers/items';
-import { SATIETY_CONSUMPTION, STUDY_ALL } from '../config/gameConstants';
+import { SATIETY_CONSUMPTION, STUDY_ALL, BUFF_SOFT_CAP_ASYMPTOTE } from '../config/gameConstants';
 import { joinMessages } from '../utils/logFormatter';
+import { LEARNING_EFFICIENCY } from '../config/gameBalance';
+import { applySoftCap } from '../utils/common';
 
 export { INITIAL_STATE };
 
@@ -32,7 +34,7 @@ const DYNAMIC_SUBJECT_OPTIONS = [
 ];
 
 const handleStudyAll = (state: GameState): GameState => {
-  // --- 総合学習ハンドラ (v2.6: 科目別難易度反映 & 時間帯制限) ---
+  // --- 総合学習ハンドラ (v2.7: バフ減衰反映) ---
   
   // 1. 時間帯チェック: 授業中(AM, AFTERNOON)は不可
   // UI側でも無効化するが、ロジックとしても保護する
@@ -53,11 +55,19 @@ const handleStudyAll = (state: GameState): GameState => {
   const avg = totalScore / subjects.length;
   const decayMult = STUDY_ALL.gainMultiplier(avg);
 
-  // 4. 科目ごとの上昇値計算
-  // 式: floor( (Base * Decay * Time * (1/Difficulty)) + Random(-1, 1) )
-  // 難易度が高い(Difficultyが小さい)科目ほど上昇しやすい... ではなく、Difficultyは係数。
-  // SUBJECTS定義: difficulty 0.7(難) 〜 1.4(易)
-  // なので、Difficultyをそのまま掛けると「易しい科目は伸びる」「難しい科目は伸びない」となる。
+  // 4. バフ効果の適用と減衰
+  // 総合演習は「広く浅く」のため、集中力系バフの効果が薄れる
+  const studyBuffs = state.activeBuffs.filter(b => b.type === 'STUDY_EFFICIENCY');
+  let buffMultiplier = 1.0;
+  if (studyBuffs.length > 0) {
+    const rawBuff = studyBuffs.reduce((acc, b) => acc * b.value, 1.0);
+    // バフ効果に係数(0.5)を掛けてから適用
+    // 例: 1.5倍バフ -> 1 + (0.5 * 0.5) = 1.25倍
+    const effectiveBuff = 1 + ((rawBuff - 1) * LEARNING_EFFICIENCY.COMPREHENSIVE.BUFF_EFFECTIVENESS);
+    buffMultiplier = applySoftCap(effectiveBuff, BUFF_SOFT_CAP_ASYMPTOTE);
+  }
+
+  // 5. 科目ごとの上昇値計算
   const knowledgeGain: Partial<Record<SubjectId, number>> = {};
   
   subjects.forEach(sid => {
@@ -65,19 +75,18 @@ const handleStudyAll = (state: GameState): GameState => {
     const rand = rng.range(-1, 1); // -1, 0, +1 のゆらぎ
     
     // 基礎計算
-    let val = (STUDY_ALL.BASE_GAIN * decayMult * timeMult * difficulty) + rand;
+    let val = (STUDY_ALL.BASE_GAIN * decayMult * timeMult * buffMultiplier * difficulty) + rand;
     
     // 最低保証と整数化
     val = Math.max(Math.floor(val), STUDY_ALL.MIN_GAIN);
     knowledgeGain[sid] = val;
   });
 
-  // 5. コスト計算
+  // 6. コスト計算
   const effect = {
     hp: Math.floor(-STUDY_ALL.COST_HP * costMult),
     sanity: Math.floor(-STUDY_ALL.COST_SAN * costMult),
-    satiety: Math.floor(-STUDY_ALL.COST_SATIETY * costMult), // 胃の負担は深夜なら減るはずだがStudyAllは例外的に疲れるとするか、一貫性を取るか。
-                                                             // ここではシンプルに「深夜は無理をする」ので消費増とする。
+    satiety: Math.floor(-STUDY_ALL.COST_SATIETY * costMult),
     knowledge: knowledgeGain
   };
 
@@ -90,7 +99,9 @@ const handleStudyAll = (state: GameState): GameState => {
 
   const details = joinMessages(messages, ', ');
   const nightLog = isLateNight ? "深夜の静寂で集中力が増したが、消耗も激しい。" : "";
-  pushLog(newState, `【総合演習】全科目を薄く広く復習した。科目毎の理解度に差が出た。\n${nightLog}(${details})`, isLateNight ? 'warning' : 'info');
+  const buffLog = buffMultiplier > 1.0 ? `(教材効果半減: x${buffMultiplier.toFixed(2)}) ` : "";
+  
+  pushLog(newState, `【総合演習】全科目を薄く広く復習した。科目毎の理解度に差が出た。\n${nightLog}${buffLog}(${details})`, isLateNight ? 'warning' : 'info');
   
   return newState;
 };

@@ -8,7 +8,7 @@ import { ACTION_LOGS, LOG_TEMPLATES } from '../../data/constants/logMessages';
 import { pushLog } from '../stateHelpers';
 import { applyEffect, mergeEffects } from '../effectProcessor';
 import { rng } from '../../utils/rng';
-import { KNOWLEDGE_THRESHOLDS, USB_SUCCESS_CONFIG } from '../../config/gameBalance';
+import { KNOWLEDGE_THRESHOLDS, USB_SUCCESS_CONFIG, LEARNING_EFFICIENCY } from '../../config/gameBalance';
 
 export const handleBuyItem = (state: GameState, itemId: ItemId): GameState => {
   const item = ITEMS[itemId];
@@ -130,8 +130,12 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
           }
           logType = 'success';
        } else {
-          effect = mergeEffects(effect, { sanity: -USB_SUCCESS_CONFIG.PENALTY_SANITY });
-          baseLog = `【解析失敗】(${formatSuccessRate(successRate)}) 解析中にウィルスを踏んだ...。アルゴリズムの理解度(${algoScore}点)が足りなかったか？合格ライン(60点)未達のリスクが露呈した。`;
+          // 失敗時のペナルティ強化 (v2.7)
+          effect = mergeEffects(effect, { 
+            sanity: -USB_SUCCESS_CONFIG.PENALTY_SANITY,
+            hp: -LEARNING_EFFICIENCY.ITEM_BASED.USB_FAILURE_HP_COST 
+          });
+          baseLog = `【解析失敗】(${formatSuccessRate(successRate)}) 解析中にウィルス感染！PCへのダメージが肉体にもフィードバックされる...。アルゴリズム理解度(${algoScore}点)が足りなかったか。`;
           logType = 'danger';
        }
        break;

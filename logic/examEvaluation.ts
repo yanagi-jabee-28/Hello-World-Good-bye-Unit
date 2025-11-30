@@ -1,6 +1,7 @@
 
 import { GameState, SubjectId } from "../types";
 import { SUBJECTS } from "../data/subjects";
+import { RELATIONSHIP_BENEFITS } from "../config/gameBalance";
 
 /**
  * 試験最終判定システム
@@ -18,8 +19,8 @@ export interface ExamMetrics {
   caffeineJitter: number;        // カフェイン過剰ペナルティ (0.85 ~ 1.0)
   
   // 人脈補正
-  professorBonus: number;        // 教授友好度 → 重点範囲リーク (1.0 ~ 1.2)
-  seniorLeakBonus: number;       // 過去問効果 (1.0 ~ 1.3+)
+  professorBonus: number;        // 教授友好度 → 重点範囲リーク
+  seniorLeakBonus: number;       // 先輩友好度/過去問
   
   // 狂気システム
   madnessStack: number;          // 累積精神負荷
@@ -59,9 +60,7 @@ export function evaluateExam(
     // 難易度で指数スケーリング
     const learned = state.knowledge[subject.id] || 0;
     // スコア計算式調整: リニアに近い形に戻し、努力が反映されやすくする
-    // 以前: Math.pow(learned, 0.88) -> 高得点ほど伸び悩みすぎる
-    // 修正: Math.pow(learned, 0.95)
-    const score = Math.pow(learned, 0.95) * subject.difficulty * 7; // Multiplier tweaked
+    const score = Math.pow(learned, 0.95) * subject.difficulty * 7; 
     rawKnowledge[subject.id] = score;
     baseScore += score;
   });
@@ -120,25 +119,42 @@ export function evaluateExam(
     caffeineJitter = 1.0;
   }
 
-  // === 3. 人脈補正 ===
+  // === 3. 人脈補正 (Tier制へ移行 v2.7) ===
   const profRel = Object.values(state.relationships)[0] || 0; // PROFESSOR
-  const professorBonus = 1.0 + Math.min(0.15, profRel / 600); // 最大1.15倍 (少しマイルドに)
+  let professorBonus = 1.0;
+  
+  if (profRel >= RELATIONSHIP_BENEFITS.PROFESSOR.TIER3_THRESHOLD) {
+    professorBonus = RELATIONSHIP_BENEFITS.PROFESSOR.TIER3_BONUS; // 出題範囲リーク
+  } else if (profRel >= RELATIONSHIP_BENEFITS.PROFESSOR.TIER2_THRESHOLD) {
+    professorBonus = RELATIONSHIP_BENEFITS.PROFESSOR.TIER2_BONUS;
+  } else if (profRel >= RELATIONSHIP_BENEFITS.PROFESSOR.TIER1_THRESHOLD) {
+    professorBonus = RELATIONSHIP_BENEFITS.PROFESSOR.TIER1_BONUS;
+  }
 
   const seniorRel = Object.values(state.relationships)[1] || 0; // SENIOR
   
-  // Changed: Scale bonus based on number of past papers
+  // 過去問ボーナスと人脈ボーナスの統合
   const papersCount = state.flags.hasPastPapers || 0;
   let seniorLeakBonus = 1.0;
   
+  // 過去問効果（最大1.3倍）
   if (papersCount > 0) {
-    // Base 1.10 for first paper, then small increments
     seniorLeakBonus = 1.10 + (papersCount - 1) * 0.05;
-    // Cap at reasonable max (e.g., 1.3x)
     seniorLeakBonus = Math.min(1.3, seniorLeakBonus);
-  } else {
-    // Slight bonus for relationship if no papers
-    seniorLeakBonus = 1.0 + Math.min(0.05, seniorRel / 1000);
   }
+  
+  // 先輩友好度による微加算（過去問を持っていなくても助けてくれる可能性）
+  let seniorRelBonus = 1.0;
+  if (seniorRel >= RELATIONSHIP_BENEFITS.SENIOR.TIER3_THRESHOLD) {
+    seniorRelBonus = RELATIONSHIP_BENEFITS.SENIOR.TIER3_BONUS;
+  } else if (seniorRel >= RELATIONSHIP_BENEFITS.SENIOR.TIER2_THRESHOLD) {
+    seniorRelBonus = RELATIONSHIP_BENEFITS.SENIOR.TIER2_BONUS;
+  } else if (seniorRel >= RELATIONSHIP_BENEFITS.SENIOR.TIER1_THRESHOLD) {
+    seniorRelBonus = RELATIONSHIP_BENEFITS.SENIOR.TIER1_BONUS;
+  }
+  
+  // 乗算適用
+  seniorLeakBonus *= seniorRelBonus;
 
   // === 4. 狂気システム ===
   const madnessStack = state.flags.madnessStack || 0;
