@@ -6,7 +6,7 @@ import { pushLog } from './stateHelpers';
 import { ALL_EVENTS } from '../data/events';
 import { SUBJECTS } from '../data/subjects';
 import { ITEMS } from '../data/items';
-import { applyEffect } from './effectProcessor';
+import { applyEffect, mergeEffects } from './effectProcessor';
 
 /**
  * Checks if event conditions are met.
@@ -102,6 +102,10 @@ export const selectEvent = (
     }))
     .filter(item => item.weight > 0);
 
+  if (state.debugFlags.logEventFlow) {
+    console.debug(`[EventManager] Trigger: ${trigger}, Candidates: ${candidates.length}`);
+  }
+
   if (candidates.length === 0) return null;
 
   const totalWeight = candidates.reduce((sum, item) => sum + item.weight, 0);
@@ -139,10 +143,36 @@ export const recordEventOccurrence = (state: GameState, eventId: string): GameSt
 export const applyEventEffect = (state: GameState, event: GameEvent): { newState: GameState; messages: string[] } => {
   let newState = recordEventOccurrence(state, event.id);
 
-  if (!event.effect) return { newState, messages: [] };
+  let effect = event.effect;
+
+  // SAFETY: ソーシャルイベント等で効果が空の場合、最低保証効果（友好度+1）を付与する
+  // これにより「イベントが起きたのに何も変わらなかった（無駄打ち）」感を防ぐ
+  const isSocial = ['action_professor', 'action_senior', 'action_friend'].includes(event.trigger);
+  if (isSocial) {
+    const hasMeaningfulEffect = effect && (
+      (effect.hp && effect.hp !== 0) ||
+      (effect.sanity && effect.sanity !== 0) ||
+      (effect.money && effect.money !== 0) ||
+      (effect.knowledge && Object.values(effect.knowledge).some(v => v !== 0)) ||
+      (effect.relationships && Object.values(effect.relationships).some(v => v !== 0)) ||
+      (effect.inventory && Object.values(effect.inventory).some(v => v !== 0))
+    );
+
+    if (!hasMeaningfulEffect) {
+      if (state.debugFlags.logEventFlow) console.debug(`[EventManager] Applying safe default effect for ${event.id}`);
+      let targetRel: RelationshipId = RelationshipId.FRIEND;
+      if (event.trigger === 'action_professor') targetRel = RelationshipId.PROFESSOR;
+      if (event.trigger === 'action_senior') targetRel = RelationshipId.SENIOR;
+      
+      // Merge safe default
+      effect = mergeEffects(effect || {}, { relationships: { [targetRel]: 1 } });
+    }
+  }
+
+  if (!effect) return { newState, messages: [] };
 
   // Use centralized processor
-  const result = applyEffect(newState, event.effect);
+  const result = applyEffect(newState, effect);
   
   return {
     newState: result.newState,
@@ -150,9 +180,30 @@ export const applyEventEffect = (state: GameState, event: GameEvent): { newState
   };
 };
 
+/**
+ * Creates a fallback event on the fly if no event matches
+ */
+const createFallbackEvent = (trigger: EventTriggerType, text: string): GameEvent => {
+  return {
+    id: `fallback_${trigger}_${Date.now()}`,
+    trigger,
+    text,
+    type: 'flavor',
+    weight: 1,
+    // Add default effect to ensure feedback
+    effect: { sanity: 1 } 
+  };
+};
+
 export const executeEvent = (state: GameState, trigger: EventTriggerType, fallbackText?: string): GameState => {
-  const event = selectEvent(state, ALL_EVENTS, trigger);
+  let event = selectEvent(state, ALL_EVENTS, trigger);
   
+  // FALLBACK LOGIC: If no event selected but we expect one (fallbackText provided), force a fallback
+  if (!event && fallbackText) {
+    if (state.debugFlags.logEventFlow) console.warn(`[EventManager] No event selected for ${trigger}. Using fallback.`);
+    event = createFallbackEvent(trigger, fallbackText);
+  }
+
   if (event) {
      if (event.options && event.options.length > 0) {
        const newState = recordEventOccurrence(state, event.id);
@@ -165,9 +216,7 @@ export const executeEvent = (state: GameState, trigger: EventTriggerType, fallba
      const logType = event.type === 'good' ? 'success' : event.type === 'bad' ? 'danger' : 'info';
      pushLog(appliedState, details ? `${event.text}\n(${details})` : event.text, logType);
      return appliedState;
-  } else if (fallbackText) {
-     pushLog(state, fallbackText, 'info');
-     return state;
-  }
+  } 
+  
   return state;
 };

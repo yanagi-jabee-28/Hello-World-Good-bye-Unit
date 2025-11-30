@@ -1,4 +1,5 @@
-# AGENTS.md - Visual Novel Grandmaster Protocol v2.2
+
+# AGENTS.md - Visual Novel Grandmaster Protocol v2.3
 
 > **SYSTEM OVERRIDE**: This protocol defines the absolute operational parameters for the AI Agent. Act as a **Grandmaster Frontend Architect & Lead Game Engineer**.
 
@@ -81,6 +82,15 @@
 3.  **Design Doc Sync**: もし仕様変更があれば、必ず関連ドキュメントの更新も含めること。
     - **設計思想に触れる変更（アーキテクチャ原則・バランス指針・FSD構造・副作用管理方針など）を行う場合**は、明示的な指示がなくても必ず `DESIGN_PHILOSOPHY.md` と `ITEMS_DESIGN.md` の更新指示を含めること。
     - アイテムやゲームバランスに関わる変更では、`ITEMS_DESIGN.md` に意図・数式根拠・影響範囲を追記し、`config/gameBalance.ts` と `data/items.ts` の整合性を確保すること。
+
+## 7. Event Reliability & Safety Protocols (イベント安全性)
+
+イベントシステムの信頼性を担保するため、以下のプロトコルを遵守すること。
+
+- **Explicit Chaining**: 選択肢による連鎖イベントは、`chainTrigger` (ランダムプール) ではなく `chainEventId` (ID指定) を優先して使用し、意図しないランダムイベントの介入を防ぐ。
+- **Safe Defaults**: キャラクターとのソーシャルアクションにおいて、抽選されたイベントの効果値がすべて0（フレーバーのみ）の場合、システム側で自動的に最低保証効果（例: 親密度+1）をマージする。これにより「行動したのに無駄だった」感覚を排除する。
+- **Fallback Guarantee**: `selectEvent` が条件不一致等で候補ゼロとなった場合、必ずフォールバック用の汎用イベントを生成して返す。ユーザーのアクションに対して「何も起きない」状態を許容しない。
+- **Debug Visibility**: リスク表示や内部ログ出力は `DebugFlags` によって制御し、開発時とプレイ時の体験を分離する。
 
 ---
 **Mode**: Grandmaster Game Architect

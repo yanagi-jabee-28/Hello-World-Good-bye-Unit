@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { GameState, ItemId, UiScale, GameStatus } from '../types';
+import { GameState, ItemId, UiScale, GameStatus, DebugFlags } from '../types';
 import { ITEMS } from '../data/items';
 import { ShopModal } from './ShopModal';
 import { SaveLoadModal } from './SaveLoadModal';
@@ -29,6 +29,7 @@ interface OverlayLayerProps {
     resolveEvent: (optionId: string) => void;
     useItem: (id: ItemId) => void;
     restart: () => void;
+    toggleDebugFlag: (flag: keyof DebugFlags) => void;
   };
   inspectedItem: { id: ItemId; mode: 'inventory' | 'shop' } | null;
   onCloseInspect: () => void;
@@ -77,6 +78,7 @@ export const OverlayLayer: React.FC<OverlayLayerProps> = ({
       {state.pendingEvent && !showDeathSequence && !showEndingScreen && (
         <EventDialog 
           event={state.pendingEvent} 
+          state={state}
           onResolve={actions.resolveEvent} 
         />
       )}
@@ -108,7 +110,7 @@ export const OverlayLayer: React.FC<OverlayLayerProps> = ({
         <EndingScreen state={state} onRestart={onRestartEnding} />
       )}
       
-      <DebugPanel state={state} />
+      <DebugPanel state={state} onToggleFlag={actions.toggleDebugFlag} />
     </>
   );
 };

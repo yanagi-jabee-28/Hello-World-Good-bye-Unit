@@ -10,7 +10,7 @@ import { getExamWarnings } from '../logic/warningSystem';
 import { predictStudyRisk, predictWorkRisk, predictItemRisk } from '../logic/riskSystem';
 import { FORGETTING_CONSTANTS } from '../config/gameConstants';
 import { sortItems, SortKey, SORT_LABELS } from '../utils/itemSorting';
-import { BookOpen, Users, Gamepad2, Package, School, GraduationCap, UserPlus, AlertTriangle, ShoppingCart, Briefcase, Bed, Sun, Moon, BatteryCharging, Ban, Zap, Clock, Skull, LayoutGrid, List, ArrowDownWideNarrow, Info } from 'lucide-react';
+import { BookOpen, Users, Gamepad2, Package, School, GraduationCap, UserPlus, AlertTriangle, ShoppingCart, Briefcase, Bed, Sun, Moon, BatteryCharging, Ban, Zap, Clock, Skull, LayoutGrid, List, ArrowDownWideNarrow, Info, Layers } from 'lucide-react';
 import { Button } from './ui/Button';
 import { ProgressButton } from './ui/ProgressButton';
 import { Badge } from './ui/Badge';
@@ -20,6 +20,7 @@ interface Props {
   state: GameState;
   actions: {
     study: (id: SubjectId) => void;
+    studyAll: () => void; // New
     rest: () => void;
     work: () => void;
     escapism: () => void;
@@ -38,9 +39,11 @@ interface Props {
 const AcademicSection: React.FC<{ 
   state: GameState; 
   onStudy: (id: SubjectId) => void; 
+  onStudyAll: () => void;
   isMobile: boolean 
-}> = React.memo(({ state, onStudy, isMobile }) => {
-  const isStudyLethal = predictStudyRisk(state);
+}> = React.memo(({ state, onStudy, onStudyAll, isMobile }) => {
+  // showDeathHintsフラグがONの場合のみリスクを表示
+  const isStudyLethal = state.debugFlags.showDeathHints && predictStudyRisk(state);
 
   return (
     <div className="space-y-1.5">
@@ -70,6 +73,19 @@ const AcademicSection: React.FC<{
           />
         );
       })}
+      
+      {/* 総合学習ボタン */}
+      <Button
+        onClick={onStudyAll}
+        label="総合演習 (ALL)"
+        subLabel="全科目+3 / 高コスト / 忘却リセット"
+        icon={<Layers size={14} />}
+        variant="outline"
+        className="border-green-800 text-green-400 hover:border-green-600 mt-2 bg-green-950/20"
+        fullWidth
+        size={isMobile ? "lg" : "sm"}
+        isLethal={isStudyLethal}
+      />
     </div>
   );
 });
@@ -83,7 +99,8 @@ const LifeSection: React.FC<{
 }> = React.memo(({ state, onRest, onWork, onOpenShop, isMobile }) => {
   const timeSlot = state.timeSlot;
   const workConfig = getWorkConfig(timeSlot);
-  const isWorkLethal = predictWorkRisk(state);
+  // showDeathHintsフラグがONの場合のみリスクを表示
+  const isWorkLethal = state.debugFlags.showDeathHints && predictWorkRisk(state);
   
   const getRestConfig = (slot: TimeSlot) => {
     switch (slot) {
@@ -265,7 +282,8 @@ const InventorySection: React.FC<{
         `}>
           {ownedItems.map((itemId) => {
             const item = ITEMS[itemId];
-            const isLethal = predictItemRisk(state, itemId);
+            // showDeathHintsフラグがONの場合のみリスクを表示
+            const isLethal = state.debugFlags.showDeathHints && predictItemRisk(state, itemId);
             const shortEffect = getShortEffectString(item);
 
             // GRID MODE (Simple Buttons)
@@ -388,7 +406,7 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect, isMobi
                <span className="fs-xxs font-bold text-gray-500 flex items-center gap-1"><BookOpen size={10} /> ACADEMIC</span>
                <Badge variant={caffeine > 100 ? 'warning' : 'outline'} className="scale-75 origin-right">{studyHint.split('(')[0]}</Badge>
             </div>
-            <AcademicSection state={state} onStudy={actions.study} isMobile={false} />
+            <AcademicSection state={state} onStudy={actions.study} onStudyAll={actions.studyAll} isMobile={false} />
          </div>
 
          {/* LIFE & ECONOMY */}
@@ -432,7 +450,7 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect, isMobi
       {/* === MOBILE LAYOUT (Visible on Mobile) === */}
       <div className="md:hidden p-2 space-y-1">
          <CollapsibleSection title="ACADEMIC (学習)" defaultOpen={true}>
-            <AcademicSection state={state} onStudy={actions.study} isMobile={true} />
+            <AcademicSection state={state} onStudy={actions.study} onStudyAll={actions.studyAll} isMobile={true} />
          </CollapsibleSection>
          
          <CollapsibleSection title="LIFE SUPPORT (生活)" defaultOpen={true}>

@@ -1,14 +1,15 @@
 
-import { GameState, ActionType, GameAction, GameStatus, SubjectId } from '../types';
+import { GameState, ActionType, GameAction, GameStatus, SubjectId, DebugFlags } from '../types';
 import { clamp, chance } from '../utils/common';
 import { ACTION_LOGS } from '../data/constants/logMessages';
-import { executeEvent } from './eventManager';
+import { executeEvent, recordEventOccurrence } from './eventManager';
 import { pushLog } from './stateHelpers';
 import { evaluateExam } from './examEvaluation';
 import { applyEffect } from './effectProcessor';
 import { INITIAL_STATE, INIT_KNOWLEDGE, INIT_RELATIONSHIPS } from '../config/initialValues';
 import { processTurnEnd } from './turnManager';
 import { selectWeakestSubject } from './studyAutoSelect';
+import { ALL_EVENTS } from '../data/events'; // Import ALL_EVENTS for direct chain lookup
 
 // Handlers
 import { handleStudy } from './handlers/study';
@@ -16,6 +17,8 @@ import { handleRest, handleEscapism } from './handlers/rest';
 import { handleWork } from './handlers/work';
 import { handleAskProfessor, handleAskSenior, handleRelyFriend } from './handlers/social';
 import { handleBuyItem, handleUseItem } from './handlers/items';
+import { SATIETY_CONSUMPTION } from '../config/gameConstants';
+import { joinMessages } from '../utils/logFormatter';
 
 export { INITIAL_STATE };
 
@@ -26,6 +29,35 @@ const DYNAMIC_SUBJECT_OPTIONS = [
   'opt_friend_study'     // 友人: 一緒に勉強
 ];
 
+const handleStudyAll = (state: GameState): GameState => {
+  // 総合学習ハンドラ
+  // コスト: HP-10, SAN-5, Satiety-25 (高負荷)
+  // 効果: 全科目+3
+  const effect = {
+    hp: -10,
+    sanity: -5,
+    satiety: -25,
+    knowledge: {
+      [SubjectId.MATH]: 3,
+      [SubjectId.ALGO]: 3,
+      [SubjectId.CIRCUIT]: 3,
+      [SubjectId.HUMANITIES]: 3,
+    }
+  };
+
+  const { newState, messages } = applyEffect(state, effect);
+  
+  // 全科目の最終学習ターンを更新 (忘却リセット)
+  Object.values(SubjectId).forEach(sid => {
+    newState.lastStudied[sid] = newState.turnCount;
+  });
+
+  const details = joinMessages(messages, ', ');
+  pushLog(newState, `【総合演習】全科目を薄く広く復習した。記憶の定着をメンテナンス。\n(${details})`, 'info');
+  
+  return newState;
+};
+
 export const gameReducer = (state: GameState, action: GameAction): GameState => {
   // セーブデータのロード
   if (action.type === ActionType.LOAD_STATE) {
@@ -33,8 +65,9 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     return { 
       ...INITIAL_STATE, 
       ...loadedState,
-      // Ensure uiScale exists even for old saves
+      // Ensure uiScale and debugFlags exist even for old saves
       uiScale: loadedState.uiScale || INITIAL_STATE.uiScale,
+      debugFlags: { ...INITIAL_STATE.debugFlags, ...(loadedState.debugFlags || {}) },
       logs: [
         ...loadedState.logs,
         {
@@ -44,6 +77,17 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
           timestamp: `DAY ${loadedState.day} ${loadedState.timeSlot}`
         }
       ]
+    };
+  }
+
+  if (action.type === ActionType.TOGGLE_DEBUG_FLAG) {
+    const flag = action.payload;
+    return {
+      ...state,
+      debugFlags: {
+        ...state.debugFlags,
+        [flag]: !state.debugFlags[flag]
+      }
     };
   }
 
@@ -81,7 +125,8 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       knowledge: inheritedKnowledge,
       relationships: { ...INIT_RELATIONSHIPS },
       inventory: { ...INITIAL_STATE.inventory },
-      uiScale: state.uiScale, // Keep UI setting
+      uiScale: state.uiScale,
+      debugFlags: state.debugFlags,
       logs: [{
         id: Math.random().toString(36).substr(2, 9),
         text: resetLogText,
@@ -95,7 +140,8 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
   if (action.type === ActionType.HARD_RESTART) {
     return {
       ...INITIAL_STATE,
-      uiScale: state.uiScale, // Keep UI setting
+      uiScale: state.uiScale,
+      debugFlags: state.debugFlags,
       logs: [{
         id: Math.random().toString(36).substr(2, 9),
         text: `${ACTION_LOGS.START}\n${ACTION_LOGS.SYSTEM.RESET_HARD}`,
@@ -125,7 +171,8 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       knowledge: inheritedKnowledge,
       relationships: { ...INIT_RELATIONSHIPS },
       inventory: { ...INITIAL_STATE.inventory },
-      uiScale: state.uiScale, // Keep UI setting
+      uiScale: state.uiScale,
+      debugFlags: state.debugFlags,
       logs: [{
         id: Math.random().toString(36).substr(2, 9),
         text: restartLogText,
@@ -159,6 +206,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       const option = event.options.find(o => o.id === optionId);
       if (option) {
         const isSuccess = Math.random() * 100 < option.successRate;
+        let chainTargetId: string | null = null;
         
         if (isSuccess) {
           let effect = option.successEffect;
@@ -179,20 +227,12 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
           }
           pushLog(newState, `${event.text}\n\n▶ 選択: ${option.label}\n${option.successLog}\n(${details.join(', ')})`, 'success');
 
-          if (option.chainTrigger) {
+          // CHAIN HANDLING
+          if (option.chainEventId) {
+            chainTargetId = option.chainEventId;
+          } else if (option.chainTrigger) {
              const prevHistoryLen = newState.eventHistory.length;
              newState = executeEvent(newState, option.chainTrigger, "特に何も起きなかった...");
-             
-             // Chain Triggerが不発だった場合のフィードバック
-             if (newState.eventHistory.length === prevHistoryLen) {
-                // Fallback text if executeEvent didn't add anything substantial
-                // executeEvent might add a "fallbackText" log, but if selectEvent returned null and no fallback text was passed...
-                // The third arg to executeEvent IS the fallback text.
-                // However, for "Random" actions, we want to ensure *something* happens.
-                // With the new "fallback events" in data/events/*.ts, this should rarely happen.
-                // But as a safety net:
-                // console.warn("Chain trigger fired but no event was selected/executed.");
-             }
           }
 
         } else {
@@ -204,10 +244,39 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
             details = res.messages;
           }
           pushLog(newState, `${event.text}\n\n▶ 選択: ${option.label}\n${option.failureLog || "失敗..."}\n(${details.join(', ')})`, 'danger');
+          
+          // Failure chain (could exist in future, currently undefined in type but consistent logic)
+          if (option.chainEventId) {
+             chainTargetId = option.chainEventId;
+          }
+        }
+
+        // Direct Chain Execution (High Priority)
+        if (chainTargetId) {
+           const nextEvent = ALL_EVENTS.find(e => e.id === chainTargetId);
+           if (nextEvent) {
+              // Immediately pending the next event without randomization
+              // NOTE: This bypasses executeEvent selection logic
+              newState = recordEventOccurrence(newState, nextEvent.id);
+              if (nextEvent.options) {
+                 newState.pendingEvent = nextEvent; // Next event is interactive
+                 return newState; // Return early, don't clear pendingEvent yet
+              } else {
+                 // Immediate effect event
+                 // We need to apply effect and log it here manually as we bypassed executeEvent
+                 const { newState: chainedState, messages: chainedMsgs } = applyEffect(newState, nextEvent.effect || {});
+                 newState = chainedState;
+                 const chainedDetails = joinMessages(chainedMsgs, ', ');
+                 pushLog(newState, chainedDetails ? `${nextEvent.text}\n(${chainedDetails})` : nextEvent.text, nextEvent.type === 'good' ? 'success' : 'info');
+              }
+           } else {
+              if (state.debugFlags.logEventFlow) console.warn(`Chain event ${chainTargetId} not found.`);
+           }
         }
       }
     }
 
+    // If we reached here, it means no interactive chain occurred, so clear pending
     newState.pendingEvent = null;
     timeAdvanced = false; // イベント解決時は時間を進めない（アクション実行時に既に進んでいるか、即時解決のため）
   } 
@@ -223,6 +292,9 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
         if (newState.sanity < 30) {
           newState.flags.madnessStack = Math.min(4, newState.flags.madnessStack + 1);
         }
+        break;
+      case ActionType.STUDY_ALL:
+        newState = handleStudyAll(newState);
         break;
       case ActionType.REST:
         newState = handleRest(newState);

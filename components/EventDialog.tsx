@@ -1,13 +1,13 @@
 
 import React, { useEffect } from 'react';
-import { GameEvent, Persona } from '../types';
+import { GameEvent, Persona, GameState } from '../types';
 import { predictOptionRisk } from '../logic/riskSystem';
-import { AlertTriangle, CheckCircle, Shield, Zap, GraduationCap, User, Users, Terminal, MessageSquare, Skull } from 'lucide-react';
+import { CheckCircle, Shield, Zap, GraduationCap, User, Users, Terminal, MessageSquare, Skull } from 'lucide-react';
 import { Sound } from '../utils/sound';
-import { useGameController } from '../hooks/useGameController'; // Need access to state for prediction
 
 interface Props {
   event: GameEvent;
+  state: GameState;
   onResolve: (optionId: string) => void;
 }
 
@@ -23,7 +23,7 @@ const PersonaConfig: Record<Persona, { color: string; bg: string; border: string
     color: 'text-purple-400',
     bg: 'bg-purple-950/30',
     border: 'border-purple-600',
-    icon: <Users size={24} />, // Using Users for Senior as a mentor figure
+    icon: <Users size={24} />,
     label: 'SENIOR (先輩)'
   },
   FRIEND: {
@@ -49,8 +49,8 @@ const PersonaConfig: Record<Persona, { color: string; bg: string; border: string
   }
 };
 
-export const EventDialog: React.FC<Props> = ({ event, onResolve }) => {
-  const { state } = useGameController(); // Get current state to predict lethality
+export const EventDialog: React.FC<Props> = ({ event, state, onResolve }) => {
+  const { debugFlags } = state;
 
   useEffect(() => {
     Sound.play('event_trigger');
@@ -83,7 +83,7 @@ export const EventDialog: React.FC<Props> = ({ event, onResolve }) => {
         <div className="p-6 space-y-6 relative z-10">
           {/* Dialogue Box */}
           <div className="flex gap-4">
-             {/* Character Visual Placeholder (Optional, keeping it minimal for now) */}
+             {/* Character Visual Placeholder */}
              <div className={`hidden sm:flex shrink-0 w-1 bg-gradient-to-b from-transparent via-${theme.color.split('-')[1]}-500 to-transparent opacity-50`} />
              
              <p className="text-md md:text-lg text-gray-100 leading-relaxed whitespace-pre-wrap font-medium">
@@ -95,33 +95,50 @@ export const EventDialog: React.FC<Props> = ({ event, onResolve }) => {
           <div className="space-y-3 mt-8">
             {event.options.map((opt) => {
               const isLethal = predictOptionRisk(state, opt);
+              // Only show lethal warning if debug flag allows it
+              const showLethal = isLethal && debugFlags.showDeathHints;
+              const showRiskInfo = debugFlags.showRisks;
 
-              // Risk styling
-              let borderClass = "border-gray-700";
-              let riskColor = "text-gray-500";
+              // Default Neutral Styling (Hidden Risk)
+              let borderClass = "border-gray-700 hover:border-gray-500";
+              let riskColor = "text-gray-600"; 
               let riskIcon = <Shield size={14} />;
-              let bgHover = "hover:bg-gray-900";
+              let bgHover = "hover:bg-gray-800";
+              let textColor = "text-gray-200 group-hover:text-white";
+              let arrowColor = "text-gray-600 group-hover:text-gray-400";
               
-              if (isLethal) {
+              if (showLethal) {
+                 // Lethal Warning (Highest Priority)
                  borderClass = "border-red-600 animate-pulse shadow-[0_0_10px_rgba(220,38,38,0.3)]";
                  riskColor = "text-red-500 font-bold";
+                 textColor = "text-red-400 group-hover:text-red-300";
+                 arrowColor = "text-red-500";
                  riskIcon = <Skull size={14} className="animate-bounce" />;
                  bgHover = "hover:bg-red-950/50";
-              } else if (opt.risk === 'safe') {
-                 borderClass = "border-green-800 hover:border-green-500";
-                 riskColor = "text-green-500";
-                 riskIcon = <Shield size={14} />;
-                 bgHover = "hover:bg-green-900/20";
-              } else if (opt.risk === 'low') {
-                 borderClass = "border-blue-800 hover:border-blue-500";
-                 riskColor = "text-blue-500";
-                 riskIcon = <CheckCircle size={14} />;
-                 bgHover = "hover:bg-blue-900/20";
-              } else {
-                 borderClass = "border-red-800 hover:border-red-500";
-                 riskColor = "text-red-500";
-                 riskIcon = <Zap size={14} />;
-                 bgHover = "hover:bg-red-900/20";
+              } else if (showRiskInfo) {
+                 // Risk Colored Styling (Only if Debug Flag ON)
+                 if (opt.risk === 'safe') {
+                    borderClass = "border-green-800 hover:border-green-500";
+                    riskColor = "text-green-500";
+                    riskIcon = <Shield size={14} />;
+                    textColor = "text-white group-hover:text-green-300";
+                    arrowColor = "text-gray-500 group-hover:text-white";
+                    bgHover = "hover:bg-green-900/20";
+                 } else if (opt.risk === 'low') {
+                    borderClass = "border-blue-800 hover:border-blue-500";
+                    riskColor = "text-blue-500";
+                    riskIcon = <CheckCircle size={14} />;
+                    textColor = "text-white group-hover:text-blue-300";
+                    arrowColor = "text-gray-500 group-hover:text-white";
+                    bgHover = "hover:bg-blue-900/20";
+                 } else { // high
+                    borderClass = "border-red-800 hover:border-red-500";
+                    riskColor = "text-red-500";
+                    riskIcon = <Zap size={14} />;
+                    textColor = "text-white group-hover:text-red-300";
+                    arrowColor = "text-gray-500 group-hover:text-white";
+                    bgHover = "hover:bg-red-900/20";
+                 }
               }
 
               return (
@@ -131,20 +148,24 @@ export const EventDialog: React.FC<Props> = ({ event, onResolve }) => {
                   className={`w-full p-4 border text-left transition-all group bg-black/50 ${borderClass} ${bgHover}`}
                 >
                   <div className="flex justify-between items-center mb-1">
-                    <span className={`font-bold text-sm md:text-base ${isLethal ? 'text-red-400 group-hover:text-red-300' : 'text-white group-hover:text-green-300'}`}>
-                        <span className={`mr-2 transition-colors ${isLethal ? 'text-red-500' : 'text-gray-500 group-hover:text-white'}`}>▶</span>
+                    <span className={`font-bold text-sm md:text-base ${textColor}`}>
+                        <span className={`mr-2 transition-colors ${arrowColor}`}>▶</span>
                         {opt.label}
                     </span>
-                    <div className={`fs-xxs flex items-center gap-1 uppercase font-mono ${riskColor}`}>
-                       {riskIcon} {isLethal ? "FATAL RISK" : opt.risk.toUpperCase()}
-                    </div>
+                    {(showRiskInfo || showLethal) && (
+                      <div className={`fs-xxs flex items-center gap-1 uppercase font-mono ${riskColor}`}>
+                         {riskIcon} {showLethal ? "FATAL RISK" : opt.risk.toUpperCase()}
+                      </div>
+                    )}
                   </div>
                   <div className="fs-xs text-gray-400 group-hover:text-gray-300 pl-5">
                     {opt.description}
                   </div>
-                  <div className="mt-2 fs-xxs text-gray-600 font-mono pl-5 group-hover:text-gray-500">
-                     SUCCESS_RATE: {opt.successRate}%
-                  </div>
+                  {showRiskInfo && (
+                    <div className="mt-2 fs-xxs text-gray-600 font-mono pl-5 group-hover:text-gray-500">
+                       SUCCESS_RATE: {opt.successRate}%
+                    </div>
+                  )}
                 </button>
               );
             })}

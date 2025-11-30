@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useGameEngine } from './useGameEngine';
 import { useGameSound } from './useGameSound';
-import { ActionType, ItemId, GameState, SubjectId, UiScale } from '../types';
+import { ActionType, ItemId, GameState, SubjectId, UiScale, DebugFlags } from '../types';
 import { Sound } from '../utils/sound';
 
 export const useGameController = () => {
@@ -23,6 +23,10 @@ export const useGameController = () => {
     study: (subjectId: SubjectId) => {
       playClick();
       dispatch({ type: ActionType.STUDY, payload: subjectId });
+    },
+    studyAll: () => {
+      playClick();
+      dispatch({ type: ActionType.STUDY_ALL });
     },
     rest: () => {
       playClick();
@@ -101,6 +105,10 @@ export const useGameController = () => {
     setUiScale: (scale: UiScale) => {
       playClick();
       dispatch({ type: ActionType.SET_UI_SCALE, payload: scale });
+    },
+    toggleDebugFlag: (flag: keyof DebugFlags) => {
+      playClick();
+      dispatch({ type: ActionType.TOGGLE_DEBUG_FLAG, payload: flag });
     }
   };
 

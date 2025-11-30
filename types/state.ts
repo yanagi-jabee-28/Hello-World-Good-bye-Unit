@@ -33,6 +33,12 @@ export interface GameFlags {
   examRisk: boolean;       // 最終日無理をしたか
 }
 
+export interface DebugFlags {
+  showRisks: boolean;      // 選択肢のリスク/成功率を表示するか
+  showDeathHints: boolean; // 死亡確定選択肢の警告を表示するか
+  logEventFlow: boolean;   // イベント抽選ログを出力するか
+}
+
 export type UiScale = 'compact' | 'normal' | 'large';
 
 export interface GameState {
@@ -59,6 +65,7 @@ export interface GameState {
   eventStats: Record<string, EventStats>; // イベントごとの発生統計（ロジック制御用）
   statsHistory: StatsSnapshot[]; // 履歴データ
   flags: GameFlags; // Hidden mechanics flags
+  debugFlags: DebugFlags; // Debug settings
   pendingEvent: GameEvent | null; // 選択待ちのイベント
   uiScale: UiScale; // UIサイズ設定
 }

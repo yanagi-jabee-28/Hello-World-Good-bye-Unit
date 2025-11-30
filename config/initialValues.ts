@@ -65,6 +65,11 @@ export const INITIAL_STATE: GameState = {
     madnessStack: 0,
     examRisk: false,
   },
+  debugFlags: {
+    showRisks: true,
+    showDeathHints: true,
+    logEventFlow: false,
+  },
   pendingEvent: null,
   uiScale: 'normal', // Default UI scale
 };

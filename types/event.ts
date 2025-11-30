@@ -1,11 +1,12 @@
 
 import { ActionType, SubjectId, ItemId, RelationshipId, TimeSlot } from './enums';
-import { GameState, UiScale } from './state';
+import { GameState, UiScale, DebugFlags } from './state';
 import { GameEventEffect } from './assets';
 
 // Discriminated Union for strict typing
 export type GameAction =
   | { type: ActionType.STUDY; payload: SubjectId }
+  | { type: ActionType.STUDY_ALL } // New: 全教科学習
   | { type: ActionType.REST }
   | { type: ActionType.ESCAPISM }
   | { type: ActionType.ASK_PROFESSOR }
@@ -20,7 +21,8 @@ export type GameAction =
   | { type: ActionType.FULL_RESET }
   | { type: ActionType.SOFT_RESET }
   | { type: ActionType.HARD_RESTART }
-  | { type: ActionType.SET_UI_SCALE; payload: UiScale };
+  | { type: ActionType.SET_UI_SCALE; payload: UiScale }
+  | { type: ActionType.TOGGLE_DEBUG_FLAG; payload: keyof DebugFlags }; // New: デバッグ切り替え
 
 // Re-export for convenience if needed by other files
 export type { GameEventEffect } from './assets';
@@ -62,7 +64,8 @@ export interface GameEventOption {
   successLog: string;
   failureEffect?: GameEventEffect;
   failureLog?: string;
-  chainTrigger?: EventTriggerType; // 成功時に連鎖して発生させるイベントトリガー
+  chainTrigger?: EventTriggerType; // 成功時に連鎖して発生させるイベントトリガー（ランダムプールから）
+  chainEventId?: string; // New: 成功時に確実に発生させるイベントID（プールを経由しない直接指定）
 }
 
 export interface GameEvent {

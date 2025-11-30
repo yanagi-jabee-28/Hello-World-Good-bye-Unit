@@ -56,6 +56,7 @@ export enum ItemId {
 
 export enum ActionType {
   STUDY = 'STUDY',
+  STUDY_ALL = 'STUDY_ALL', // New: 総合学習
   REST = 'REST',
   ESCAPISM = 'ESCAPISM',
   ASK_SENIOR = 'ASK_SENIOR',
@@ -71,4 +72,5 @@ export enum ActionType {
   SOFT_RESET = 'SOFT_RESET', // New: セーブデータ残して強くてニューゲーム相当のリセット
   HARD_RESTART = 'HARD_RESTART', // New: 継承なしの強くてニューゲーム（周回諦め）
   SET_UI_SCALE = 'SET_UI_SCALE', // UIサイズ変更
+  TOGGLE_DEBUG_FLAG = 'TOGGLE_DEBUG_FLAG', // New: デバッグフラグ切り替え
 }

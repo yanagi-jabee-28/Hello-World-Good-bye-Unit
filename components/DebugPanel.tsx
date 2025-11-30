@@ -1,18 +1,19 @@
 
 import React, { useState } from 'react';
-import { GameState } from '../types';
+import { GameState, DebugFlags } from '../types';
 import { evaluateExam } from '../logic/examEvaluation';
 import { getExamWarnings } from '../logic/warningSystem';
 import { Bug, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 
 interface Props {
   state: GameState;
+  onToggleFlag: (flag: keyof DebugFlags) => void;
 }
 
 /**
  * デバッグ/学習支援パネル
  */
-export const DebugPanel: React.FC<Props> = ({ state }) => {
+export const DebugPanel: React.FC<Props> = ({ state, onToggleFlag }) => {
   const [expanded, setExpanded] = useState(false);
   const [showProjection, setShowProjection] = useState(false);
 
@@ -46,6 +47,40 @@ export const DebugPanel: React.FC<Props> = ({ state }) => {
         >
           <ChevronDown size={16} />
         </button>
+      </div>
+
+      {/* DEBUG TOGGLES */}
+      <div className="mb-4 bg-gray-900/50 p-2 rounded border border-gray-800">
+        <h3 className="text-cyan-500 font-bold mb-2">DEBUG SETTINGS</h3>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-gray-400">リスク/成功率表示:</span>
+            <button
+              onClick={() => onToggleFlag('showRisks')}
+              className={`flex items-center gap-2 px-2 py-1 rounded text-[10px] font-bold ${state.debugFlags.showRisks ? 'bg-green-900/50 text-green-400 border border-green-700' : 'bg-gray-800 text-gray-500 border border-gray-700'}`}
+            >
+              {state.debugFlags.showRisks ? 'ON' : 'OFF'}
+            </button>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-gray-400">死亡リスクヒント:</span>
+            <button
+              onClick={() => onToggleFlag('showDeathHints')}
+              className={`flex items-center gap-2 px-2 py-1 rounded text-[10px] font-bold ${state.debugFlags.showDeathHints ? 'bg-red-900/50 text-red-400 border border-red-700' : 'bg-gray-800 text-gray-500 border border-gray-700'}`}
+            >
+              {state.debugFlags.showDeathHints ? 'ON' : 'OFF'}
+            </button>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-gray-400">イベントログ出力:</span>
+            <button
+              onClick={() => onToggleFlag('logEventFlow')}
+              className={`flex items-center gap-2 px-2 py-1 rounded text-[10px] font-bold ${state.debugFlags.logEventFlow ? 'bg-blue-900/50 text-blue-400 border border-blue-700' : 'bg-gray-800 text-gray-500 border border-gray-700'}`}
+            >
+              {state.debugFlags.logEventFlow ? 'ON' : 'OFF'}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* 警告セクション */}

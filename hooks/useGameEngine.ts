@@ -12,7 +12,16 @@ export const useGameEngine = () => {
     const saved = loadGame();
     if (saved) {
       // バージョンアップなどでフィールドが増えた場合に備え、デフォルト値にセーブデータをマージする
-      return { ...defaultState, ...saved };
+      // 特にネストされたオブジェクト(debugFlags等)は浅いコピーだと消える可能性があるため丁寧にマージする
+      return { 
+        ...defaultState, 
+        ...saved,
+        debugFlags: { 
+          ...defaultState.debugFlags, 
+          ...(saved.debugFlags || {}) 
+        },
+        uiScale: saved.uiScale || defaultState.uiScale
+      };
     }
     return defaultState;
   });
