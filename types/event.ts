@@ -1,28 +1,6 @@
 
-import { ActionType, SubjectId, ItemId, RelationshipId, TimeSlot } from './enums';
-import { GameState, UiScale, DebugFlags } from './state';
+import { SubjectId, ItemId, RelationshipId, TimeSlot } from './enums';
 import { GameEventEffect } from './assets';
-
-// Discriminated Union for strict typing
-export type GameAction =
-  | { type: ActionType.STUDY; payload: SubjectId }
-  | { type: ActionType.STUDY_ALL } // New: 全教科学習
-  | { type: ActionType.REST }
-  | { type: ActionType.ESCAPISM }
-  | { type: ActionType.ASK_PROFESSOR }
-  | { type: ActionType.ASK_SENIOR }
-  | { type: ActionType.RELY_FRIEND }
-  | { type: ActionType.USE_ITEM; payload: ItemId }
-  | { type: ActionType.RESTART }
-  | { type: ActionType.WORK }
-  | { type: ActionType.BUY_ITEM; payload: ItemId }
-  | { type: ActionType.RESOLVE_EVENT; payload: { optionId: string } }
-  | { type: ActionType.LOAD_STATE; payload: GameState }
-  | { type: ActionType.FULL_RESET }
-  | { type: ActionType.SOFT_RESET }
-  | { type: ActionType.HARD_RESTART }
-  | { type: ActionType.SET_UI_SCALE; payload: UiScale }
-  | { type: ActionType.TOGGLE_DEBUG_FLAG; payload: keyof DebugFlags }; // New: デバッグ切り替え
 
 // Re-export for convenience if needed by other files
 export type { GameEventEffect } from './assets';

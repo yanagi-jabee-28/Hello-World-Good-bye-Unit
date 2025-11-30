@@ -11,36 +11,10 @@ import { GameStatus, ItemId } from './types';
 import { Sound } from './utils/sound';
 import { SwipeableStatus } from './components/status/SwipeableStatus';
 import { CAFFEINE_THRESHOLDS, SATIETY_CONSTANTS } from './config/gameConstants';
-
-// ミニステータスバー (Mobile only helper)
-const MiniBar = ({ 
-  value, 
-  max, 
-  color, 
-  label, 
-  icon,
-  warn = false 
-}: { 
-  value: number; 
-  max: number; 
-  color: string; 
-  label: string; 
-  icon?: React.ReactNode;
-  warn?: boolean;
-}) => (
-  <div className="flex flex-col gap-0.5 min-w-0">
-    <div className={`flex justify-between items-center fs-xxs leading-none font-mono ${warn ? 'text-red-400 animate-pulse' : 'text-gray-400'}`}>
-       <span className="flex items-center gap-1 scale-90 origin-left">{icon}{label}</span>
-       <span className="tracking-tighter">{max > 20000 ? (value/1000).toFixed(1)+'k' : value}</span>
-    </div>
-    <div className="h-1 bg-gray-800 w-full border border-gray-700/50 rounded-full overflow-hidden">
-       <div className={`h-full ${color} transition-all duration-500`} style={{ width: `${Math.min(100, (value/max)*100)}%` }} />
-    </div>
-  </div>
-);
+import { MiniBar } from './components/ui/MiniBar';
 
 const App: React.FC = () => {
-  // useGameController now wraps the Zustand store
+  // useGameController wraps the Zustand store
   const { state, ui, actions } = useGameController();
   const [showDeathSequence, setShowDeathSequence] = useState(false);
   const [showEndingScreen, setShowEndingScreen] = useState(false);
@@ -115,8 +89,6 @@ const App: React.FC = () => {
       <div className="hidden lg:grid flex-1 grid-cols-12 gap-4 h-full min-h-0 p-4 pt-0">
         {/* Left: Status */}
         <div className="col-span-3 h-full min-h-0 overflow-hidden">
-          {/* Note: Components are now 'Smart' but we pass state for compatibility with existing internal props if needed, or to avoid heavy refactor inside them immediately. 
-              Ideally, StatusDisplay would internally use useGameStore. */}
           <StatusDisplay state={state} />
         </div>
 
@@ -171,7 +143,7 @@ const App: React.FC = () => {
 
         {/* Bottom Nav (Always visible) */}
         <div className="shrink-0 bg-black border-t border-green-800 p-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] z-30 shadow-[0_-2px_10px_rgba(0,0,0,0.5)]">
-          {/* Mini Status Grid - Enhanced */}
+          {/* Mini Status Grid */}
           <div className="grid grid-cols-12 gap-2 mb-2 px-1">
              {/* Main Vitals (Left) */}
              <div className="col-span-7 grid grid-cols-1 gap-1.5">
