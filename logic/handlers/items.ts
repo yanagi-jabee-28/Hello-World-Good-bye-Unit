@@ -130,12 +130,14 @@ export const handleUseItem = (state: GameState, itemId: ItemId): GameState => {
           }
           logType = 'success';
        } else {
-          // 失敗時のペナルティ強化 (v2.7)
+          // 失敗時のペナルティ強化 (v2.7) - Critical Failure Narrative
           effect = mergeEffects(effect, { 
-            sanity: -USB_SUCCESS_CONFIG.PENALTY_SANITY,
-            hp: -LEARNING_EFFICIENCY.ITEM_BASED.USB_FAILURE_HP_COST 
+            sanity: -25, // Increased Despair
+            hp: -15, // Physical strain
+            money: -5000 // Repair cost
           });
-          baseLog = `【解析失敗】(${formatSuccessRate(successRate)}) 解析中にウィルス感染！PCへのダメージが肉体にもフィードバックされる...。アルゴリズム理解度(${algoScore}点)が足りなかったか。`;
+          baseLog = `【致命的失敗】(${formatSuccessRate(successRate)}) **ランサムウェア感染**！画面が真っ赤に染まる...。\n` +
+                    `「アルゴリズム(${algoScore}点)では防げなかった」PCの緊急修理で5000円が飛んだ。`;
           logType = 'danger';
        }
        break;

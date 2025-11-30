@@ -19,7 +19,7 @@ import { handleRest, handleEscapism } from './handlers/rest';
 import { handleWork } from './handlers/work';
 import { handleAskProfessor, handleAskSenior, handleRelyFriend } from './handlers/social';
 import { handleBuyItem, handleUseItem } from './handlers/items';
-import { SATIETY_CONSUMPTION, STUDY_ALL, BUFF_SOFT_CAP_ASYMPTOTE } from '../config/gameConstants';
+import { SATIETY_CONSUMPTION, STUDY_ALL, BUFF_SOFT_CAP_ASYMPTOTE, STUDY_CONSTANTS } from '../config/gameConstants';
 import { joinMessages } from '../utils/logFormatter';
 import { LEARNING_EFFICIENCY } from '../config/gameBalance';
 import { applySoftCap } from '../utils/common';
@@ -67,6 +67,17 @@ const handleStudyAll = (state: GameState): GameState => {
     buffMultiplier = applySoftCap(effectiveBuff, BUFF_SOFT_CAP_ASYMPTOTE);
   }
 
+  // --- Madness Bonus ---
+  let madnessMult = 1.0;
+  let madnessHpCost = 0;
+  let madnessLog = "";
+  
+  if (state.sanity < STUDY_CONSTANTS.MADNESS_THRESHOLD) {
+    madnessMult = STUDY_CONSTANTS.MADNESS_EFFICIENCY_BONUS;
+    madnessHpCost = STUDY_CONSTANTS.MADNESS_HP_COST;
+    madnessLog = ACTION_LOGS.STUDY.MADNESS;
+  }
+
   // 5. 科目ごとの上昇値計算
   const knowledgeGain: Partial<Record<SubjectId, number>> = {};
   
@@ -75,7 +86,7 @@ const handleStudyAll = (state: GameState): GameState => {
     const rand = rng.range(-1, 1); // -1, 0, +1 のゆらぎ
     
     // 基礎計算
-    let val = (STUDY_ALL.BASE_GAIN * decayMult * timeMult * buffMultiplier * difficulty) + rand;
+    let val = (STUDY_ALL.BASE_GAIN * decayMult * timeMult * buffMultiplier * madnessMult * difficulty) + rand;
     
     // 最低保証と整数化
     val = Math.max(Math.floor(val), STUDY_ALL.MIN_GAIN);
@@ -84,7 +95,7 @@ const handleStudyAll = (state: GameState): GameState => {
 
   // 6. コスト計算
   const effect = {
-    hp: Math.floor(-STUDY_ALL.COST_HP * costMult),
+    hp: Math.floor(-STUDY_ALL.COST_HP * costMult) - madnessHpCost,
     sanity: Math.floor(-STUDY_ALL.COST_SAN * costMult),
     satiety: Math.floor(-STUDY_ALL.COST_SATIETY * costMult),
     knowledge: knowledgeGain
@@ -101,7 +112,7 @@ const handleStudyAll = (state: GameState): GameState => {
   const nightLog = isLateNight ? "深夜の静寂で集中力が増したが、消耗も激しい。" : "";
   const buffLog = buffMultiplier > 1.0 ? `(教材効果半減: x${buffMultiplier.toFixed(2)}) ` : "";
   
-  pushLog(newState, `【総合演習】全科目を薄く広く復習した。科目毎の理解度に差が出た。\n${nightLog}${buffLog}(${details})`, isLateNight ? 'warning' : 'info');
+  pushLog(newState, `【総合演習】全科目を薄く広く復習した。科目毎の理解度に差が出た。\n${nightLog}${buffLog}${madnessLog}(${details})`, isLateNight ? 'warning' : 'info');
   
   return newState;
 };
@@ -349,6 +360,9 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
            timeAdvanced = false;
         } else {
            newState = handleStudyAll(newState);
+           if (newState.sanity < STUDY_CONSTANTS.MADNESS_THRESHOLD) {
+             newState.flags.madnessStack = Math.min(4, newState.flags.madnessStack + 1);
+           }
         }
         break;
       case ActionType.REST:

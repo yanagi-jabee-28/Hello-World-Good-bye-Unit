@@ -93,7 +93,7 @@ export const friendBranching: GameEvent[] = [
         description: '長電話に付き合う。SAN値は回復するが、体力を消耗する。',
         successEffect: {
           sanity: COSTS.SANITY.RECOVER_SMALL,
-          hp: COSTS.HP.LARGE,
+          hp: COSTS.HP.LARGE, // Costs HP to listen
           satiety: -SATIETY_CONSUMPTION.SOCIAL,
           relationships: { [RelationshipId.FRIEND]: 10 }
         },

@@ -6,14 +6,14 @@ import { lowRiskOption, midRiskOption, highRiskOption, safeOption } from '../../
 
 export const systemBranching: GameEvent[] = [
   {
-    id: 'branching_git_conflict',
+    id: 'branching_git_merge_conflict',
     trigger: 'turn_end',
     persona: 'SYSTEM',
-    text: "【衝突】Gitで巨大なコンフリクト発生！マージに失敗し、数時間の作業が消える危機。",
+    text: "【衝突検知】`git merge` で大規模コンフリクト発生。自動マージ失敗。HEAD と MERGE_HEAD が睨み合っている。",
     type: 'mixed',
     category: 'tech_trouble',
     weight: WEIGHTS.RARE,
-    conditions: { timeSlots: [TimeSlot.AFTER_SCHOOL, TimeSlot.NIGHT, TimeSlot.LATE_NIGHT] },
+    conditions: { timeSlots: [TimeSlot.AFTER_SCHOOL, TimeSlot.NIGHT, TimeSlot.LATE_NIGHT], minKnowledge: { [SubjectId.ALGO]: 20 } },
     coolDownTurns: COOLDOWNS.MEDIUM,
     options: [
       midRiskOption({
@@ -24,39 +24,42 @@ export const systemBranching: GameEvent[] = [
         successEffect: {
           hp: COSTS.HP.MEDIUM,
           satiety: COSTS.SATIETY.SMALL,
-          knowledge: { [SubjectId.ALGO]: KNOWLEDGE_GAINS.SMALL }
+          knowledge: { [SubjectId.ALGO]: 10 } // Increased gain
         },
-        successLog: "地道な作業の末、なんとかマージできた。コードへの理解も深まった気がする。",
+        successLog: "2時間の格闘の末、マージ完了。`git log --graph` が美しい。構造への理解が一段深まった。",
         failureEffect: {
           sanity: COSTS.SANITY.LARGE,
-          hp: COSTS.HP.LARGE
+          hp: COSTS.HP.LARGE,
+          knowledge: { [SubjectId.ALGO]: -5 }
         },
-        failureLog: "修正中に新たなバグを埋め込んでしまった...。泥沼だ。"
+        failureLog: "手動マージに失敗し、コードが意味不明な状態に...。「俺は何もわかっていなかった」（SAN値と知識が減少）"
       }),
       highRiskOption({
-        id: 'opt_git_force_push',
-        label: 'Force Push',
-        description: '「俺のコードが正しい」全てを上書きする賭け。',
+        id: 'opt_git_force_mine',
+        label: '自分のを優先 (--ours)',
+        description: '相手の変更を全無視。チーム開発なら危険だが、個人なら...',
         successRate: SUCCESS_RATES.RISKY, // 30%
         successEffect: {
           sanity: COSTS.SANITY.BOOST_MID,
           hp: COSTS.HP.TINY
         },
-        successLog: "神に祈りながらEnterッ！...奇跡的に動いた。強引だが解決だ。",
+        successLog: "`git checkout --ours .` で強制解決。罪悪感はあるが、動けばヨシ！",
         failureEffect: {
           sanity: COSTS.SANITY.CRITICAL,
-          knowledge: { [SubjectId.ALGO]: -5 }
+          hp: COSTS.HP.LARGE,
+          knowledge: { [SubjectId.ALGO]: -10 }
         },
-        failureLog: "必要なコードまで消し飛んだ。取り返しがつかない..."
+        failureLog: "**必要なコードまで消し飛ばした**。プロジェクトが起動しない...。取り返しがつかない（知識-10, SAN値崩壊）"
       }),
       safeOption({
         id: 'opt_git_giveup',
         label: '諦めて寝る',
-        description: '今日の作業はなかったことにする。精神的ダメージは最小限。',
+        description: '今日の作業はなかったことにする。',
         successEffect: {
-          sanity: 5
+          sanity: 5,
+          hp: -5
         },
-        successLog: "「git reset --hard」...美しい虚無だ。寝よう。"
+        successLog: "`git reset --hard ORIG_HEAD` ...美しい虚無だ。明日の自分に任せよう。"
       })
     ]
   },
@@ -109,7 +112,7 @@ export const systemBranching: GameEvent[] = [
     id: 'branching_rainy_day', 
     trigger: 'turn_end',
     persona: 'SYSTEM',
-    text: "【天候】ゲリラ豪雨。傘を持っていない。", 
+    text: "【気象警報】予期せぬ豪雨。傘も持っていない。ずぶ濡れ確定だが、どうする？", 
     type: 'mixed',
     weight: WEIGHTS.UNCOMMON,
     conditions: { timeSlots: [TimeSlot.MORNING, TimeSlot.AFTER_SCHOOL, TimeSlot.NIGHT] },
@@ -125,7 +128,7 @@ export const systemBranching: GameEvent[] = [
         },
         successLog: "快適な移動。出費は痛いが、体調には代えられない。"
       }),
-      lowRiskOption({
+      midRiskOption({
         id: 'opt_rain_call_friend',
         label: '友人に電話する',
         description: '迎えに来てもらい、そのまま遊びに行く。',
@@ -136,12 +139,12 @@ export const systemBranching: GameEvent[] = [
           satiety: -SATIETY_CONSUMPTION.ESCAPISM,
           relationships: { [RelationshipId.FRIEND]: REL_GAINS.MEDIUM }
         },
-        successLog: "「おっ、いいぜ！」友人が車で颯爽と登場。そのままカラオケで雨宿りした。",
+        successLog: "「おっ、いいぜ！」友人が車で颯爽と登場。そのままカラオケで雨宿り。友情を実感した。",
         failureEffect: {
-          hp: COSTS.HP.SMALL,
-          sanity: COSTS.SANITY.MEDIUM
+          hp: -20,
+          sanity: -20
         },
-        failureLog: "電話は繋がらなかった...。雨の中、孤独を噛み締めながら帰った。"
+        failureLog: "電話は繋がらなかった...。**誰も助けてくれない**。雨の中、孤独を噛み締めながら帰った。"
       }),
       midRiskOption({
         id: 'opt_rain_run',
@@ -150,14 +153,14 @@ export const systemBranching: GameEvent[] = [
         successRate: SUCCESS_RATES.LOW, // 50%
         successEffect: {
           hp: COSTS.HP.TINY,
-          sanity: 5
+          sanity: 10
         },
-        successLog: "ずぶ濡れだが、なんだか爽やかな気分だ。風邪も引かなそうだ。",
+        successLog: "ずぶ濡れだが、**なんだか爽やかな気分**だ。青春映画のワンシーンみたいだ。",
         failureEffect: {
-          hp: COSTS.HP.LARGE,
-          sanity: COSTS.SANITY.SMALL
+          hp: -35, // Severe HP loss (catch cold)
+          sanity: COSTS.SANITY.MEDIUM
         },
-        failureLog: "完全に冷えた。明日熱が出るかもしれない..."
+        failureLog: "**完全に冷えた**。体の芯まで震えが止まらない。明日は確実に高熱が出る..."
       })
     ]
   },
@@ -194,10 +197,10 @@ export const systemBranching: GameEvent[] = [
         },
         successLog: "ガンッ！...画面が戻った！？奇跡だ。",
         failureEffect: {
-          money: COSTS.MONEY.PENALTY_LARGE,
+          money: COSTS.MONEY.PENALTY_LARGE, // Physical damage
           sanity: COSTS.SANITY.CRITICAL
         },
-        failureLog: "バキッという嫌な音がした。PCが物理的に壊れた..."
+        failureLog: "バキッという嫌な音がした。PCが物理的に壊れた...（修理費発生）"
       }),
       safeOption({
         id: 'opt_bsod_giveup',

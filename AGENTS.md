@@ -82,6 +82,7 @@
 3.  **Design Doc Sync**: もし仕様変更があれば、必ず関連ドキュメントの更新も含めること。
     - **設計思想に触れる変更（アーキテクチャ原則・バランス指針・FSD構造・副作用管理方針など）を行う場合**は、明示的な指示がなくても必ず `DESIGN_PHILOSOPHY.md` と `ITEMS_DESIGN.md` の更新指示を含めること。
     - アイテムやゲームバランスに関わる変更では、`ITEMS_DESIGN.md` に意図・数式根拠・影響範囲を追記し、`config/gameBalance.ts` と `data/items.ts` の整合性を確保すること。
+    - 設計思想（上記アーキテクチャ原則・バランス指針等）に変更が入る場合は必ず `AGENTS.md`, `DESIGN_PHILOSOPHY.md`, `ITEMS_DESIGN.md` の3ファイルを同一コミットで同期更新し、差分理由（Why）を各ドキュメントに明記すること。
 
 ## 7. Event Reliability & Safety Protocols (イベント安全性)
 

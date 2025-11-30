@@ -1,6 +1,6 @@
 
 import { GameEvent, RelationshipId, SubjectId, ItemId, TimeSlot } from '../../types';
-import { REL_TIERS, WEIGHTS, COOLDOWNS } from '../../config/gameBalance';
+import { REL_TIERS, WEIGHTS, COOLDOWNS, REL_GAINS } from '../../config/gameBalance';
 import { Effect } from '../presets/effectTemplates';
 
 /**
@@ -26,7 +26,7 @@ export const FRIEND_EVENTS: GameEvent[] = [
     id: 'friend_game_talk',
     trigger: 'action_friend',
     persona: 'FRIEND',
-    text: "【遊戯】試験期間中だが、新作ゲームの話で盛り上がる。「現実逃避最高！」",
+    text: "【遊戯】「新作ゲームの話しようぜ！」試験期間？ 知らん。エンタメの話で脳をリフレッシュする。",
     type: 'flavor',
     weight: WEIGHTS.COMMON,
     // Balance Update: Allow late night gaming
@@ -35,8 +35,8 @@ export const FRIEND_EVENTS: GameEvent[] = [
     },
     effect: {
       ...Effect.Social.Boost(RelationshipId.FRIEND, 'LARGE'),
-      ...Effect.Status.RecoverModerate(), // HP&SAN
-      hp: 5 // Override HP to minor
+      sanity: 15, // Mental recovery only
+      satiety: -5 // Light consumption
     }
   },
 
@@ -45,7 +45,7 @@ export const FRIEND_EVENTS: GameEvent[] = [
     id: 'friend_info_share',
     trigger: 'action_friend',
     persona: 'FRIEND',
-    text: "【噂話】「線形代数の先生、今年は難化させるらしいよ」不穏だが有益な情報を共有した。",
+    text: "【噂話】「線形代数の先生、今年は難化させるらしいよ」不穏だが有益な情報を共有した。対策を練らねば。",
     type: 'good',
     weight: WEIGHTS.UNCOMMON,
     conditions: { minRelationship: REL_TIERS.MID },
@@ -58,7 +58,7 @@ export const FRIEND_EVENTS: GameEvent[] = [
     id: 'friend_escapism',
     trigger: 'action_friend',
     persona: 'FRIEND',
-    text: "【誘惑】「カラオケ行こうぜ。勉強？ 知らん！」強引に連れ出され、喉が枯れるまで歌った。",
+    text: "【誘惑】「カラオケ行こうぜ！」断れる雰囲気じゃない...が、まあいいか。喉が枯れるまで歌い倒した。",
     type: 'flavor',
     weight: WEIGHTS.UNCOMMON,
     conditions: { 
@@ -68,8 +68,11 @@ export const FRIEND_EVENTS: GameEvent[] = [
       timeSlots: [TimeSlot.AFTER_SCHOOL, TimeSlot.NIGHT, TimeSlot.LATE_NIGHT]
     },
     effect: {
-      ...Effect.Preset.Hangout(),
-      sanity: 35 // Override Sanity to Huge
+      relationships: { [RelationshipId.FRIEND]: REL_GAINS.LARGE },
+      sanity: 35, // Huge relief
+      hp: -10, // Physical exhaustion
+      satiety: -20, // Singing makes you hungry
+      money: -2000
     },
     coolDownTurns: COOLDOWNS.MEDIUM
   },
@@ -95,7 +98,7 @@ export const FRIEND_EVENTS: GameEvent[] = [
     id: 'friend_cloud_leak',
     trigger: 'action_friend',
     persona: 'FRIEND',
-    text: "【共有】「例のドライブ、権限付与しといたわ」有志がまとめた過去問データベースへのアクセス権を得た。",
+    text: "【共有】「例のドライブ、権限付与しといたわ」有志がまとめた過去問データベースへのアクセス権を得た。これはデカイ。",
     type: 'good',
     weight: WEIGHTS.RARE,
     conditions: { minRelationship: REL_TIERS.HIGH },

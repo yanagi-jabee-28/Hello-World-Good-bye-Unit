@@ -14,7 +14,7 @@ export const PROFESSOR_EVENTS: GameEvent[] = [
     id: 'prof_basic_success', // Math
     trigger: 'action_professor',
     persona: 'PROFESSOR',
-    text: "【質問】「良い着眼点だ」教授は数式を指し示し、論理の飛躍を指摘してくれた。基礎理解が深まる。",
+    text: "【質問】「的確な着眼点だ」教授は数式を指し示し、論理の飛躍を冷静に指摘してくれた。基礎理解が深まる。",
     type: 'good',
     weight: WEIGHTS.COMMON,
     conditions: { 
@@ -34,7 +34,7 @@ export const PROFESSOR_EVENTS: GameEvent[] = [
     id: 'prof_basic_algo',
     trigger: 'action_professor',
     persona: 'PROFESSOR',
-    text: "【質問】「その解法は良いが、計算量を考えたか？」アルゴリズムの本質を指摘され、理解が深まった。",
+    text: "【質問】「その解法は悪くないが、計算量は考慮したかね？」アルゴリズムの本質的な欠陥を指摘され、蒙が開けた。",
     type: 'good',
     weight: WEIGHTS.COMMON,
     conditions: { 
@@ -52,7 +52,7 @@ export const PROFESSOR_EVENTS: GameEvent[] = [
     id: 'prof_basic_circuit',
     trigger: 'action_professor',
     persona: 'PROFESSOR',
-    text: "【質問】「回路図のどこが間違っているか分かるか？」教授の誘導で、自力で解法に辿り着いた。",
+    text: "【質問】「回路図のここ、電流の向きが矛盾しているな」教授の誘導尋問で、自力で解法に辿り着いた。",
     type: 'good',
     weight: WEIGHTS.COMMON,
     conditions: { 
@@ -70,7 +70,7 @@ export const PROFESSOR_EVENTS: GameEvent[] = [
     id: 'prof_basic_humanities',
     trigger: 'action_professor',
     persona: 'PROFESSOR',
-    text: "【質問】「教養科目も疎かにしてはいけない」レポートの書き方を丁寧に指導された。",
+    text: "【質問】「教養とは、君自身を守る武器だよ」レポートの構成について、厳しくも丁寧な指導を受けた。",
     type: 'good',
     weight: WEIGHTS.COMMON,
     conditions: { 
@@ -88,7 +88,7 @@ export const PROFESSOR_EVENTS: GameEvent[] = [
     id: 'prof_basic_fail',
     trigger: 'action_professor',
     persona: 'PROFESSOR',
-    text: "【門前払い】「シラバスを読んだかね？」基礎的な質問を一蹴された。出直す必要がある。",
+    text: "【門前払い】「シラバスを読んだかね？」基礎的すぎる質問を一蹴された。出直してこいということか...",
     type: 'bad',
     weight: WEIGHTS.RARE,
     conditions: { 
@@ -104,7 +104,7 @@ export const PROFESSOR_EVENTS: GameEvent[] = [
     id: 'prof_scolding',
     trigger: 'action_professor',
     persona: 'PROFESSOR',
-    text: "【指導】「君のレポートは定義が曖昧だ」...1時間に及ぶ厳しい指導を受けた。精神が削れる。",
+    text: "【指導】「君のレポートは定義が曖昧だ」...1時間に及ぶ徹底的な指導を受けた。精神が削れる音がする。",
     type: 'bad',
     weight: WEIGHTS.UNCOMMON,
     conditions: { 
@@ -123,7 +123,7 @@ export const PROFESSOR_EVENTS: GameEvent[] = [
     id: 'prof_small_talk',
     trigger: 'action_professor',
     persona: 'PROFESSOR',
-    text: "【休息】廊下で遭遇。「根を詰めすぎないように」と、ブラックコーヒー(微糖)を手渡された。",
+    text: "【休息】廊下で遭遇。「根を詰めすぎないように」と、ブラックコーヒー(微糖)を手渡された。意外な優しさ。",
     type: 'good',
     weight: WEIGHTS.COMMON,
     conditions: { 
@@ -219,7 +219,7 @@ export const PROFESSOR_EVENTS: GameEvent[] = [
     id: 'prof_generic_chat',
     trigger: 'action_professor',
     persona: 'PROFESSOR',
-    text: "【雑談】研究室で少し話をした。「君の顔を見ると研究が進むよ」と冗談を言われた。",
+    text: "【雑談】研究室で少し話をした。「君の顔を見ると研究が進むよ」と冗談めかして言われた。",
     type: 'flavor',
     weight: 1, // Low weight but no strict conditions
     conditions: {
