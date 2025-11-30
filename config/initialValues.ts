@@ -64,6 +64,7 @@ export const INITIAL_STATE: GameState = {
     hasPastPapers: 0, // Initialize as number
     madnessStack: 0,
     examRisk: false,
+    studyAllUsedDay: 0,
   },
   debugFlags: {
     showRisks: true,

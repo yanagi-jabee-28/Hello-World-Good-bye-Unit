@@ -47,6 +47,25 @@ export const STUDY_CONSTANTS = {
   MADNESS_HP_COST: 10, // 狂気時の追加HP消費
 };
 
+// 総合演習 (Study All) バランス定数 [Revised v2.6]
+export const STUDY_ALL = {
+  BASE_GAIN: 3,                 // 基礎値（これに科目難易度係数が掛かる）
+  MIN_GAIN: 1,                  // 最低保証
+  // 平均スコアに応じた減衰係数
+  gainMultiplier: (avg: number) => {
+    if (avg >= 80) return 0.4;
+    if (avg >= 60) return 0.7;
+    if (avg >= 40) return 0.9;
+    return 1.0;
+  },
+  COST_HP: 14,                  // HP-14 (高負荷)
+  COST_SAN: 8,                  // SAN-8
+  COST_SATIETY: 28,             // 胃の負担-28
+  // 深夜補正
+  LATE_NIGHT_EFFICIENCY: 1.2,   // 深夜は効率UP
+  LATE_NIGHT_COST_MULT: 1.5,    // 深夜は消耗激増
+};
+
 // 忘却曲線 (Forgetting Curve) - Updated for harsher difficulty
 export const FORGETTING_CONSTANTS = {
   GRACE_PERIOD_TURNS: 5, // 8 -> 5: 学習後、半日もしないうちに忘れ始める

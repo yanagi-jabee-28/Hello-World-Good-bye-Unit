@@ -8,7 +8,7 @@ import { getWorkConfig } from '../data/work';
 import { getShortEffectString } from '../utils/logFormatter';
 import { getExamWarnings } from '../logic/warningSystem';
 import { predictStudyRisk, predictWorkRisk, predictItemRisk } from '../logic/riskSystem';
-import { FORGETTING_CONSTANTS } from '../config/gameConstants';
+import { FORGETTING_CONSTANTS, STUDY_ALL } from '../config/gameConstants';
 import { sortItems, SortKey, SORT_LABELS } from '../utils/itemSorting';
 import { BookOpen, Users, Gamepad2, Package, School, GraduationCap, UserPlus, AlertTriangle, ShoppingCart, Briefcase, Bed, Sun, Moon, BatteryCharging, Ban, Zap, Clock, Skull, LayoutGrid, List, ArrowDownWideNarrow, Info, Layers } from 'lucide-react';
 import { Button } from './ui/Button';
@@ -44,6 +44,10 @@ const AcademicSection: React.FC<{
 }> = React.memo(({ state, onStudy, onStudyAll, isMobile }) => {
   // showDeathHintsフラグがONの場合のみリスクを表示
   const isStudyLethal = state.debugFlags.showDeathHints && predictStudyRisk(state);
+  
+  // 授業中(AM, AFTERNOON)は総合演習不可
+  const isClassTime = state.timeSlot === TimeSlot.AM || state.timeSlot === TimeSlot.AFTERNOON;
+  const isLateNight = state.timeSlot === TimeSlot.LATE_NIGHT;
 
   return (
     <div className="space-y-1.5">
@@ -77,11 +81,22 @@ const AcademicSection: React.FC<{
       {/* 総合学習ボタン */}
       <Button
         onClick={onStudyAll}
+        disabled={isClassTime}
         label="総合演習 (ALL)"
-        subLabel="全科目+3 / 高コスト / 忘却リセット"
+        subLabel={
+          isClassTime ? "授業中は不可" :
+          isLateNight ? "深夜効率UP / 激しく消耗" :
+          "全科目復習 / 科目特性を反映"
+        }
         icon={<Layers size={14} />}
         variant="outline"
-        className="border-green-800 text-green-400 hover:border-green-600 mt-2 bg-green-950/20"
+        className={`mt-2 ${
+          isClassTime
+            ? "border-gray-800 text-gray-600 bg-transparent"
+            : isLateNight 
+              ? "border-purple-800 text-purple-400 hover:border-purple-600 bg-purple-950/20"
+              : "border-green-800 text-green-400 hover:border-green-600 bg-green-950/20"
+        }`}
         fullWidth
         size={isMobile ? "lg" : "sm"}
         isLethal={isStudyLethal}

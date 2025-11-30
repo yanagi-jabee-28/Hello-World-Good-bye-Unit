@@ -1,5 +1,5 @@
 
-import { GameState, ActionType, GameAction, GameStatus, SubjectId, DebugFlags } from '../types';
+import { GameState, ActionType, GameAction, GameStatus, SubjectId, DebugFlags, TimeSlot } from '../types';
 import { clamp, chance } from '../utils/common';
 import { ACTION_LOGS } from '../data/constants/logMessages';
 import { executeEvent, recordEventOccurrence } from './eventManager';
@@ -10,6 +10,8 @@ import { INITIAL_STATE, INIT_KNOWLEDGE, INIT_RELATIONSHIPS } from '../config/ini
 import { processTurnEnd } from './turnManager';
 import { selectWeakestSubject } from './studyAutoSelect';
 import { ALL_EVENTS } from '../data/events'; // Import ALL_EVENTS for direct chain lookup
+import { SUBJECTS } from '../data/subjects';
+import { rng } from '../utils/rng';
 
 // Handlers
 import { handleStudy } from './handlers/study';
@@ -17,7 +19,7 @@ import { handleRest, handleEscapism } from './handlers/rest';
 import { handleWork } from './handlers/work';
 import { handleAskProfessor, handleAskSenior, handleRelyFriend } from './handlers/social';
 import { handleBuyItem, handleUseItem } from './handlers/items';
-import { SATIETY_CONSUMPTION } from '../config/gameConstants';
+import { SATIETY_CONSUMPTION, STUDY_ALL } from '../config/gameConstants';
 import { joinMessages } from '../utils/logFormatter';
 
 export { INITIAL_STATE };
@@ -30,30 +32,65 @@ const DYNAMIC_SUBJECT_OPTIONS = [
 ];
 
 const handleStudyAll = (state: GameState): GameState => {
-  // 総合学習ハンドラ
-  // コスト: HP-10, SAN-5, Satiety-25 (高負荷)
-  // 効果: 全科目+3
+  // --- 総合学習ハンドラ (v2.6: 科目別難易度反映 & 時間帯制限) ---
+  
+  // 1. 時間帯チェック: 授業中(AM, AFTERNOON)は不可
+  // UI側でも無効化するが、ロジックとしても保護する
+  if (state.timeSlot === TimeSlot.AM || state.timeSlot === TimeSlot.AFTERNOON) {
+    const warningState = { ...state, logs: [...state.logs] };
+    pushLog(warningState, "【エラー】授業中に全科目の復習はできない。教授の目が光っている。", 'warning');
+    return warningState;
+  }
+
+  // 2. 深夜補正
+  const isLateNight = state.timeSlot === TimeSlot.LATE_NIGHT;
+  const timeMult = isLateNight ? STUDY_ALL.LATE_NIGHT_EFFICIENCY : 1.0;
+  const costMult = isLateNight ? STUDY_ALL.LATE_NIGHT_COST_MULT : 1.0;
+
+  // 3. 平均スコアによる減衰
+  const subjects = Object.values(SubjectId);
+  const totalScore = subjects.reduce((sum, id) => sum + state.knowledge[id], 0);
+  const avg = totalScore / subjects.length;
+  const decayMult = STUDY_ALL.gainMultiplier(avg);
+
+  // 4. 科目ごとの上昇値計算
+  // 式: floor( (Base * Decay * Time * (1/Difficulty)) + Random(-1, 1) )
+  // 難易度が高い(Difficultyが小さい)科目ほど上昇しやすい... ではなく、Difficultyは係数。
+  // SUBJECTS定義: difficulty 0.7(難) 〜 1.4(易)
+  // なので、Difficultyをそのまま掛けると「易しい科目は伸びる」「難しい科目は伸びない」となる。
+  const knowledgeGain: Partial<Record<SubjectId, number>> = {};
+  
+  subjects.forEach(sid => {
+    const difficulty = SUBJECTS[sid].difficulty;
+    const rand = rng.range(-1, 1); // -1, 0, +1 のゆらぎ
+    
+    // 基礎計算
+    let val = (STUDY_ALL.BASE_GAIN * decayMult * timeMult * difficulty) + rand;
+    
+    // 最低保証と整数化
+    val = Math.max(Math.floor(val), STUDY_ALL.MIN_GAIN);
+    knowledgeGain[sid] = val;
+  });
+
+  // 5. コスト計算
   const effect = {
-    hp: -10,
-    sanity: -5,
-    satiety: -25,
-    knowledge: {
-      [SubjectId.MATH]: 3,
-      [SubjectId.ALGO]: 3,
-      [SubjectId.CIRCUIT]: 3,
-      [SubjectId.HUMANITIES]: 3,
-    }
+    hp: Math.floor(-STUDY_ALL.COST_HP * costMult),
+    sanity: Math.floor(-STUDY_ALL.COST_SAN * costMult),
+    satiety: Math.floor(-STUDY_ALL.COST_SATIETY * costMult), // 胃の負担は深夜なら減るはずだがStudyAllは例外的に疲れるとするか、一貫性を取るか。
+                                                             // ここではシンプルに「深夜は無理をする」ので消費増とする。
+    knowledge: knowledgeGain
   };
 
   const { newState, messages } = applyEffect(state, effect);
   
   // 全科目の最終学習ターンを更新 (忘却リセット)
-  Object.values(SubjectId).forEach(sid => {
+  subjects.forEach(sid => {
     newState.lastStudied[sid] = newState.turnCount;
   });
 
   const details = joinMessages(messages, ', ');
-  pushLog(newState, `【総合演習】全科目を薄く広く復習した。記憶の定着をメンテナンス。\n(${details})`, 'info');
+  const nightLog = isLateNight ? "深夜の静寂で集中力が増したが、消耗も激しい。" : "";
+  pushLog(newState, `【総合演習】全科目を薄く広く復習した。科目毎の理解度に差が出た。\n${nightLog}(${details})`, isLateNight ? 'warning' : 'info');
   
   return newState;
 };
@@ -294,7 +331,14 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
         }
         break;
       case ActionType.STUDY_ALL:
-        newState = handleStudyAll(newState);
+        // 授業中かどうかのチェック。handleStudyAll内部でもチェックしているが、
+        // ここで弾いて時間を進めないようにする
+        if (newState.timeSlot === TimeSlot.AM || newState.timeSlot === TimeSlot.AFTERNOON) {
+           newState = handleStudyAll(newState); // 警告ログを出す
+           timeAdvanced = false;
+        } else {
+           newState = handleStudyAll(newState);
+        }
         break;
       case ActionType.REST:
         newState = handleRest(newState);

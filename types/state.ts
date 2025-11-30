@@ -31,6 +31,7 @@ export interface GameFlags {
   hasPastPapers: number;   // 過去問入手数 (Stackable)
   madnessStack: number;    // 狂気スタック (0-4)
   examRisk: boolean;       // 最終日無理をしたか
+  studyAllUsedDay: number; // 総合学習の使用回数 (日次リセット)
 }
 
 export interface DebugFlags {

@@ -116,6 +116,8 @@ export const processTurnEnd = (state: GameState, isResting: boolean = false): Ga
   if (isNextDay) {
     newState.day += 1;
     pushLog(newState, ACTION_LOGS.SYSTEM.DAY_START(newState.day), 'system');
+    // デイリー制限のリセット (v2.5)
+    newState.flags.studyAllUsedDay = 0;
   }
   newState.turnCount += 1;
 
