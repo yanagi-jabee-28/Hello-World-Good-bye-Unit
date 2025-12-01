@@ -1,12 +1,12 @@
 
 import { GameState, SubjectId, TimeSlot, GameEventOption, GameEventEffect, ItemId } from '../types';
-import { WORK_CONFIGS } from '../data/work';
+import { getWorkConfig } from '../data/work';
 import { ITEMS } from '../data/items';
 import { CAFFEINE_THRESHOLDS, STUDY_CONSTANTS, SATIETY_CONSUMPTION } from '../config/gameConstants';
 import { RISK_PREDICTION } from '../config/gameBalance';
 
 /**
- * リスク予測ロジック v2.0
+ * リスク予測ロジック v2.1
  * Directモード: 確定コストのみで死亡判定
  * Predictiveモード: 確率的失敗やイベントによる追加ダメージを含めて判定（「運が悪ければ死ぬ」を検知）
  */
@@ -17,6 +17,7 @@ const checkFatal = (current: number, cost: number): boolean => {
 };
 
 // --- STUDY RISK ---
+// Note: This logic must reflect handleStudy in logic/handlers/study.ts
 const getStudyPressure = (day: number): number => {
   if (day <= 3) return 1.0;
   if (day <= 5) return 1.1;
@@ -67,8 +68,8 @@ export const predictStudyRisk = (state: GameState): boolean => {
 
 // --- WORK RISK ---
 export const predictWorkRisk = (state: GameState): boolean => {
-  const config = WORK_CONFIGS[state.timeSlot];
-  if (!config) return false;
+  // Use helper to ensure fallback logic matches actual execution
+  const config = getWorkConfig(state.timeSlot);
 
   let hpCost = config.hpCost;
   let sanityCost = config.sanityCost;

@@ -73,7 +73,7 @@ export const INITIAL_STATE: GameState = {
     logEventFlow: false,
     riskOverlay: false, // New: Default off
     riskDetail: false, // New: Default off
-    riskPredictionMode: 'predictive', // Default to safer mode
+    riskPredictionMode: 'direct', // Changed to 'direct' for accurate deterministic warnings
   },
   pendingEvent: null,
   uiScale: 'normal', // Default UI scale

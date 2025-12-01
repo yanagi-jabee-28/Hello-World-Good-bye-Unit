@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { GameState, ItemId, SubjectId } from '../types';
 import { getStudyHint } from '../logic/advisor';
@@ -25,6 +26,7 @@ interface Props {
     relyFriend: () => void;
     useItem: (id: ItemId) => void;
     openShop: () => void;
+    openInventory: () => void;
   };
   onInspect?: (itemId: ItemId, mode: 'inventory' | 'shop') => void;
   isMobile?: boolean;
@@ -122,6 +124,7 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect, isMobi
                   state={state} 
                   onUse={actions.useItem} 
                   onInspect={onInspect} 
+                  onOpenInventory={actions.openInventory}
                   isMobile={false} 
                 />
               </div>
@@ -154,7 +157,8 @@ export const ActionPanel: React.FC<Props> = ({ state, actions, onInspect, isMobi
               <InventorySection 
                 state={state}
                 onUse={actions.useItem} 
-                onInspect={onInspect} 
+                onInspect={onInspect}
+                onOpenInventory={actions.openInventory}
                 isMobile={true} 
               />
            </CollapsibleSection>

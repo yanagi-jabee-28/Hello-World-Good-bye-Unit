@@ -15,6 +15,7 @@ export const useGameController = () => {
 
   // UI State (Local)
   const [isShopOpen, setIsShopOpen] = useState(false);
+  const [isInventoryOpen, setIsInventoryOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState<'terminal' | 'status'>('terminal');
 
@@ -25,6 +26,8 @@ export const useGameController = () => {
     ...actions,
     openShop: () => { playClick(); setIsShopOpen(true); },
     closeShop: () => { playClick(); setIsShopOpen(false); },
+    openInventory: () => { playClick(); setIsInventoryOpen(true); },
+    closeInventory: () => { playClick(); setIsInventoryOpen(false); },
     openMenu: () => { playClick(); setIsMenuOpen(true); },
     closeMenu: () => { setIsMenuOpen(false); },
     setMobileTab: (tab: 'terminal' | 'status') => {
@@ -54,7 +57,7 @@ export const useGameController = () => {
 
   return {
     state,
-    ui: { isShopOpen, isMenuOpen, mobileTab, uiScale: state.uiScale },
+    ui: { isShopOpen, isInventoryOpen, isMenuOpen, mobileTab, uiScale: state.uiScale },
     actions: wrappedActions
   };
 };

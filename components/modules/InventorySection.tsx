@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { GameState, ItemId } from '../../types';
 import { ITEMS } from '../../data/items';
@@ -5,16 +6,17 @@ import { predictItemRisk } from '../../logic/riskSystem';
 import { sortItems, SortKey, SORT_LABELS } from '../../utils/itemSorting';
 import { getShortEffectString } from '../../utils/logFormatter';
 import { Button } from '../ui/Button';
-import { ArrowDownWideNarrow, LayoutGrid, List, Info, Zap, Skull } from 'lucide-react';
+import { ArrowDownWideNarrow, LayoutGrid, List, Info, Zap, Skull, Maximize2 } from 'lucide-react';
 
 interface Props {
   state: GameState;
   onUse: (id: ItemId) => void;
   onInspect?: (id: ItemId, mode: 'inventory') => void;
+  onOpenInventory: () => void;
   isMobile: boolean;
 }
 
-export const InventorySection: React.FC<Props> = React.memo(({ state, onUse, onInspect, isMobile }) => {
+export const InventorySection: React.FC<Props> = React.memo(({ state, onUse, onInspect, onOpenInventory, isMobile }) => {
   const { inventory } = state;
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortKey, setSortKey] = useState<SortKey>('DEFAULT');
@@ -29,9 +31,9 @@ export const InventorySection: React.FC<Props> = React.memo(({ state, onUse, onI
 
   return (
     <div className="space-y-1.5 flex flex-col h-full">
-      {/* Header Controls (Only show if items exist) */}
-      {ownedItems.length > 0 && (
-        <div className="flex justify-between items-center px-1 pb-1 border-b border-gray-800 mb-1 shrink-0">
+      {/* Header Controls */}
+      <div className="flex justify-between items-center px-1 pb-1 border-b border-gray-800 mb-1 shrink-0">
+         {ownedItems.length > 0 && (
            <div className="flex items-center gap-1">
              {viewMode === 'list' && (
                 <div className="flex items-center gap-1 bg-gray-900 rounded px-1">
@@ -48,25 +50,37 @@ export const InventorySection: React.FC<Props> = React.memo(({ state, onUse, onI
                 </div>
              )}
            </div>
-           
-           <div className="flex bg-gray-900 rounded p-0.5 border border-gray-700">
-              <button 
-                onClick={() => setViewMode('grid')}
-                className={`p-1 rounded ${viewMode === 'grid' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'}`}
-                title="簡易表示"
-              >
-                <LayoutGrid size={12} />
-              </button>
-              <button 
-                onClick={() => setViewMode('list')}
-                className={`p-1 rounded ${viewMode === 'list' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'}`}
-                title="詳細表示"
-              >
-                <List size={12} />
-              </button>
-           </div>
-        </div>
-      )}
+         )}
+         
+         <div className="flex items-center gap-2 ml-auto">
+            {/* Expand Button */}
+            <button
+              onClick={onOpenInventory}
+              className="flex items-center gap-1 px-2 py-0.5 bg-green-900/20 text-green-500 fs-xxs rounded hover:bg-green-900/40 border border-green-900/30 transition-colors"
+              title="全画面で一覧表示"
+            >
+              <Maximize2 size={10} /> EXPAND
+            </button>
+
+            {/* View Mode Toggle */}
+            <div className="flex bg-gray-900 rounded p-0.5 border border-gray-700">
+                <button 
+                  onClick={() => setViewMode('grid')}
+                  className={`p-1 rounded ${viewMode === 'grid' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                  title="簡易表示"
+                >
+                  <LayoutGrid size={12} />
+                </button>
+                <button 
+                  onClick={() => setViewMode('list')}
+                  className={`p-1 rounded ${viewMode === 'list' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                  title="詳細表示"
+                >
+                  <List size={12} />
+                </button>
+            </div>
+         </div>
+      </div>
 
       {ownedItems.length === 0 ? (
          <div className="fs-xxs text-gray-600 p-4 border border-gray-800 border-dashed text-center rounded h-full flex items-center justify-center bg-black/30">

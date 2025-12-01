@@ -3,6 +3,7 @@ import React from 'react';
 import { GameState, ItemId, UiScale, GameStatus, DebugFlags } from '../types';
 import { ITEMS } from '../data/items';
 import { ShopModal } from './ShopModal';
+import { InventoryModal } from './InventoryModal';
 import { SaveLoadModal } from './SaveLoadModal';
 import { EventDialog } from './EventDialog';
 import { ItemDetailModal } from './ItemDetailModal';
@@ -15,11 +16,13 @@ interface OverlayLayerProps {
   state: GameState;
   ui: {
     isShopOpen: boolean;
+    isInventoryOpen: boolean;
     isMenuOpen: boolean;
     uiScale: UiScale;
   };
   actions: {
     closeShop: () => void;
+    closeInventory: () => void;
     buyItem: (id: ItemId) => void;
     closeMenu: () => void;
     loadState: (state: GameState) => void;
@@ -62,6 +65,14 @@ export const OverlayLayer: React.FC<OverlayLayerProps> = ({
           money={state.money} 
           onClose={actions.closeShop} 
           onBuy={actions.buyItem} 
+          onInspect={onInspect}
+        />
+      )}
+      {ui.isInventoryOpen && (
+        <InventoryModal 
+          state={state}
+          onClose={actions.closeInventory}
+          onUse={actions.useItem}
           onInspect={onInspect}
         />
       )}
