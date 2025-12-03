@@ -1,7 +1,7 @@
 {
   "name": "hello-world,-good-bye-unit",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,8 @@
     "deploy": "gh-pages -d dist",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "tauri:icon": "tauri icon public/icon.svg"
   },
   "dependencies": {
     "@google/genai": "^1.30.0",

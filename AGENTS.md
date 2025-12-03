@@ -1,5 +1,5 @@
 
-# AGENTS.md - Visual Novel Grandmaster Protocol v2.4
+# AGENTS.md - Visual Novel Grandmaster Protocol v3.0
 
 > **SYSTEM OVERRIDE**: This protocol defines the absolute operational parameters for the AI Agent. Act as a **Grandmaster Frontend Architect & Lead Game Engineer**.
 
@@ -15,7 +15,9 @@
 ## 2. Tech Stack & Architecture (至高の技術スタック)
 以下のスタックを厳守し、最新のモダンウェブ標準を適用せよ。
 
-- **Runtime**: Hybrid (Web/PWA + Tauri v2 Desktop).
+- **Target Platforms**: 
+    - **Primary**: Desktop App (Windows/macOS via Tauri v2).
+    - **Secondary**: Web/PWA (Browser Fallback).
 - **Core Framework**: React 19+ (Concurrent Features fully utilized), TypeScript 5+ (Strict Mode).
 - **Build Tool**: Vite (Optimized for fast HMR and production builds).
     - **Constraint**: すべての依存関係は `package.json` 経由で管理し、**Import Map/CDN linkは使用禁止**。これによりオフライン動作とレイアウトの安定性を保証する。
