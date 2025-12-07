@@ -15,25 +15,29 @@ function generatePWAAssets(base: string): Plugin {
     generateBundle() {
       // Generate manifest.json
       const manifestPath = path.resolve(__dirname, 'manifest.template.json');
-      const manifestTemplate = fs.readFileSync(manifestPath, 'utf-8');
-      const manifestContent = manifestTemplate.replace(/__BASE_URL__/g, base);
-      
-      this.emitFile({
-        type: 'asset',
-        fileName: 'manifest.json',
-        source: manifestContent
-      });
+      if (fs.existsSync(manifestPath)) {
+        const manifestTemplate = fs.readFileSync(manifestPath, 'utf-8');
+        const manifestContent = manifestTemplate.replace(/__BASE_URL__/g, base);
+        
+        this.emitFile({
+          type: 'asset',
+          fileName: 'manifest.json',
+          source: manifestContent
+        });
+      }
 
       // Generate sw.js
       const swPath = path.resolve(__dirname, 'sw.template.js');
-      const swTemplate = fs.readFileSync(swPath, 'utf-8');
-      const swContent = swTemplate.replace(/__BASE_URL__/g, base);
-      
-      this.emitFile({
-        type: 'asset',
-        fileName: 'sw.js',
-        source: swContent
-      });
+      if (fs.existsSync(swPath)) {
+        const swTemplate = fs.readFileSync(swPath, 'utf-8');
+        const swContent = swTemplate.replace(/__BASE_URL__/g, base);
+        
+        this.emitFile({
+          type: 'asset',
+          fileName: 'sw.js',
+          source: swContent
+        });
+      }
     }
   };
 }
