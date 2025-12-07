@@ -1,3 +1,4 @@
+
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { defineConfig, loadEnv, Plugin } from 'vite';
@@ -39,7 +40,14 @@ function generatePWAAssets(base: string): Plugin {
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
-    const base = mode === 'production' ? '/Hello-World-Good-bye-Unit/' : '/';
+    
+    // Configurable base URL
+    // Priority: VITE_BASE_URL (from env) > default './' (relative for Tauri/Local)
+    // For GitHub Pages, VITE_BASE_URL should be set to '/repo-name/' in CI environment
+    const base = env.VITE_BASE_URL || './';
+    
+    console.log(`Building with base path: ${base}`);
+
     return {
       base,
       server: {
