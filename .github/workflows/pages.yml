@@ -1,3 +1,4 @@
+
 name: Deploy to GitHub Pages (Smart)
 
 on:
@@ -67,6 +68,8 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
+          # 重要: GitHub Pages用のベースパスを設定
+          VITE_BASE_URL: /Hello-World-Good-bye-Unit/
 
       - name: Create 404 for SPA fallback
         if: steps.skip.outputs.should-deploy != 'false'
